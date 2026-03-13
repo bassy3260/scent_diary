@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="common">
+
+    <sql id="commonColumns">
+        created_time,
+        updated_time,
+        deleted_time,
+        is_delete
+    </sql>
+
+    <sql id="commonColumnsWithAlias">
+        ${alias}.created_time,
+        ${alias}.updated_time,
+        ${alias}.deleted_time,
+        ${alias}.is_delete
+    </sql>
+
+    <sql id="insertCommonColumns">
+        created_time,
+        updated_time,
+        is_delete
+    </sql>
+
+    <sql id="insertCommonValues">
+        NOW(),
+        NOW(),
+        false
+    </sql>
+
+    <sql id="notDeleted">
+        is_delete = false
+    </sql>
+
+    <sql id="notDeletedWithAlias">
+        ${alias}.is_delete = false
+    </sql>
+
+    <sql id="softDelete">
+        is_delete = true,
+        deleted_time = NOW()
+    </sql>
+
+    <sql id="updateCommonColumns">
+        updated_time = NOW()
+    </sql>
+
+</mapper>
