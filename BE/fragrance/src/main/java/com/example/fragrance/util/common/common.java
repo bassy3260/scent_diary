@@ -17,4 +17,5 @@ public abstract class common {
     private LocalDateTime updatedTime;
     private LocalDateTime deletedTime;
     private boolean isDelete;
+
 }
