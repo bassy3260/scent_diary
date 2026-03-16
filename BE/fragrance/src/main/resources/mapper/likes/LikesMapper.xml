@@ -3,5 +3,53 @@
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.example.fragrance.likes.mapper.LikesMapper">
 
+    <resultMap id="likedPerfumeResultMap" type="com.example.fragrance.likes.dto.LikedPerfume">
+        <result property="image"  column="image_route"/>
+        <result property="brand"  column="brand"/>
+        <result property="name"   column="perfume_name"/>
+        <collection property="accords" ofType="string" column="perfume_id"
+                    select="selectAccordsByPerfumeId"/>
+    </resultMap>
+
+    <select id="selectAccordsByPerfumeId" resultType="string">
+        SELECT a.accord_name
+        FROM perfume_accord pa
+        JOIN accord a ON pa.accord_id = a.accord_id
+        WHERE pa.perfume_id = #{perfume_id}
+        AND pa.is_delete = FALSE
+        ORDER BY pa.accord_order
+    </select>
+
+    <select id="findLikedPerfumes" resultMap="likedPerfumeResultMap">
+        SELECT p.perfume_id,
+        p.image_route,
+        p.brand,
+        p.perfume_name
+        FROM likes l
+        JOIN perfume p ON l.perfume_id = p.perfume_id
+        WHERE l.member_id = #{memberId}
+        AND l.is_delete = FALSE
+        AND p.is_delete = FALSE
+        ORDER BY l.create_time DESC
+        LIMIT #{size} OFFSET #{offset}
+    </select>
+
+    <select id="countLikedPerfumes" resultType="long">
+        SELECT COUNT(*)
+        FROM likes l
+        JOIN perfume p ON l.perfume_id = p.perfume_id
+        WHERE l.member_id = #{memberId}
+        AND l.is_delete = FALSE
+        AND p.is_delete = FALSE
+    </select>
+
+    <update id="softDeleteLikes">
+        UPDATE likes
+        SET is_delete   = TRUE,
+        delete_time = NOW()
+        WHERE likes_id  = #{likesId}
+        AND member_id = #{memberId}
+        AND is_delete = FALSE
+    </update>
 
 </mapper>

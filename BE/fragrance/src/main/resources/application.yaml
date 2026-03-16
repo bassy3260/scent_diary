@@ -1,6 +1,8 @@
 spring:
   application:
     name: fragrance
+  profiles:
+    active: local
 
 mybatis:
   mapper-locations: classpath:mapper/**/*.xml
