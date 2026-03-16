@@ -3,4 +3,11 @@
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.example.fragrance.diary.mapper.DiaryImageMapper">
 
+    <insert id="insert" useGeneratedKeys="true" keyProperty="diaryImageId">
+        INSERT INTO diary_image (diary_id, image_route,
+            <include refid="common.insertCommonColumns"/>)
+        VALUES (#{diaryId}, #{imageRoute},
+            <include refid="common.insertCommonValues"/>)
+    </insert>
+
 </mapper>

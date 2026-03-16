@@ -3,4 +3,70 @@
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.example.fragrance.diary.mapper.DiaryMapper">
 
+    <resultMap id="diaryListResultMap" type="com.example.fragrance.diary.dto.DiaryListResponse">
+        <result property="diaryId" column="diary_id"/>
+        <result property="title" column="title"/>
+        <result property="createTime" column="created_time"/>
+        <result property="detail" column="detail"/>
+        <association property="perfume" javaType="com.example.fragrance.diary.dto.DiaryListResponse$PerfumeInfo">
+            <result property="perfumeId" column="perfume_id"/>
+            <result property="perfumeImageUrl" column="image_route"/>
+            <result property="perfumeName" column="perfume_name"/>
+            <result property="brand" column="brand"/>
+        </association>
+    </resultMap>
+
+    <select id="findAll" resultMap="diaryListResultMap">
+        SELECT d.diary_id, d.title, d.created_time, d.detail,
+               p.perfume_id, p.image_route, p.perfume_name, p.brand
+        FROM diary d
+        LEFT JOIN perfume p ON d.perfume_id = p.perfume_id
+        WHERE d.member_id = #{memberId}
+          AND <include refid="common.notDeletedWithAlias"><property name="alias" value="d"/></include>
+        ORDER BY d.created_time DESC
+        LIMIT #{size} OFFSET #{offset}
+    </select>
+
+    <select id="countByMemberId" resultType="int">
+        SELECT COUNT(*)
+        FROM diary
+        WHERE member_id = #{memberId}
+          AND <include refid="common.notDeleted"/>
+    </select>
+
+    <resultMap id="diaryDetailResultMap" type="com.example.fragrance.diary.dto.DiaryDetailResponse">
+        <result property="diaryId" column="diary_id"/>
+        <result property="title" column="title"/>
+        <result property="createTime" column="created_time"/>
+        <result property="detail" column="detail"/>
+        <association property="perfume" javaType="com.example.fragrance.diary.dto.DiaryDetailResponse$PerfumeInfo">
+            <result property="perfumeId" column="perfume_id"/>
+            <result property="perfumeImageUrl" column="perfume_image_route"/>
+            <result property="perfumeName" column="perfume_name"/>
+            <result property="brand" column="brand"/>
+        </association>
+        <collection property="diaryImage" ofType="com.example.fragrance.diary.dto.DiaryDetailResponse$DiaryImageInfo">
+            <result property="diaryImageUrl" column="image_route"/>
+        </collection>
+    </resultMap>
+
+    <select id="findById" resultMap="diaryDetailResultMap">
+        SELECT d.diary_id, d.title, d.created_time, d.detail,
+               di.image_route,
+               p.perfume_id, p.image_route AS perfume_image_route, p.perfume_name, p.brand
+        FROM diary d
+        LEFT JOIN diary_image di ON d.diary_id = di.diary_id
+            AND <include refid="common.notDeletedWithAlias"><property name="alias" value="di"/></include>
+        LEFT JOIN perfume p ON d.perfume_id = p.perfume_id
+        WHERE d.diary_id = #{diaryId}
+          AND <include refid="common.notDeletedWithAlias"><property name="alias" value="d"/></include>
+    </select>
+
+    <insert id="insert" useGeneratedKeys="true" keyProperty="diaryId">
+        INSERT INTO diary (member_id, perfume_id, title, detail,
+            <include refid="common.insertCommonColumns"/>)
+        VALUES (#{memberId}, #{perfumeId}, #{title}, #{detail},
+            <include refid="common.insertCommonValues"/>)
+    </insert>
+
 </mapper>
