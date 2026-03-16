@@ -9,4 +9,5 @@ import java.util.List;
 @Mapper
 public interface TryDiaryPerfumeMapper {
 
+    void insertBatch(@org.apache.ibatis.annotations.Param("list") List<TryDiaryPerfume> list);
 }

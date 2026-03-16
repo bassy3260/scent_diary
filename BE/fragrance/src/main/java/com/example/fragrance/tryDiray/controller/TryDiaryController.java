@@ -1,13 +1,17 @@
 package com.example.fragrance.tryDiray.controller;
 
-import com.example.fragrance.tryDiray.entity.TryDiary;
+import com.example.fragrance.tryDiray.dto.TryDiaryCreateRequest;
+import com.example.fragrance.tryDiray.dto.TryDiaryDetailResponse;
+import com.example.fragrance.tryDiray.dto.TryDiaryListResponse;
 import com.example.fragrance.tryDiray.service.TryDiaryService;
+import com.example.fragrance.util.common.ApiResponse;
+import com.example.fragrance.util.common.PageResponse;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping(value = "/api/v1/try-diary", produces = "application/json; charset=utf8")
@@ -18,32 +22,30 @@ public class TryDiaryController {
 
     // 시향 일지 목록 조회
     @GetMapping
-    public ResponseEntity<List<TryDiary>> getTryDiaries(
+    public ResponseEntity<ApiResponse<PageResponse<TryDiaryListResponse>>> getTryDiaries(
             @RequestAttribute("memberId") Long memberId,
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "5") int size) {
 
-        List<TryDiary> tryDiaries = tryDiaryService.getTryDiaries(memberId, page, size);
-        return ResponseEntity.ok(tryDiaries);
+        PageResponse<TryDiaryListResponse> pageResponse = tryDiaryService.getTryDiaries(memberId, page, size);
+        return ResponseEntity.ok(ApiResponse.ok("시향 일지 목록 조회 성공", pageResponse));
     }
 
-    // 시향 일지 상세 조회
     @GetMapping("/{tryDiaryId}")
-    public ResponseEntity<TryDiary> getTryDiary(
+    public ResponseEntity<ApiResponse<TryDiaryDetailResponse>> getTryDiary(
             @RequestAttribute("memberId") Long memberId,
             @PathVariable Long tryDiaryId) {
 
-        TryDiary tryDiary = tryDiaryService.getTryDiary(tryDiaryId);
-        return ResponseEntity.ok(tryDiary);
+        TryDiaryDetailResponse tryDiary = tryDiaryService.getTryDiary(tryDiaryId);
+        return ResponseEntity.ok(ApiResponse.ok("시향 일지 상세 조회가 완료되었습니다.", tryDiary));
     }
 
-    // 시향 일지 작성
     @PostMapping(consumes = "application/json; charset=utf8")
-    public ResponseEntity<Void> createTryDiary(
+    public ResponseEntity<ApiResponse<Map<String, Long>>> createTryDiary(
             @RequestAttribute("memberId") Long memberId,
-            @RequestBody TryDiary tryDiary) {
+            @RequestBody TryDiaryCreateRequest request) {
 
-        tryDiaryService.createTryDiary(memberId, tryDiary);
-        return ResponseEntity.ok().build();
+        Long tryDiaryId = tryDiaryService.createTryDiary(memberId, request);
+        return ResponseEntity.ok(ApiResponse.ok("시향 일지 작성 성공", Map.of("tryDiaryId", tryDiaryId)));
     }
 }
