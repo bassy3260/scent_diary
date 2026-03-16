@@ -4,7 +4,16 @@
       "WebSearch",
       "WebFetch(domain:repo.spring.io)",
       "WebFetch(domain:mvnrepository.com)",
-      "WebFetch(domain:central.sonatype.com)"
+      "WebFetch(domain:central.sonatype.com)",
+      "Bash(xargs grep -l \"@RestController\\\\|@Service\\\\|@Repository\\\\|@Component\")",
+      "Bash(./gradlew compileJava)",
+      "Bash(mysql -h 54.180.237.147 -u root -paZq8BbSMpf9uMJKe fragrance_local -e \"SHOW TABLES;\")",
+      "Bash(./gradlew test:*)",
+      "Bash(./gradlew dependencies:*)",
+      "Bash(jar tf:*)",
+      "Bash(find /c/Users/SSAFY/.gradle/caches -name spring-ai-autoconfigure-model-openai*.jar)",
+      "Bash(./gradlew clean:*)",
+      "Bash(./gradlew --stop)"
     ]
   }
 }
