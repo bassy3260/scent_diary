@@ -6,7 +6,7 @@
     <resultMap id="diaryListResultMap" type="com.example.fragrance.diary.dto.DiaryListResponse">
         <result property="diaryId" column="diary_id"/>
         <result property="title" column="title"/>
-        <result property="createTime" column="created_time"/>
+        <result property="createTime" column="create_time"/>
         <result property="detail" column="detail"/>
         <association property="perfume" javaType="com.example.fragrance.diary.dto.DiaryListResponse$PerfumeInfo">
             <result property="perfumeId" column="perfume_id"/>
@@ -17,13 +17,13 @@
     </resultMap>
 
     <select id="findAll" resultMap="diaryListResultMap">
-        SELECT d.diary_id, d.title, d.created_time, d.detail,
+        SELECT d.diary_id, d.title, d.create_time, d.detail,
                p.perfume_id, p.image_route, p.perfume_name, p.brand
         FROM diary d
         LEFT JOIN perfume p ON d.perfume_id = p.perfume_id
         WHERE d.member_id = #{memberId}
           AND <include refid="common.notDeletedWithAlias"><property name="alias" value="d"/></include>
-        ORDER BY d.created_time DESC
+        ORDER BY d.create_time DESC
         LIMIT #{size} OFFSET #{offset}
     </select>
 
@@ -37,7 +37,7 @@
     <resultMap id="diaryDetailResultMap" type="com.example.fragrance.diary.dto.DiaryDetailResponse">
         <result property="diaryId" column="diary_id"/>
         <result property="title" column="title"/>
-        <result property="createTime" column="created_time"/>
+        <result property="createTime" column="create_time"/>
         <result property="detail" column="detail"/>
         <association property="perfume" javaType="com.example.fragrance.diary.dto.DiaryDetailResponse$PerfumeInfo">
             <result property="perfumeId" column="perfume_id"/>
@@ -51,7 +51,7 @@
     </resultMap>
 
     <select id="findById" resultMap="diaryDetailResultMap">
-        SELECT d.diary_id, d.title, d.created_time, d.detail,
+        SELECT d.diary_id, d.title, d.create_time, d.detail,
                di.image_route,
                p.perfume_id, p.image_route AS perfume_image_route, p.perfume_name, p.brand
         FROM diary d

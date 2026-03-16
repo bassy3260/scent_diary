@@ -8,6 +8,7 @@ import org.springframework.stereotype.Component;
 
 import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
+import java.util.Date;
 
 @Component
 public class JwtUtil {
@@ -26,6 +27,16 @@ public class JwtUtil {
                 .getPayload();
 
         return claims.get("memberId", Long.class);
+    }
+
+    // 토큰 생성
+    public String generateToken(Long memberId) {
+        return Jwts.builder()
+                .claim("memberId", memberId)
+                .issuedAt(new Date())
+                .expiration(new Date(System.currentTimeMillis() + 1000 * 60 * 60)) // 1시간
+                .signWith(secretKey)
+                .compact();
     }
 
     public boolean validateToken(String token) {

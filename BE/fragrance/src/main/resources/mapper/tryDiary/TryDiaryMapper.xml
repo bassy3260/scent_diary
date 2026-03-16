@@ -6,14 +6,14 @@
     <resultMap id="tryDiaryListResultMap" type="com.example.fragrance.tryDiray.dto.TryDiaryListResponse">
         <result property="tryDiaryId" column="try_diary_id"/>
         <result property="title" column="title"/>
-        <result property="createTime" column="created_time"/>
+        <result property="createTime" column="create_time"/>
         <result property="thumbnail" column="image_route"/>
         <result property="perfumeName" column="perfume_name"/>
         <result property="brand" column="brand"/>
     </resultMap>
 
     <select id="findAll" resultMap="tryDiaryListResultMap">
-        SELECT td.try_diary_id, td.title, td.created_time,
+        SELECT td.try_diary_id, td.title, td.create_time,
                p.image_route, p.perfume_name, p.brand
         FROM try_diary td
         LEFT JOIN try_diary_perfume tdp ON td.try_diary_id = tdp.try_diary_id
@@ -27,7 +27,7 @@
         LEFT JOIN perfume p ON tdp.perfume_id = p.perfume_id
         WHERE td.member_id = #{memberId}
           AND <include refid="common.notDeletedWithAlias"><property name="alias" value="td"/></include>
-        ORDER BY td.created_time DESC
+        ORDER BY td.create_time DESC
         LIMIT #{size} OFFSET #{offset}
     </select>
 
@@ -41,7 +41,7 @@
     <resultMap id="tryDiaryDetailResultMap" type="com.example.fragrance.tryDiray.dto.TryDiaryDetailResponse">
         <result property="tryDiaryId" column="try_diary_id"/>
         <result property="title" column="title"/>
-        <result property="createTime" column="created_time"/>
+        <result property="createTime" column="create_time"/>
         <collection property="tryItem" ofType="com.example.fragrance.tryDiray.dto.TryDiaryDetailResponse$TryItemInfo">
             <result property="perfumeId" column="perfume_id"/>
             <result property="perfumeImageUrl" column="image_route"/>
@@ -52,7 +52,7 @@
     </resultMap>
 
     <select id="findById" resultMap="tryDiaryDetailResultMap">
-        SELECT td.try_diary_id, td.title, td.created_time,
+        SELECT td.try_diary_id, td.title, td.create_time,
                p.perfume_id, p.image_route, p.perfume_name, p.brand,
                tdp.description
         FROM try_diary td
