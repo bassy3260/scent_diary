@@ -8,6 +8,8 @@ import lombok.NoArgsConstructor;
 @Getter
 @NoArgsConstructor
 public class LikedPerfume {
+	private Long likesId;
+	private Long perfumeId;
 	private String image;
 	private String brand;
 	private String name;
