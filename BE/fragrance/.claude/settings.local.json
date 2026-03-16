@@ -4,7 +4,9 @@
       "WebSearch",
       "WebFetch(domain:repo.spring.io)",
       "WebFetch(domain:mvnrepository.com)",
-      "WebFetch(domain:central.sonatype.com)"
+      "WebFetch(domain:central.sonatype.com)",
+      "Bash(xargs grep -l \"@RestController\\\\|@Service\\\\|@Repository\\\\|@Component\")",
+      "Bash(./gradlew compileJava)"
     ]
   }
 }
