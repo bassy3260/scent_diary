@@ -30,7 +30,6 @@ public class LikesController {
 		@RequestParam(defaultValue = "1") int page,
 		@RequestParam(defaultValue = "10") int size
 	) {
-		memberId = 1L;
 		LikedPerfumeListResponse data = likesService.getLikedPerfumes(memberId, page - 1, size);
 		return ResponseEntity.ok(ApiResponse.ok("SUCCESS", data));
 	}
@@ -41,7 +40,6 @@ public class LikesController {
 		@RequestAttribute("memberId") Long memberId,
 		@PathVariable Long likesId
 	) {
-		memberId = 1L;
 		likesService.deleteLikes(likesId, memberId);
 		return ResponseEntity.ok(ApiResponse.ok("SUCCESS"));
 	}
