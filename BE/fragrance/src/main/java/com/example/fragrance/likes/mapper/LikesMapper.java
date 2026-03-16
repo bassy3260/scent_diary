@@ -1,12 +1,25 @@
 package com.example.fragrance.likes.mapper;
 
-import com.example.fragrance.likes.entity.Likes;
+import java.util.List;
 
 import org.apache.ibatis.annotations.Mapper;
+import org.apache.ibatis.annotations.Param;
 
-import java.util.List;
+import com.example.fragrance.likes.dto.LikedPerfume;
 
 @Mapper
 public interface LikesMapper {
 
+	List<LikedPerfume> findLikedPerfumes(
+		@Param("memberId") Long memberId,
+		@Param("offset") int offset,
+		@Param("size") int size
+	);
+
+	long countLikedPerfumes(@Param("memberId") Long memberId);
+
+	int softDeleteLikes(
+		@Param("likesId") Long likesId,
+		@Param("memberId") Long memberId
+	);
 }

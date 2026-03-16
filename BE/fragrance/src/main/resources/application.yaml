@@ -1,6 +1,8 @@
 spring:
   application:
     name: fragrance
+  profiles:
+    active: local
 
 jwt:
   secret: your-secret-key-here-at-least-32-characters-long
