@@ -76,7 +76,7 @@
         #{id},
         #{password},
         #{birthYear},
-        #{gender}::public.gender_type,
+        #{gender}::public.gender_enum,
         #{nickname},
         <include refid="common.insertCommonValues"/>
         )

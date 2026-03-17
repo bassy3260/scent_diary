@@ -1,13 +1,9 @@
 package com.example.fragrance.likes.controller;
 
+import com.example.fragrance.likes.dto.LikesRequest;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestAttribute;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.*;
 
 import com.example.fragrance.likes.dto.LikedPerfumeListResponse;
 import com.example.fragrance.likes.service.LikesService;
@@ -15,6 +11,8 @@ import com.example.fragrance.util.common.ApiResponse;
 
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
+
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/v1/my")
@@ -43,4 +41,5 @@ public class LikesController {
 		likesService.deleteLikes(likesId, memberId);
 		return ResponseEntity.ok(ApiResponse.ok("SUCCESS"));
 	}
+
 }
