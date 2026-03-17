@@ -52,7 +52,7 @@
         JOIN note n ON pn.note_id = n.note_id AND n.is_delete = FALSE
         WHERE mp.member_id = #{memberId}
         AND mp.is_delete = FALSE
-        AND pn.note_level = #{noteLevel}::note_level_type
+        AND pn.note_level = #{noteLevel}::note_level_enum
         GROUP BY n.note_id, n.note_name
         ORDER BY count DESC
         LIMIT 10
