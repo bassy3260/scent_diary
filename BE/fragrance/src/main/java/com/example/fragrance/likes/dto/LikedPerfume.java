@@ -13,5 +13,6 @@ public class LikedPerfume {
 	private String image;
 	private String brand;
 	private String name;
+	private Integer price;
 	private List<String> accords;
 }

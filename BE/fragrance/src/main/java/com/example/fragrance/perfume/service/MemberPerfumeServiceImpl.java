@@ -27,7 +27,7 @@ public class MemberPerfumeServiceImpl implements MemberPerfumeService {
 
 	@Override
 	public void deleteMemberPerfume(Long memberPerfumeId, Long memberId) {
-		int affected = memberPerfumeMapper.softDeleteMemberPerfume(memberPerfumeId, memberId);
+		int affected = memberPerfumeMapper.hardDeleteMemberPerfume(memberPerfumeId, memberId);
 		if (affected == 0) {
 			throw new IllegalArgumentException("소장한 향수를 찾을 수 없거나 삭제 권한이 없습니다.");
 		}

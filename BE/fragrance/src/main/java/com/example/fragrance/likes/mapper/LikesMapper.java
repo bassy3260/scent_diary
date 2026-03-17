@@ -18,7 +18,7 @@ public interface LikesMapper {
 
 	long countLikedPerfumes(@Param("memberId") Long memberId);
 
-	int softDeleteLikes(
+	int hardDeleteLikes(
 		@Param("likesId") Long likesId,
 		@Param("memberId") Long memberId
 	);

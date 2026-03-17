@@ -24,7 +24,7 @@ public class LikesServiceImpl implements LikesService{
 	}
 
 	public void deleteLikes(Long likesId, Long memberId) {
-		int affected = likesMapper.softDeleteLikes(likesId, memberId);
+		int affected = likesMapper.hardDeleteLikes(likesId, memberId);
 		if (affected == 0) {
 			throw new IllegalArgumentException("찜한 향수를 찾을 수 없거나 삭제 권한이 없습니다.");
 		}

@@ -18,7 +18,7 @@ public interface MemberPerfumeMapper {
 
 	long countOwnedPerfumes(@Param("memberId") Long memberId);
 
-	int softDeleteMemberPerfume(
+	int hardDeleteMemberPerfume(
 		@Param("memberPerfumeId") Long memberPerfumeId,
 		@Param("memberId") Long memberId
 	);
