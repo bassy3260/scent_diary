@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.fragrance.preference.mapper.PreferenceMapper">
+
+    <select id="countOwnedPerfumes" resultType="long">
+        SELECT COUNT(DISTINCT mp.member_perfume_id)
+        FROM member_perfume mp
+        JOIN perfume p ON mp.perfume_id = p.perfume_id
+        WHERE mp.member_id = #{memberId}
+        AND mp.is_delete = FALSE
+        AND p.is_delete = FALSE
+    </select>
+
+    <select id="findTopAccords" resultType="com.example.fragrance.preference.dto.PreferenceAccordDto">
+        SELECT a.accord_name AS accordName,
+        COUNT(DISTINCT mp.perfume_id) AS count,
+        0.0 AS ratio
+        FROM member_perfume mp
+        JOIN perfume p ON mp.perfume_id = p.perfume_id AND p.is_delete = FALSE
+        JOIN perfume_accord pa ON p.perfume_id = pa.perfume_id AND pa.is_delete = FALSE
+        JOIN accord a ON pa.accord_id = a.accord_id AND a.is_delete = FALSE
+        WHERE mp.member_id = #{memberId}
+        AND mp.is_delete = FALSE
+        GROUP BY a.accord_id, a.accord_name
+        ORDER BY count DESC
+        LIMIT 10
+    </select>
+
+    <select id="findTopNotes" resultType="com.example.fragrance.preference.dto.PreferenceNoteDto">
+        SELECT n.note_name AS noteName,
+        COUNT(DISTINCT mp.perfume_id) AS count,
+        0.0 AS ratio
+        FROM member_perfume mp
+        JOIN perfume p ON mp.perfume_id = p.perfume_id AND p.is_delete = FALSE
+        JOIN perfume_note pn ON p.perfume_id = pn.perfume_id AND pn.is_delete = FALSE
+        JOIN note n ON pn.note_id = n.note_id AND n.is_delete = FALSE
+        WHERE mp.member_id = #{memberId}
+        AND mp.is_delete = FALSE
+        GROUP BY n.note_id, n.note_name
+        ORDER BY count DESC
+        LIMIT 10
+    </select>
+
+    <select id="findTopNotesByLevel" resultType="com.example.fragrance.preference.dto.PreferenceNoteDto">
+        SELECT n.note_name AS noteName,
+        COUNT(DISTINCT mp.perfume_id) AS count,
+        0.0 AS ratio
+        FROM member_perfume mp
+        JOIN perfume p ON mp.perfume_id = p.perfume_id AND p.is_delete = FALSE
+        JOIN perfume_note pn ON p.perfume_id = pn.perfume_id AND pn.is_delete = FALSE
+        JOIN note n ON pn.note_id = n.note_id AND n.is_delete = FALSE
+        WHERE mp.member_id = #{memberId}
+        AND mp.is_delete = FALSE
+        AND pn.note_level = #{noteLevel}::note_level_type
+        GROUP BY n.note_id, n.note_name
+        ORDER BY count DESC
+        LIMIT 10
+    </select>
+
+</mapper>
