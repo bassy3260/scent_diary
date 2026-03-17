@@ -1,121 +1,118 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import heroImg from './assets/hero.png'
-import './App.css'
+/**
+ * App.tsx — 앱 셸 (Application Shell)
+ *
+ * 이 파일의 책임은 딱 세 가지입니다:
+ *  1. 현재 화면(screen)에 맞는 컴포넌트를 렌더링한다 → screenRegistry
+ *  2. 화면 전환 애니메이션을 처리한다 → motion variants
+ *  3. BottomNav 표시 여부를 결정하고 탭 전환을 처리한다
+ *
+ * 비즈니스 로직은 store 슬라이스로,
+ * 화면 매핑은 navigation/screenRegistry로 이동했습니다.
+ */
+import { useCallback, useMemo } from 'react';
+import { AnimatePresence, motion } from 'motion/react';
+import { MobileFrame } from './components/layout/MobileFrame';
+import { BottomNav, type TabId } from './components/layout/BottomNav';
+import { useAppStore } from './store';
+import { mockPerfumes } from './constants/perfumes';
+import { tabVariants, pushVariants, sheetVariants, fadeVariants } from './motion';
+import type { TransitionType } from './types';
+import {
+  renderScreen,
+  getActiveTab,
+  BOTTOM_NAV_SCREENS,
+} from './navigation/screenRegistry';
 
-function App() {
-  const [count, setCount] = useState(0)
-
-  return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
-        </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.tsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
-        <button
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
-      </section>
-
-      <div className="ticks"></div>
-
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
-        </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
-
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
-  )
+function getVariants(type: TransitionType) {
+  switch (type) {
+    case 'tab':   return tabVariants;
+    case 'push':  return pushVariants;
+    case 'sheet': return sheetVariants;
+    case 'fade':
+    default:      return fadeVariants;
+  }
 }
 
-export default App
+export default function App() {
+  const {
+    screen, setScreen, navigateTo, goBack,
+    selectedPerfumeId, transitionType,
+    hasOnboarded, setHasOnboarded,
+  } = useAppStore();
+
+  // ─── 화면 전환 핸들러 ─────────────────────────────
+  const onLaunchComplete = useCallback(() => {
+    setScreen(hasOnboarded ? 'home' : 'onboarding');
+  }, [hasOnboarded, setScreen]);
+
+  const onOnboardingComplete = useCallback(() => {
+    setScreen('auth-entry');
+  }, [setScreen]);
+
+  const onProfileComplete = useCallback(() => {
+    setHasOnboarded(true);
+    setScreen('home');
+  }, [setHasOnboarded, setScreen]);
+
+  const onEmotionComplete = useCallback(() => {
+    navigateTo('analyzing');
+  }, [navigateTo]);
+
+  const onAnalyzingComplete = useCallback(() => {
+    setScreen('results');
+  }, [setScreen]);
+
+  // screenRegistry에 전달할 핸들러 묶음
+  const handlers = useMemo(() => ({
+    onLaunchComplete,
+    onOnboardingComplete,
+    onProfileComplete,
+    onEmotionComplete,
+    onAnalyzingComplete,
+    navigateTo,
+    goBack,
+  }), [onLaunchComplete, onOnboardingComplete, onProfileComplete,
+      onEmotionComplete, onAnalyzingComplete, navigateTo, goBack]);
+
+  // ─── 탭 전환 ──────────────────────────────────────
+  const handleTabChange = useCallback((tab: TabId) => {
+    const tabScreenMap: Record<TabId, Parameters<typeof setScreen>[0]> = {
+      home:   'home',
+      search: 'search',
+      diary:  'diary',
+      mypage: 'mypage',
+    };
+    setScreen(tabScreenMap[tab]);
+  }, [setScreen]);
+
+  // ─── 렌더링 ───────────────────────────────────────
+  const selectedPerfume = mockPerfumes.find((p) => p.id === selectedPerfumeId);
+  const showBottomNav = BOTTOM_NAV_SCREENS.includes(screen);
+  const variants = useMemo(() => getVariants(transitionType), [transitionType]);
+
+  return (
+    <MobileFrame>
+      <div className="relative w-full h-full">
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={screen + (selectedPerfumeId || '')}
+            className="w-full h-full"
+            initial={variants.initial}
+            animate={variants.animate}
+            exit={variants.exit}
+            transition={variants.transition}
+          >
+            {renderScreen(screen, handlers, selectedPerfume)}
+          </motion.div>
+        </AnimatePresence>
+
+        {showBottomNav && (
+          <BottomNav
+            activeTab={getActiveTab(screen)}
+            onTabChange={handleTabChange}
+          />
+        )}
+      </div>
+    </MobileFrame>
+  );
+}
