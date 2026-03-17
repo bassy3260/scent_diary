@@ -56,4 +56,17 @@
         AND member_id         = #{memberId}
     </delete>
 
+    <insert id="insertCollect">
+        INSERT INTO member_perfume (
+        member_id,
+        perfume_id,
+        <include refid="common.insertCommonColumns"/>
+        )
+        VALUES (
+        #{memberId},
+        #{perfumeId},
+        <include refid="common.insertCommonValues"/>
+        )
+    </insert>
+
 </mapper>
