@@ -25,6 +25,7 @@ public class TryDiaryDetailResponse {
         private String perfumeImageUrl;
         private String perfumeName;
         private String brand;
+        private int price;
         private String description;
     }
 }
