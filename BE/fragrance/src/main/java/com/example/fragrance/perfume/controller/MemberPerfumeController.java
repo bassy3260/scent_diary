@@ -1,6 +1,7 @@
 package com.example.fragrance.perfume.controller;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -25,10 +26,11 @@ public class MemberPerfumeController {
 	// GET /api/v1/my/perfume?page=1&size=10
 	@GetMapping("/perfume")
 	public ResponseEntity<ApiResponse<MemberPerfumeListResponse>> getOwnedPerfumes(
-		@RequestAttribute("memberId") Long memberId,
+		@AuthenticationPrincipal String loginId,
 		@RequestParam(defaultValue = "1") int page,
 		@RequestParam(defaultValue = "10") int size
 	) {
+		Long memberId = Long.parseLong(loginId);
 		MemberPerfumeListResponse data = memberPerfumeService.getOwnedPerfumes(memberId, page - 1, size);
 		return ResponseEntity.ok(ApiResponse.ok("SUCCESS", data));
 	}
@@ -36,9 +38,10 @@ public class MemberPerfumeController {
 	// DELETE /api/v1/my/perfume/{memberPerfumeId}
 	@DeleteMapping("/perfume/{memberPerfumeId}")
 	public ResponseEntity<ApiResponse<Void>> deleteMemberPerfume(
-		@RequestAttribute("memberId") Long memberId,
+		@AuthenticationPrincipal String loginId,
 		@PathVariable Long memberPerfumeId
 	) {
+		Long memberId = Long.parseLong(loginId);
 		memberPerfumeService.deleteMemberPerfume(memberPerfumeId, memberId);
 		return ResponseEntity.ok(ApiResponse.ok("SUCCESS"));
 	}
