@@ -21,8 +21,8 @@ public class ReviewController {
 
 	private final ReviewService reviewService;
 
-	// GET /api/v1/my/reviews?page=1&size=10
-	@GetMapping("/reviews")
+	// GET /api/v1/my/review?page=1&size=10
+	@GetMapping("/review")
 	public ResponseEntity<ApiResponse<ReviewListResponse>> getReviews(
 		@AuthenticationPrincipal String loginId,
 		@RequestParam(defaultValue = "1") int page,
