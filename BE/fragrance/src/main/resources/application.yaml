@@ -1,9 +1,8 @@
 spring:
   application:
     name: fragrance
-
-jwt:
-  secret: your-secret-key-here-at-least-32-characters-long
+  profiles:
+    active: local
 
 mybatis:
   mapper-locations: classpath:mapper/**/*.xml

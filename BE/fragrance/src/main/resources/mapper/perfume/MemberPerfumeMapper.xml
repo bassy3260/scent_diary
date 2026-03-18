@@ -3,4 +3,70 @@
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.example.fragrance.perfume.mapper.MemberPerfumeMapper">
 
+    <resultMap id="memberPerfumeResultMap" type="com.example.fragrance.perfume.dto.MemberPerfumeDto">
+        <result property="memberPerfumeId" column="member_perfume_id"/>
+        <result property="perfumeId"       column="perfume_id"/>
+        <result property="image"           column="image_route"/>
+        <result property="brand"           column="brand"/>
+        <result property="name"            column="perfume_name"/>
+        <result property="price"           column="price"/>
+        <collection property="accords" ofType="string">
+            <result column="accord_name"/>
+        </collection>
+    </resultMap>
+
+    <select id="findOwnedPerfumes" resultMap="memberPerfumeResultMap">
+        SELECT mp.member_perfume_id,
+        p.perfume_id,
+        p.image_route,
+        p.brand,
+        p.perfume_name,
+        p.price,
+        a.accord_name
+        FROM (
+        SELECT mp2.member_perfume_id, mp2.perfume_id, mp2.create_time
+        FROM member_perfume mp2
+        JOIN perfume p2 ON mp2.perfume_id = p2.perfume_id
+        WHERE mp2.member_id = #{memberId}
+        AND mp2.is_delete = FALSE
+        AND p2.is_delete = FALSE
+        ORDER BY mp2.create_time DESC
+        LIMIT #{size} OFFSET #{offset}
+        ) mp
+        JOIN perfume p ON mp.perfume_id = p.perfume_id
+        LEFT JOIN perfume_accord pa ON p.perfume_id = pa.perfume_id
+        AND pa.is_delete = FALSE
+        LEFT JOIN accord a ON pa.accord_id = a.accord_id
+        AND a.is_delete = FALSE
+        ORDER BY mp.create_time DESC, pa.accord_order
+    </select>
+
+    <select id="countOwnedPerfumes" resultType="long">
+        SELECT COUNT(DISTINCT mp.member_perfume_id)
+        FROM member_perfume mp
+        JOIN perfume p ON mp.perfume_id = p.perfume_id
+        WHERE mp.member_id = #{memberId}
+        AND mp.is_delete = FALSE
+        AND p.is_delete = FALSE
+    </select>
+
+    <delete id="hardDeleteMemberPerfume">
+        DELETE FROM member_perfume
+        WHERE member_perfume_id = #{memberPerfumeId}
+        AND member_id         = #{memberId}
+    </delete>
+
+    <insert id="insertCollect">
+        INSERT INTO member_perfume (
+        member_id,
+        perfume_id,
+        <include refid="common.insertCommonColumns"/>
+        )
+        VALUES (
+        #{memberId},
+        #{perfumeId},
+        <include refid="common.insertCommonValues"/>
+        )
+    </insert>
+
 </mapper>

@@ -3,4 +3,58 @@
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.example.fragrance.review.mapper.ReviewMapper">
 
+    <resultMap id="reviewResultMap" type="com.example.fragrance.review.dto.ReviewDto">
+        <result property="reviewId"   column="review_id"/>
+        <result property="detail"     column="detail"/>
+        <result property="rating"     column="rating"/>
+        <result property="createTime" column="create_time"/>
+        <association property="perfume" javaType="com.example.fragrance.review.dto.ReviewPerfumeDto">
+            <result property="perfumeId"   column="perfume_id"/>
+            <result property="perfumeName" column="perfume_name"/>
+            <result property="brand"       column="brand"/>
+            <result property="image"       column="image_route"/>
+        </association>
+    </resultMap>
+
+    <select id="findReviewsByMemberId" resultMap="reviewResultMap">
+        SELECT r.review_id,
+        r.detail,
+        r.rating,
+        r.create_time,
+        p.perfume_id,
+        p.perfume_name,
+        p.brand,
+        p.image_route
+        FROM review r
+        JOIN perfume p ON r.perfume_id = p.perfume_id
+        WHERE r.member_id = #{memberId}
+        AND r.is_delete = FALSE
+        AND p.is_delete = FALSE
+        ORDER BY r.create_time DESC
+        LIMIT #{size} OFFSET #{offset}
+    </select>
+
+    <select id="countReviewsByMemberId" resultType="long">
+        SELECT COUNT(*)
+        FROM review r
+        WHERE r.member_id = #{memberId}
+        AND r.is_delete = FALSE
+    </select>
+
+    <insert id="insertReview" parameterType="com.example.fragrance.review.dto.ReviewRequest">
+        INSERT INTO public.review (
+            detail,
+            member_id,
+            perfume_id,
+            rating,
+            <include refid="common.insertCommonColumns"/>
+        ) VALUES (
+            #{content},
+            #{memberId},
+            #{perfumeId},
+            #{rating},
+            <include refid="common.insertCommonValues"/>
+        )
+    </insert>
+
 </mapper>

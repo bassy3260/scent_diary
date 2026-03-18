@@ -30,11 +30,11 @@ public class JwtUtil {
     }
 
     // 토큰 생성
-    public String generateToken(Long memberId) {
+    public String generateToken(Long memberId, long expirationTimeMs) {
         return Jwts.builder()
                 .claim("memberId", memberId)
                 .issuedAt(new Date())
-                .expiration(new Date(System.currentTimeMillis() + 1000 * 60 * 60)) // 1시간
+                .expiration(new Date(System.currentTimeMillis() + expirationTimeMs))
                 .signWith(secretKey)
                 .compact();
     }

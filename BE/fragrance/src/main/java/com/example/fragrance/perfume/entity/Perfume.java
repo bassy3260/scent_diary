@@ -18,5 +18,5 @@ public class Perfume extends common {
     private String perfumeName;
     private String brand;
     private Integer price;
-    private String description;
+	private String description;
 }
