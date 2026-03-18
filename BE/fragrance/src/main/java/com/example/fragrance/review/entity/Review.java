@@ -18,4 +18,5 @@ public class Review extends common {
     private Long memberId;
     private Long perfumeId;
     private Integer rating;
+
 }

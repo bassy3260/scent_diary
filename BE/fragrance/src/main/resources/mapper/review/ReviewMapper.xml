@@ -41,4 +41,20 @@
         AND r.is_delete = FALSE
     </select>
 
+    <insert id="insertReview" parameterType="com.example.fragrance.review.dto.ReviewRequest">
+        INSERT INTO public.review (
+            detail,
+            member_id,
+            perfume_id,
+            rating,
+            <include refid="common.insertCommonColumns"/>
+        ) VALUES (
+            #{content},
+            #{memberId},
+            #{perfumeId},
+            #{rating},
+            <include refid="common.insertCommonValues"/>
+        )
+    </insert>
+
 </mapper>
