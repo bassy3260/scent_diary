@@ -1,0 +1,226 @@
+@custom-variant dark (&:is(.dark *));
+
+:root {
+  --font-size: 16px;
+  --background: #FAFAF8;
+  --foreground: #1A1A1A;
+  --card: #FFFFFF;
+  --card-foreground: #1A1A1A;
+  --popover: #FFFFFF;
+  --popover-foreground: #1A1A1A;
+  --primary: #1A1A1A;
+  --primary-foreground: #FAFAF8;
+  --secondary: #F5F3EF;
+  --secondary-foreground: #1A1A1A;
+  --muted: #E8E6E1;
+  --muted-foreground: #8A8680;
+  --accent: #6B7B5E;
+  --accent-foreground: #FFFFFF;
+  --destructive: #C4453E;
+  --destructive-foreground: #FFFFFF;
+  --border: rgba(0, 0, 0, 0.08);
+  --input: transparent;
+  --input-background: #F5F3EF;
+  --switch-background: #D4D0CA;
+  --font-weight-medium: 500;
+  --font-weight-normal: 400;
+  --ring: #6B7B5E;
+
+  /* ScentLog Brand Tokens */
+  --scent-olive: #6B7B5E;
+  --scent-olive-light: #8FA380;
+  --scent-sage: #A3B18A;
+  --scent-gold: #B8A88A;
+  --scent-gold-muted: #D4C5A9;
+  --scent-amber: #C4956A;
+  --scent-dusty-blue: #8BA4B8;
+  --scent-lilac: #B8A5C8;
+  --scent-rose: #C8A5A5;
+  --scent-warm-gray: #F5F3EF;
+  --scent-cream: #FAF8F5;
+
+  --chart-1: #6B7B5E;
+  --chart-2: #B8A88A;
+  --chart-3: #8BA4B8;
+  --chart-4: #B8A5C8;
+  --chart-5: #C4956A;
+  --radius: 0.75rem;
+  --sidebar: #FAFAF8;
+  --sidebar-foreground: #1A1A1A;
+  --sidebar-primary: #1A1A1A;
+  --sidebar-primary-foreground: #FAFAF8;
+  --sidebar-accent: #F5F3EF;
+  --sidebar-accent-foreground: #1A1A1A;
+  --sidebar-border: #E8E6E1;
+  --sidebar-ring: #6B7B5E;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-input-background: var(--input-background);
+  --color-switch-background: var(--switch-background);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+
+  --color-scent-olive: var(--scent-olive);
+  --color-scent-olive-light: var(--scent-olive-light);
+  --color-scent-sage: var(--scent-sage);
+  --color-scent-gold: var(--scent-gold);
+  --color-scent-gold-muted: var(--scent-gold-muted);
+  --color-scent-amber: var(--scent-amber);
+  --color-scent-dusty-blue: var(--scent-dusty-blue);
+  --color-scent-lilac: var(--scent-lilac);
+  --color-scent-rose: var(--scent-rose);
+  --color-scent-warm-gray: var(--scent-warm-gray);
+  --color-scent-cream: var(--scent-cream);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  }
+
+  html {
+    font-size: var(--font-size);
+  }
+
+  h1 {
+    font-family: 'Playfair Display', Georgia, serif;
+    font-size: 2rem;
+    font-weight: 600;
+    line-height: 1.2;
+    letter-spacing: -0.02em;
+  }
+
+  h2 {
+    font-family: 'Playfair Display', Georgia, serif;
+    font-size: 1.5rem;
+    font-weight: 500;
+    line-height: 1.3;
+    letter-spacing: -0.01em;
+  }
+
+  h3 {
+    font-size: 1.125rem;
+    font-weight: 500;
+    line-height: 1.4;
+  }
+
+  h4 {
+    font-size: 1rem;
+    font-weight: 500;
+    line-height: 1.5;
+  }
+
+  label {
+    font-size: 0.875rem;
+    font-weight: 500;
+    line-height: 1.5;
+  }
+
+  button {
+    font-size: 0.9375rem;
+    font-weight: 500;
+    line-height: 1.5;
+  }
+
+  input {
+    font-size: 1rem;
+    font-weight: 400;
+    line-height: 1.5;
+  }
+}
+
+/* ScentLog 커스텀 스크롤바 — 절제된 올리브 톤 */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(107, 123, 94, 0.2) transparent;
+}
+
+*::-webkit-scrollbar {
+  width: 3px;
+}
+
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+*::-webkit-scrollbar-thumb {
+  background: rgba(107, 123, 94, 0.18);
+  border-radius: 100px;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: rgba(107, 123, 94, 0.35);
+}
+
+*::-webkit-scrollbar-thumb:active {
+  background: rgba(107, 123, 94, 0.45);
+}
+
+/* 스크롤 중이 아닐 때 숨기기 (hover 시에만 보이기) */
+.overflow-y-auto {
+  scrollbar-color: transparent transparent;
+}
+
+.overflow-y-auto:hover {
+  scrollbar-color: rgba(107, 123, 94, 0.2) transparent;
+}
+
+.overflow-y-auto::-webkit-scrollbar-thumb {
+  background: transparent;
+}
+
+.overflow-y-auto:hover::-webkit-scrollbar-thumb {
+  background: rgba(107, 123, 94, 0.18);
+}
+
+/* prefers-reduced-motion: 모든 애니메이션/전환을 즉시 완료 */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

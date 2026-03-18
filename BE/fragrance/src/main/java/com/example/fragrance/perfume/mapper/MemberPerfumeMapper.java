@@ -22,4 +22,6 @@ public interface MemberPerfumeMapper {
 		@Param("memberPerfumeId") Long memberPerfumeId,
 		@Param("memberId") Long memberId
 	);
+
+	void insertCollect(@Param("memberId") Long memberId, @Param("perfumeId") Long perfumeId);
 }

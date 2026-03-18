@@ -56,4 +56,22 @@
         AND member_id = #{memberId}
     </delete>
 
+    <select id="existsLike" resultType="boolean">
+        SELECT EXISTS (
+            SELECT 1 FROM likes
+            WHERE member_id = #{userId} AND perfume_id = #{perfumeId}
+        )
+    </select>
+
+    <insert id="insertLike">
+        INSERT INTO likes (member_id, perfume_id,<include refid="common.insertCommonColumns"/>)
+        VALUES (#{userId}, #{perfumeId},
+        <include refid="common.insertCommonValues"/>)
+    </insert>
+
+    <delete id="deleteLike">
+        DELETE FROM likes
+        WHERE member_id = #{userId} AND perfume_id = #{perfumeId}
+    </delete>
+
 </mapper>

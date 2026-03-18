@@ -22,4 +22,10 @@ public interface LikesMapper {
 		@Param("likesId") Long likesId,
 		@Param("memberId") Long memberId
 	);
+
+	boolean existsLike(@Param("userId") Long userId, @Param("perfumeId") Long perfumeId);
+
+	void insertLike(@Param("userId") Long userId, @Param("perfumeId") Long perfumeId);
+
+	void deleteLike(@Param("userId") Long userId, @Param("perfumeId") Long perfumeId);
 }
