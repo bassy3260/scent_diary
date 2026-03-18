@@ -24,10 +24,11 @@ public class LikesController {
 	// GET /api/v1/my/likes?page=1&size=10
 	@GetMapping("/likes")
 	public ResponseEntity<ApiResponse<LikedPerfumeListResponse>> getLikedPerfumes(
-		@RequestAttribute("memberId") Long memberId,
+		@AuthenticationPrincipal String loginId,
 		@RequestParam(defaultValue = "1") int page,
 		@RequestParam(defaultValue = "10") int size
 	) {
+		Long memberId = Long.parseLong(loginId);
 		LikedPerfumeListResponse data = likesService.getLikedPerfumes(memberId, page - 1, size);
 		return ResponseEntity.ok(ApiResponse.ok("SUCCESS", data));
 	}
@@ -35,9 +36,10 @@ public class LikesController {
 	// DELETE /api/v1/my/likes/{likesId}
 	@DeleteMapping("/likes/{likesId}")
 	public ResponseEntity<ApiResponse<Void>> deleteLikes(
-		@RequestAttribute("memberId") Long memberId,
+		@AuthenticationPrincipal String loginId,
 		@PathVariable Long likesId
 	) {
+		Long memberId = Long.parseLong(loginId);
 		likesService.deleteLikes(likesId, memberId);
 		return ResponseEntity.ok(ApiResponse.ok("SUCCESS"));
 	}

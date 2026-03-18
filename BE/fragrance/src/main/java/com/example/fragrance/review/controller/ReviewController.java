@@ -1,6 +1,7 @@
 package com.example.fragrance.review.controller;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestAttribute;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -23,10 +24,11 @@ public class ReviewController {
 	// GET /api/v1/my/reviews?page=1&size=10
 	@GetMapping("/reviews")
 	public ResponseEntity<ApiResponse<ReviewListResponse>> getReviews(
-		@RequestAttribute("memberId") Long memberId,
+		@AuthenticationPrincipal String loginId,
 		@RequestParam(defaultValue = "1") int page,
 		@RequestParam(defaultValue = "10") int size
 	) {
+		Long memberId = Long.parseLong(loginId);
 		ReviewListResponse data = reviewService.getReviewsByMemberId(memberId, page - 1, size);
 		return ResponseEntity.ok(ApiResponse.ok("SUCCESS", data));
 	}

@@ -1,6 +1,7 @@
 package com.example.fragrance.preference.controller;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestAttribute;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -22,8 +23,9 @@ public class PreferenceController {
 	// GET /api/v1/my/preference
 	@GetMapping("/preference")
 	public ResponseEntity<ApiResponse<PreferenceResponse>> getPreference(
-		@RequestAttribute("memberId") Long memberId
+		@AuthenticationPrincipal String loginId
 	) {
+		Long memberId = Long.parseLong(loginId);
 		PreferenceResponse data = preferenceService.getPreference(memberId);
 		return ResponseEntity.ok(ApiResponse.ok("SUCCESS", data));
 	}

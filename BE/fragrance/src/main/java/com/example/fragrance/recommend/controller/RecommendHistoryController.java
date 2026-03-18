@@ -1,6 +1,7 @@
 package com.example.fragrance.recommend.controller;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestAttribute;
@@ -25,10 +26,11 @@ public class RecommendHistoryController {
 	// GET /api/v1/my/recommend?page=1&size=10
 	@GetMapping("/recommend")
 	public ResponseEntity<ApiResponse<RecommendHistoryListResponse>> getHistoryList(
-		@RequestAttribute("memberId") Long memberId,
+		@AuthenticationPrincipal String loginId,
 		@RequestParam(defaultValue = "1") int page,
 		@RequestParam(defaultValue = "10") int size
 	) {
+		Long memberId = Long.parseLong(loginId);
 		RecommendHistoryListResponse data = recommendHistoryService.getHistoryList(memberId, page - 1, size);
 		return ResponseEntity.ok(ApiResponse.ok("SUCCESS", data));
 	}
@@ -36,9 +38,10 @@ public class RecommendHistoryController {
 	// GET /api/v1/my/recommend/{recommendResultId}
 	@GetMapping("/recommend/{recommendResultId}")
 	public ResponseEntity<ApiResponse<RecommendHistoryDetailResponse>> getHistoryDetail(
-		@RequestAttribute("memberId") Long memberId,
+		@AuthenticationPrincipal String loginId,
 		@PathVariable Long recommendResultId
 	) {
+		Long memberId = Long.parseLong(loginId);
 		RecommendHistoryDetailResponse data = recommendHistoryService.getHistoryDetail(memberId, recommendResultId);
 		return ResponseEntity.ok(ApiResponse.ok("SUCCESS", data));
 	}
