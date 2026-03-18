@@ -17,5 +17,6 @@ public class Perfume extends common {
     private String imageRoute;
     private String perfumeName;
     private String brand;
-    private String gender;
+    private Integer price;
+    private String description;
 }
