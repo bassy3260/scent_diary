@@ -1,0 +1,11 @@
+spring:
+  application:
+    name: fragrance
+  profiles:
+    active: local
+
+mybatis:
+  mapper-locations: classpath:mapper/**/*.xml
+  type-aliases-package: com.example.fragrance
+  configuration:
+    map-underscore-to-camel-case: true

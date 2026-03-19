@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.fragrance.user.mapper.MemberMapper">
+
+    <resultMap id="memberResultMap" type="com.example.fragrance.user.entity.Member">
+        <id property="memberId" column="member_id"/>
+        <result property="id" column="id"/>
+        <result property="password" column="password"/>
+        <result property="birthYear" column="birth_year"/>
+        <result property="gender" column="gender"/>
+        <result property="nickname" column="nickname"/>
+        <result property="createdTime" column="create_time"/>
+        <result property="updatedTime" column="modify_time"/>
+        <result property="deletedTime" column="delete_time"/>
+        <result property="isDelete" column="is_delete"/>
+    </resultMap>
+
+    <select id="findById" resultMap="memberResultMap">
+        SELECT
+        member_id,
+        id,
+        password,
+        birth_year,
+        gender,
+        nickname,
+        <include refid="common.commonColumns"/>
+        FROM public.member
+        WHERE id = #{id}
+        AND <include refid="common.notDeleted"/>
+    </select>
+
+    <select id="findByMemberId" resultMap="memberResultMap">
+        SELECT
+        member_id,
+        id,
+        password,
+        birth_year,
+        gender,
+        nickname,
+        <include refid="common.commonColumns"/>
+        FROM public.member
+        WHERE member_id = #{id}
+        AND <include refid="common.notDeleted"/>
+    </select>
+
+    <insert id="insertMember" useGeneratedKeys="true" keyProperty="memberId">
+        INSERT INTO public.member (
+        id,
+        password,
+        birth_year,
+        gender,
+        nickname,
+        <include refid="common.insertCommonColumns"/>
+        )
+        VALUES (
+        #{id},
+        #{password},
+        #{birthYear},
+        #{gender},
+        #{nickname},
+        <include refid="common.insertCommonValues"/>
+        )
+    </insert>
+
+    <insert id="save" useGeneratedKeys="true" keyProperty="memberId">
+        INSERT INTO public.member (
+        id,
+        password,
+        birth_year,
+        gender,
+        nickname,
+        <include refid="common.insertCommonColumns"/>
+        )
+        VALUES (
+        #{id},
+        #{password},
+        #{birthYear},
+        #{gender}::public.gender_enum,
+        #{nickname},
+        <include refid="common.insertCommonValues"/>
+        )
+    </insert>
+
+    <update id="updateMember">
+        UPDATE public.member
+        SET
+            nickname = #{nickname},
+            birth_year = #{birthYear},
+            gender = #{gender}::public.gender_type,
+        modify_time = NOW()
+        WHERE member_id = #{memberId}
+          AND is_delete = false
+    </update>
+
+</mapper>
