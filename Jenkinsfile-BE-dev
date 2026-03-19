@@ -1,0 +1,128 @@
+// ---------------------------------------------------------------
+// BE 파이프라인
+// 트리거 설정은 Jenkins 대시보드에서 관리
+// (Generic Webhook Trigger + GitLab 플러그인)
+// ---------------------------------------------------------------
+pipeline {
+    agent any
+
+    environment {
+        IMAGE_NAME   = "backend-dev"
+        COMPOSE_FILE = "/home/ubuntu/infra/docker-compose.dev.yml"
+        ENV_FILE     = "/home/ubuntu/infra/.env"
+        DB_COMPOSE_FILE = "/home/ubuntu/infra/docker-compose.db.local.yml"
+        DB_ENV_FILE     = "/home/ubuntu/infra/.env"
+    }
+
+    stages {
+        stage('변경 경로 확인') {
+            steps {
+                script {
+                    def allChanged = (env.changed_files ?: '') + ',' + (env.added_files ?: '')
+                    if (!allChanged.contains('BE/')) {
+                        currentBuild.result = 'NOT_BUILT'
+                        error("BE 폴더 변경 없음 - 파이프라인 스킵")
+                    }
+                    echo "BE 폴더 변경 감지 - 배포 시작"
+                }
+            }
+        }
+
+        stage('DB/Redis 상태 확인 및 기동') {
+            steps {
+                script {
+                    // postgres-local 확인
+                    def pgStatus = sh(
+                        script: "docker inspect -f '{{.State.Running}}' postgres-local 2>/dev/null || echo 'false'",
+                        returnStdout: true
+                    ).trim()
+
+                    if (pgStatus != 'true') {
+                        echo "postgres-local 컨테이너가 내려가 있음 - 기동 시작"
+                        sh """
+                            docker-compose \
+                                -f ${DB_COMPOSE_FILE} \
+                                --env-file ${DB_ENV_FILE} \
+                                up -d postgres-local
+                        """
+                        // 기동 대기
+                        sh 'sleep 5'
+                    } else {
+                        echo "postgres-local 실행 중 - 스킵"
+                    }
+
+                    // redis-local 확인
+                    def redisStatus = sh(
+                        script: "docker inspect -f '{{.State.Running}}' redis-local 2>/dev/null || echo 'false'",
+                        returnStdout: true
+                    ).trim()
+
+                    if (redisStatus != 'true') {
+                        echo "redis-local 컨테이너가 내려가 있음 - 기동 시작"
+                        sh """
+                            docker-compose \
+                                -f ${DB_COMPOSE_FILE} \
+                                --env-file ${DB_ENV_FILE} \
+                                up -d redis-local
+                        """
+                        sh 'sleep 3'
+                    } else {
+                        echo "redis-local 실행 중 - 스킵"
+                    }
+                }
+            }
+        }
+
+        stage('소스 체크아웃') {
+            steps {
+                checkout([
+                    $class: 'GitSCM',
+                    branches: [[name: '*/feature/INF-173-jenkinsfile-dockerfile-be']],
+                    userRemoteConfigs: [[
+                        url:           'https://lab.ssafy.com/YOUR_GROUP/YOUR_REPO.git',
+                        credentialsId: 'gitlab-credentials'
+                    ]]
+                ])
+            }
+        }
+
+        stage('Docker 이미지 빌드') {
+            steps {
+                sh """
+                    docker build \
+                        -t ${IMAGE_NAME}:latest \
+                        -f BE/fragrance/Dockerfile \
+                        ./BE/fragrance
+                """
+            }
+        }
+
+        stage('컨테이너 재시작') {
+            steps {
+                sh """
+                    docker-compose \
+                        -f ${COMPOSE_FILE} \
+                        --env-file ${ENV_FILE} \
+                        up -d --no-deps backend-dev
+                """
+            }
+        }
+
+        stage('헬스체크') {
+            steps {
+                sh 'sleep 10'
+                sh 'docker ps | grep backend-dev'
+            }
+        }
+    }
+
+    post {
+        success {
+            echo "BE 배포 성공"
+        }
+        failure {
+            echo "BE 배포 실패 - 로그 확인 필요"
+            sh 'docker logs backend-dev --tail=50 || true'
+        }
+    }
+}
