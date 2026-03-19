@@ -1,8 +1,9 @@
 package com.example.fragrance.perfume.controller;
 
 import com.example.fragrance.perfume.dto.CollectRequest;
-import com.example.fragrance.perfume.dto.MemberPerfumeListResponse;
+import com.example.fragrance.perfume.dto.PerfumeDetailResponse;
 import com.example.fragrance.perfume.service.MemberPerfumeService;
+import com.example.fragrance.perfume.service.PerfumeService;
 import com.example.fragrance.util.common.ApiResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -14,9 +15,10 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/v1/perfume")
 @RequiredArgsConstructor
-public class PerfumeCollectController {
+public class PerfumeController {
 
 	private final MemberPerfumeService memberPerfumeService;
+	private final PerfumeService perfumeService;
 
 	@PostMapping("/collect")
 	public ResponseEntity<?> toggleCollect(
@@ -27,5 +29,16 @@ public class PerfumeCollectController {
 		String message = memberPerfumeService.insertCollect(memberId, request.getPerfumeId());
 
 		return ResponseEntity.ok(Map.of("message", message));
+	}
+
+	@GetMapping("/{perfumeId}")
+	public ResponseEntity<ApiResponse<PerfumeDetailResponse>> getPerfumeDetail(@PathVariable Long perfumeId) {
+		PerfumeDetailResponse response = perfumeService.getPerfumeDetail(perfumeId);
+
+		if (response == null) {
+			return ResponseEntity.notFound().build();
+		}
+
+		return ResponseEntity.ok(ApiResponse.ok("SUCCESS", response));
 	}
 }
