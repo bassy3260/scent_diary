@@ -21,7 +21,7 @@ pipeline {
             steps {
                 checkout([
                     $class: 'GitSCM',
-                    branches: [[name: '*/feature/INF-173-jenkinsfile-dockerfile-be']],
+                    branches: [[name: '*/dev']],
                     userRemoteConfigs: [[
                         url:           'https://lab.ssafy.com/s14-bigdata-recom-sub1/S14P21E102',
                         credentialsId: 'sabizupa_personal_gitlab_access_token'
