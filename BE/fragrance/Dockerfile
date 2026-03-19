@@ -5,7 +5,7 @@ FROM gradle:8.5-jdk21 AS builder
 
 WORKDIR /app
 
-# 의존성 캐시 레이어 (build.gradle이 바뀌지 않으면 재사용)
+# build.gradle이 바뀌지 않으면 재사용
 COPY build.gradle settings.gradle ./
 COPY gradle ./gradle
 RUN gradle dependencies --no-daemon || true
@@ -16,7 +16,7 @@ RUN gradle bootJar --no-daemon -x test
 
 # ---------------------------------------------------------------
 # Stage 2 : 실행
-# JRE만 포함한 slim 이미지로 최종 용량 절감
+# JRE만 포함한 slim 이미지
 # ---------------------------------------------------------------
 FROM eclipse-temurin:21-jre-alpine
 
@@ -28,5 +28,4 @@ ENV TZ=Asia/Seoul
 # 빌더에서 JAR만 복사
 COPY --from=builder /app/build/libs/*.jar app.jar
 
-# Spring profile은 docker-compose에서 주입 (SPRING_PROFILES_ACTIVE=dev)
 ENTRYPOINT ["java", "-jar", "app.jar"]
