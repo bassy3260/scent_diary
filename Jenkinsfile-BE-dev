@@ -7,22 +7,23 @@ pipeline {
     agent any
 
     environment {
-        IMAGE_NAME   = "backend-dev"
-        COMPOSE_FILE = "/home/ubuntu/infra/docker-compose.dev.yml"
-        ENV_FILE     = "/home/ubuntu/infra/.env"
+        IMAGE_NAME      = "backend-dev"
+        COMPOSE_FILE    = "/home/ubuntu/infra/docker-compose.dev.yml"
+        ENV_FILE        = "/home/ubuntu/infra/.env"
         DB_COMPOSE_FILE = "/home/ubuntu/infra/docker-compose.db.local.yml"
         DB_ENV_FILE     = "/home/ubuntu/infra/.env"
+        DOCKER          = "/usr/bin/docker"
     }
 
     stages {
         stage('변경 경로 확인') {
             steps {
                 script {
-                    //def allChanged = (env.changed_files ?: '') + ',' + (env.added_files ?: '')
-                    //if (!allChanged.contains('BE/')) {
-                    //    currentBuild.result = 'NOT_BUILT'
-                    //    error("BE 폴더 변경 없음 - 파이프라인 스킵")
-                    //}
+                    def allChanged = (env.changed_files ?: '') + ',' + (env.added_files ?: '')
+                    if (!allChanged.contains('BE/')) {
+                        currentBuild.result = 'NOT_BUILT'
+                        error("BE 폴더 변경 없음 - 파이프라인 스킵")
+                    }
                     echo "BE 폴더 변경 감지 - 배포 시작"
                 }
             }
@@ -33,19 +34,18 @@ pipeline {
                 script {
                     // postgres-local 확인
                     def pgStatus = sh(
-                        script: "docker inspect -f '{{.State.Running}}' postgres-local 2>/dev/null || echo 'false'",
+                        script: "${DOCKER} inspect -f '{{.State.Running}}' postgres-local 2>/dev/null || echo 'false'",
                         returnStdout: true
                     ).trim()
 
                     if (pgStatus != 'true') {
                         echo "postgres-local 컨테이너가 내려가 있음 - 기동 시작"
                         sh """
-                            docker-compose \
+                            ${DOCKER} compose \
                                 -f ${DB_COMPOSE_FILE} \
                                 --env-file ${DB_ENV_FILE} \
                                 up -d postgres-local
                         """
-                        // 기동 대기
                         sh 'sleep 5'
                     } else {
                         echo "postgres-local 실행 중 - 스킵"
@@ -53,14 +53,14 @@ pipeline {
 
                     // redis-local 확인
                     def redisStatus = sh(
-                        script: "docker inspect -f '{{.State.Running}}' redis-local 2>/dev/null || echo 'false'",
+                        script: "${DOCKER} inspect -f '{{.State.Running}}' redis-local 2>/dev/null || echo 'false'",
                         returnStdout: true
                     ).trim()
 
                     if (redisStatus != 'true') {
                         echo "redis-local 컨테이너가 내려가 있음 - 기동 시작"
                         sh """
-                            docker-compose \
+                            ${DOCKER} compose \
                                 -f ${DB_COMPOSE_FILE} \
                                 --env-file ${DB_ENV_FILE} \
                                 up -d redis-local
@@ -89,7 +89,7 @@ pipeline {
         stage('Docker 이미지 빌드') {
             steps {
                 sh """
-                    docker build \
+                    ${DOCKER} build \
                         -t ${IMAGE_NAME}:latest \
                         -f BE/fragrance/Dockerfile \
                         ./BE/fragrance
@@ -100,7 +100,7 @@ pipeline {
         stage('컨테이너 재시작') {
             steps {
                 sh """
-                    docker-compose \
+                    ${DOCKER} compose \
                         -f ${COMPOSE_FILE} \
                         --env-file ${ENV_FILE} \
                         up -d --no-deps backend-dev
@@ -111,7 +111,7 @@ pipeline {
         stage('헬스체크') {
             steps {
                 sh 'sleep 10'
-                sh 'docker ps | grep backend-dev'
+                sh "${DOCKER} ps | grep backend-dev"
             }
         }
     }
@@ -122,7 +122,7 @@ pipeline {
         }
         failure {
             echo "BE 배포 실패 - 로그 확인 필요"
-            sh 'docker logs backend-dev --tail=50 || true'
+            sh "${DOCKER} logs backend-dev --tail=50 || true"
         }
     }
 }
