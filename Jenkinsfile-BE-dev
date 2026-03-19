@@ -18,11 +18,11 @@ pipeline {
         stage('변경 경로 확인') {
             steps {
                 script {
-                    def allChanged = (env.changed_files ?: '') + ',' + (env.added_files ?: '')
-                    if (!allChanged.contains('BE/')) {
-                        currentBuild.result = 'NOT_BUILT'
-                        error("BE 폴더 변경 없음 - 파이프라인 스킵")
-                    }
+                    //def allChanged = (env.changed_files ?: '') + ',' + (env.added_files ?: '')
+                    //if (!allChanged.contains('BE/')) {
+                    //    currentBuild.result = 'NOT_BUILT'
+                    //    error("BE 폴더 변경 없음 - 파이프라인 스킵")
+                    //}
                     echo "BE 폴더 변경 감지 - 배포 시작"
                 }
             }
