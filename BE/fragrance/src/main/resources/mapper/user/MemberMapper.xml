@@ -93,4 +93,38 @@
           AND is_delete = false
     </update>
 
+    <update id="softDeleteMember">
+        UPDATE public.member
+        SET is_delete = true,
+            delete_time = NOW()
+        WHERE member_Id = #{memberId}
+    </update>
+
+    <update id="softDeleteMemberData">
+        /* 추천 결과 (recommend_result) */
+        UPDATE public.recommend_result
+        SET is_delete = true, delete_time = NOW()
+        WHERE member_id = #{memberId};
+
+        /* 소장한 향수 (member_perfume) */
+        UPDATE public.member_perfume
+        SET is_delete = true, delete_time = NOW()
+        WHERE member_id = #{memberId};
+
+        /* 찜 (likes) */
+        UPDATE public.likes
+        SET is_delete = true, delete_time = NOW()
+        WHERE member_id = #{memberId};
+
+        /* 일기 (diary) */
+        UPDATE public.diary
+        SET is_delete = true, delete_time = NOW()
+        WHERE member_id = #{memberId};
+
+        /* 시향일지 (try_diary) */
+        UPDATE public.try_diary
+        SET is_delete = true, delete_time = NOW()
+        WHERE member_id = #{memberId};
+    </update>
+
 </mapper>

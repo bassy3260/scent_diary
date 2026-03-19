@@ -5,6 +5,7 @@ import com.example.fragrance.user.dto.SignUpRequest;
 import com.example.fragrance.user.dto.UserUpdateRequest;
 import com.example.fragrance.user.entity.Member;
 import com.example.fragrance.user.service.MemberService;
+import com.example.fragrance.util.common.ApiResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -17,7 +18,6 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/v1/auth")
 @RequiredArgsConstructor
-@Slf4j
 public class MemberController {
 
     private final MemberService authService;
@@ -26,7 +26,7 @@ public class MemberController {
     public ResponseEntity<?> login(@RequestBody Map<String, String> request) {
         try {
             LoginResponse token = authService.login(request.get("id"), request.get("password"));
-            return ResponseEntity.ok(Map.of("accessToken", token));
+            return ResponseEntity.ok(ApiResponse.ok("SUCCESS", token));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("message", e.getMessage()));
         }
@@ -35,7 +35,7 @@ public class MemberController {
     @PostMapping("/signup")
     public ResponseEntity<?> signUp(@RequestBody SignUpRequest request) {
         authService.signUp(request);
-        return ResponseEntity.ok(Map.of("message", "회원가입이 완료되었습니다."));
+        return ResponseEntity.ok(ApiResponse.ok("회원가입이 완료되었습니다."));
     }
 
     @GetMapping("/me")
@@ -56,20 +56,20 @@ public class MemberController {
 
         authService.logout(memberId);
 
-        return ResponseEntity.ok(Map.of("message", "성공적으로 로그아웃 되었습니다."));
+        return ResponseEntity.ok(ApiResponse.ok("성공적으로 로그아웃 되었습니다."));
     }
 
     @PutMapping("/me")
     public ResponseEntity<?> updateMyInfo(
             @AuthenticationPrincipal String memberId,
             @RequestBody UserUpdateRequest request) {
-
         try {
             authService.updateMyInfo(memberId, request);
-            return ResponseEntity.ok(Map.of("message", "회원 정보가 수정되었습니다."));
+            return ResponseEntity.ok(ApiResponse.ok("회원 정보가 수정되었습니다."));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(Map.of("message", e.getMessage()));
         }
     }
+
 }
