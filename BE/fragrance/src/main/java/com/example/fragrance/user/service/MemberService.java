@@ -14,6 +14,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.PostMapping;
 
+import java.util.NoSuchElementException;
 import java.util.concurrent.TimeUnit;
 
 @Service
@@ -52,7 +53,7 @@ public class MemberService {
                 TimeUnit.MILLISECONDS
         );
 
-        return new LoginResponse(accessToken, refreshToken);
+        return new LoginResponse(accessToken);
     }
 
     @Transactional
@@ -82,7 +83,7 @@ public class MemberService {
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 사용자입니다."));
     }
 
-    @PostMapping("/logout")
+    @Transactional
     public void logout(String memberId) {
         // Redis 에서 해당 사용자의 Refresh Token 삭제
         redisTemplate.delete("RT:" + memberId);
@@ -100,6 +101,24 @@ public class MemberService {
         member.setGender(request.getGender());
 
         memberMapper.updateMember(member);
+    }
+
+    @Transactional
+    public void deleteUser(Long memberId) {
+        // 회원 정보 Soft Delete
+        int result = memberMapper.softDeleteMember(memberId);
+
+        if (result == 0) {
+            throw new NoSuchElementException("존재하지 않는 회원입니다.");
+        }
+
+        // 연관 데이터 Soft Delete (추천결과, 소장한 향수, 찜, 일기, 시향일지)
+        // 리뷰는 삭제하지 않음
+        memberMapper.softDeleteMemberData(memberId);
+
+        redisTemplate.delete("RT:" + memberId);
+
+        log.info("회원 탈퇴 완료 - MemberID: {}", memberId);
     }
 
 }

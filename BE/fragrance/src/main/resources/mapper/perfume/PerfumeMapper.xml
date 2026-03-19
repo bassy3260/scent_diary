@@ -57,7 +57,9 @@
 
     <select id="selectReviewsByPerfumeId" resultType="com.example.fragrance.review.dto.ReviewDetailResponse">
         SELECT
-            m.nickname,
+            CASE WHEN m.is_delete = true THEN '(탈퇴한 회원)'
+                 ELSE m.nickname
+            END as nickname,
             r.detail content,
             r.rating,
             TO_CHAR(r.create_time, 'YYYY-MM-DD') as createAt

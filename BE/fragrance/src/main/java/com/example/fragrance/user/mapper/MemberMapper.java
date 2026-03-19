@@ -13,4 +13,8 @@ public interface MemberMapper {
     void save(Member member);
 
     void updateMember(Member member);
+
+    int softDeleteMember(Long memberId);
+
+    void softDeleteMemberData(Long memberId);
 }
