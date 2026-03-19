@@ -9,7 +9,7 @@ import lombok.experimental.SuperBuilder;
 
 @Getter
 @Setter
-@NoArgsConstructor
+@NoArgsConstructor 
 @SuperBuilder
 public class Member extends common {
 

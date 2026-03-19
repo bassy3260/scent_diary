@@ -8,11 +8,12 @@ pipeline {
 
     environment {
         IMAGE_NAME      = "backend-dev"
-        COMPOSE_FILE    = "/home/ubuntu/infra/docker-compose.dev.yml"
+        COMPOSE_FILE    = "/home/ubuntu/infra/docker-compose.app.dev.yml"
         ENV_FILE        = "/home/ubuntu/infra/.env"
         DB_COMPOSE_FILE = "/home/ubuntu/infra/docker-compose.db.local.yml"
         DB_ENV_FILE     = "/home/ubuntu/infra/.env"
         DOCKER          = "/usr/bin/docker"
+        DOCKER_COMPOSE  = "/usr/bin/docker compose"
     }
 
     stages {
