@@ -1,7 +1,7 @@
 // ---------------------------------------------------------------
 // BE 파이프라인
-// 트리거 설정은 Jenkins 대시보드에서 관리
-// (Generic Webhook Trigger + GitLab 플러그인)
+// 트리거 설정은 Jenkins 대시보드에서 관리 (GitLab 플러그인)
+// 변경 경로 감지: git diff로 BE/ 폴더 변경 여부 확인
 // ---------------------------------------------------------------
 pipeline {
     agent any
@@ -16,11 +16,30 @@ pipeline {
     }
 
     stages {
+        stage('소스 체크아웃') {
+            steps {
+                checkout([
+                    $class: 'GitSCM',
+                    branches: [[name: '*/feature/INF-173-jenkinsfile-dockerfile-be']],
+                    userRemoteConfigs: [[
+                        url:           'https://lab.ssafy.com/s14-bigdata-recom-sub1/S14P21E102',
+                        credentialsId: 'sabizupa_personal_gitlab_access_token'
+                    ]]
+                ])
+            }
+        }
+
         stage('변경 경로 확인') {
             steps {
                 script {
-                    def allChanged = (env.changed_files ?: '') + ',' + (env.added_files ?: '')
-                    if (!allChanged.contains('BE/')) {
+                    def changedFiles = sh(
+                        script: "git diff --name-only HEAD~1 HEAD",
+                        returnStdout: true
+                    ).trim()
+
+                    echo "변경된 파일 목록:\n${changedFiles}"
+
+                    if (!changedFiles.contains('BE/')) {
                         currentBuild.result = 'NOT_BUILT'
                         error("BE 폴더 변경 없음 - 파이프라인 스킵")
                     }
@@ -70,19 +89,6 @@ pipeline {
                         echo "redis-local 실행 중 - 스킵"
                     }
                 }
-            }
-        }
-
-        stage('소스 체크아웃') {
-            steps {
-                checkout([
-                    $class: 'GitSCM',
-                    branches: [[name: '*/feature/INF-173-jenkinsfile-dockerfile-be']],
-                    userRemoteConfigs: [[
-                        url:           'https://lab.ssafy.com/s14-bigdata-recom-sub1/S14P21E102',
-                        credentialsId: 'sabizupa_personal_gitlab_access_token'
-                    ]]
-                ])
             }
         }
 
