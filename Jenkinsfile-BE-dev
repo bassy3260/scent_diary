@@ -79,8 +79,8 @@ pipeline {
                     $class: 'GitSCM',
                     branches: [[name: '*/feature/INF-173-jenkinsfile-dockerfile-be']],
                     userRemoteConfigs: [[
-                        url:           'https://lab.ssafy.com/YOUR_GROUP/YOUR_REPO.git',
-                        credentialsId: 'gitlab-credentials'
+                        url:           'https://lab.ssafy.com/s14-bigdata-recom-sub1/S14P21E102',
+                        credentialsId: 'sabizupa_personal_gitlab_access_token'
                     ]]
                 ])
             }
