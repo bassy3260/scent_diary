@@ -2,5 +2,69 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.example.fragrance.perfume.mapper.PerfumeMapper">
+    <resultMap id="PerfumeDetailMap" type="com.example.fragrance.perfume.dto.PerfumeDetailResponse">
+        <result property="image" column="image_route"/>
+        <result property="brand" column="brand"/>
+        <result property="name" column="perfume_name"/>
+        <result property="price" column="price"/>
 
+        <association property="notes" resultMap="NotesMap" />
+
+        <collection property="accords" column="perfume_id" select="selectAccordsByPerfumeId" />
+        <collection property="reviews" column="perfume_id" select="selectReviewsByPerfumeId" />
+    </resultMap>
+
+    <select id="selectPerfumeDetail" resultMap="PerfumeDetailMap">
+        SELECT
+            p.perfume_id,
+            p.image_route,
+            p.brand,
+            p.perfume_name,
+            p.price,
+            CASE WHEN pn.note_level = 'TOP' THEN n.note_name END as top_note,
+            CASE WHEN pn.note_level = 'MIDDLE' THEN n.note_name END as mid_note,
+            CASE WHEN pn.note_level = 'BASE' THEN n.note_name END as base_note,
+            CASE WHEN pn.note_level = 'SINGLE' THEN n.note_name END as single_note
+        FROM public.perfume p
+                 LEFT JOIN public.perfume_note pn ON p.perfume_id = pn.perfume_id
+                 LEFT JOIN public.note n ON pn.note_id = n.note_id
+        WHERE p.perfume_id = #{perfumeId}
+    </select>
+
+    <resultMap id="NotesMap" type="com.example.fragrance.note.dto.NotesDetailResponse">
+        <id column="perfume_id"/>
+        <collection property="top" ofType="string">
+            <result column="top_note"/>
+        </collection>
+        <collection property="middle" ofType="string">
+            <result column="mid_note"/>
+        </collection>
+        <collection property="base" ofType="string">
+            <result column="base_note"/>
+        </collection>
+        <collection property="single" ofType="string">
+            <result column="single_note"/>
+        </collection>
+    </resultMap>
+
+    <select id="selectAccordsByPerfumeId" resultType="string">
+        SELECT a.accord_name
+        FROM public.perfume_accord pa
+                 JOIN public.accord a ON pa.accord_id = a.accord_id
+        WHERE pa.perfume_id = #{perfumeId}
+        ORDER BY pa.perfume_accord_id ASC
+    </select>
+
+    <select id="selectReviewsByPerfumeId" resultType="com.example.fragrance.review.dto.ReviewDetailResponse">
+        SELECT
+            m.nickname,
+            r.detail content,
+            r.rating,
+            TO_CHAR(r.create_time, 'YYYY-MM-DD') as createAt
+        FROM public.review r
+                 JOIN public.member m ON r.member_id = m.member_Id
+        WHERE r.perfume_id = #{perfumeId}
+          AND r.is_delete = false
+        ORDER BY r.create_time DESC
+    </select>
 </mapper>
