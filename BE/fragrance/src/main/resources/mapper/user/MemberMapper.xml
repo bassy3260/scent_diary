@@ -87,7 +87,7 @@
         SET
             nickname = #{nickname},
             birth_year = #{birthYear},
-            gender = #{gender}::public.gender_type,
+            gender = #{gender}::public.gender_enum,
         modify_time = NOW()
         WHERE member_id = #{memberId}
           AND is_delete = false
