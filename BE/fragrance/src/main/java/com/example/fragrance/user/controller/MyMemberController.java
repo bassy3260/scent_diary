@@ -32,4 +32,28 @@ public class MyMemberController {
 
         return ResponseEntity.ok(ApiResponse.ok("회원 탈퇴가 완료되었습니다."));
     }
+
+    @GetMapping("/me")
+    public ResponseEntity<Member> getMyInfo(@AuthenticationPrincipal String loginId) {
+        Member member = userService.getMyInfo(Long.parseLong(loginId));
+
+        // 보안상 비밀번호는 제거하고 반환함
+        member.setPassword(null);
+
+        return ResponseEntity.ok(member);
+    }
+
+    @PutMapping("/me")
+    public ResponseEntity<?> updateMyInfo(
+            @AuthenticationPrincipal String memberId,
+            @RequestBody UserUpdateRequest request) {
+        try {
+            userService.updateMyInfo(memberId, request);
+            return ResponseEntity.ok(ApiResponse.ok("회원 정보가 수정되었습니다."));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Map.of("message", e.getMessage()));
+        }
+    }
+
 }

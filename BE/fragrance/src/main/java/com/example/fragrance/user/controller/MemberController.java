@@ -38,16 +38,6 @@ public class MemberController {
         return ResponseEntity.ok(ApiResponse.ok("회원가입이 완료되었습니다."));
     }
 
-    @GetMapping("/me")
-    public ResponseEntity<Member> getMyInfo(@AuthenticationPrincipal String loginId) {
-        Member member = authService.getMyInfo(Long.parseLong(loginId));
-
-        // 보안상 비밀번호는 제거하고 반환함
-        member.setPassword(null);
-
-        return ResponseEntity.ok(member);
-    }
-
     @PostMapping("/logout")
     public ResponseEntity<?> logout(@AuthenticationPrincipal String memberId) {
         if (memberId == null) {
@@ -57,19 +47,6 @@ public class MemberController {
         authService.logout(memberId);
 
         return ResponseEntity.ok(ApiResponse.ok("성공적으로 로그아웃 되었습니다."));
-    }
-
-    @PutMapping("/me")
-    public ResponseEntity<?> updateMyInfo(
-            @AuthenticationPrincipal String memberId,
-            @RequestBody UserUpdateRequest request) {
-        try {
-            authService.updateMyInfo(memberId, request);
-            return ResponseEntity.ok(ApiResponse.ok("회원 정보가 수정되었습니다."));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(Map.of("message", e.getMessage()));
-        }
     }
 
 }
