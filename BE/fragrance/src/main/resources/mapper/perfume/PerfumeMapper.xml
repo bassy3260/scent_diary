@@ -69,4 +69,40 @@
           AND r.is_delete = false
         ORDER BY r.create_time DESC
     </select>
+
+    <resultMap id="PerfumeSearchMap" type="com.example.fragrance.perfume.dto.PerfumeSearchDto">
+        <id property="name" column="perfume_name"/>
+        <result property="image" column="image_route"/>
+        <result property="brand" column="brand"/>
+        <result property="name" column="perfume_name"/>
+        <result property="price" column="price"/>
+        <collection property="accords" column="perfume_id" select="selectAccordsByPerfumeId"/>
+    </resultMap>
+
+    <select id="searchPerfumes" resultMap="PerfumeSearchMap">
+        SELECT
+            p.perfume_id,
+            p.image_route,
+            p.brand,
+            p.perfume_name,
+            p.price
+        FROM public.perfume p
+        WHERE p.is_delete = false
+        <if test="search != null and search != ''">
+            AND (p.perfume_name ILIKE CONCAT('%', #{search}, '%')
+                 OR p.brand ILIKE CONCAT('%', #{search}, '%'))
+        </if>
+        ORDER BY p.perfume_id ASC
+        LIMIT #{size} OFFSET #{offset}
+    </select>
+
+    <select id="countSearchPerfumes" resultType="long">
+        SELECT COUNT(*)
+        FROM public.perfume p
+        WHERE p.is_delete = false
+        <if test="search != null and search != ''">
+            AND (p.perfume_name ILIKE CONCAT('%', #{search}, '%')
+                 OR p.brand ILIKE CONCAT('%', #{search}, '%'))
+        </if>
+    </select>
 </mapper>
