@@ -11,6 +11,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.Map;
+
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/v1/perfume")
@@ -19,7 +21,7 @@ public class PerfumeReviewController {
 	private final ReviewService reviewService;
 
 	@PostMapping("/review")
-	public ResponseEntity<String> createReview(
+	public ResponseEntity<Map<String, Object>> createReview(
 			@RequestBody ReviewRequest requestDto,
 			@AuthenticationPrincipal String loginId
 	) {
@@ -28,6 +30,9 @@ public class PerfumeReviewController {
 
 		reviewService.saveReview(requestDto);
 
-		return ResponseEntity.status(HttpStatus.CREATED).body("리뷰가 등록되었습니다.");
+		return ResponseEntity.status(HttpStatus.CREATED).body(Map.of(
+				"status", 201,
+				"message", "리뷰가 등록되었습니다."
+		));
 	}
 }
