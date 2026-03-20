@@ -1,8 +1,8 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { ChevronLeft, Check, Camera, X, Search, Sparkles, Wand2, Plus } from 'lucide-react';
 import { useAppStore } from '../../store';
-import { mockPerfumes } from '../../constants/perfumes';
+import { usePerfumeStore } from '../../store';
 import { DIARY_MOODS, DIARY_WEATHERS } from '../../constants/ui.constants';
 import { ImageWithFallback } from '../../components/common/ImageWithFallback';
 import { DiaryCanvas, type DiaryFormData } from './DiaryCanvas';
@@ -18,6 +18,7 @@ const AI_SAMPLES = [
 
 export function DiaryWrite() {
   const { navigateTo, savedPerfumes, myCollection } = useAppStore();
+  const { searchResults, searchPerfumes } = usePerfumeStore();
 
   const [stage, setStage] = useState<'form' | 'canvas'>('form');
   const [mood, setMood] = useState('');
@@ -26,42 +27,45 @@ export function DiaryWrite() {
   const [weatherEmoji, setWeatherEmoji] = useState('');
   const [note, setNote] = useState('');
   // 다중 향수 선택
-  const [selectedPerfumeIds, setSelectedPerfumeIds] = useState<string[]>([]);
+  const [selectedPerfumeIds, setSelectedPerfumeIds] = useState<number[]>([]);
   const [tags, setTags] = useState<string[]>([]);
   // 사진 최대 3개
   const [photoUrls, setPhotoUrls] = useState<string[]>([]);
+  const [imageNames, setImageNames] = useState<string[]>([]);
   const [showPerfumeSheet, setShowPerfumeSheet] = useState(false);
   const [perfumeSearch, setPerfumeSearch] = useState('');
   const [perfumeFilter, setPerfumeFilter] = useState<'all' | 'saved' | 'collection'>('all');
   const [aiLoading, setAiLoading] = useState(false);
   const [aiUsed, setAiUsed] = useState(false);
 
-  const selectedPerfumes = mockPerfumes.filter(p => selectedPerfumeIds.includes(p.id));
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      searchPerfumes(perfumeSearch.trim() || '');
+    }, 400);
+    return () => clearTimeout(timer);
+  }, [perfumeSearch, searchPerfumes]);
+
+  const selectedPerfumes = searchResults.filter(p => selectedPerfumeIds.includes(p.perfumeId));
 
   const baseFilteredPerfumes = (() => {
-    if (perfumeFilter === 'saved') return mockPerfumes.filter(p => savedPerfumes.includes(p.id));
-    if (perfumeFilter === 'collection') return mockPerfumes.filter(p => myCollection.includes(p.id));
-    return mockPerfumes;
+    if (perfumeFilter === 'saved') return searchResults.filter(p => savedPerfumes.includes(p.perfumeId));
+    if (perfumeFilter === 'collection') return searchResults.filter(p => myCollection.includes(p.perfumeId));
+    return searchResults;
   })();
 
-  const filteredPerfumes = perfumeSearch.trim()
-    ? baseFilteredPerfumes.filter(p =>
-        p.name.toLowerCase().includes(perfumeSearch.toLowerCase()) ||
-        p.brand.toLowerCase().includes(perfumeSearch.toLowerCase())
-      )
-    : baseFilteredPerfumes;
+  const filteredPerfumes = baseFilteredPerfumes;
 
   const emptyMessage = (() => {
     if (perfumeSearch.trim()) return '검색 결과가 없어요';
     if (perfumeFilter === 'saved') return '찜한 향수가 없어요';
     if (perfumeFilter === 'collection') return '구매한 향수가 없어요';
-    return '향수가 없어요';
+    return '향수 이름을 검색해보세요';
   })();
 
   const toggleTag = (t: string) =>
     setTags(prev => prev.includes(t) ? prev.filter(x => x !== t) : [...prev, t]);
 
-  const togglePerfume = (id: string) => {
+  const togglePerfume = (id: number) => {
     setSelectedPerfumeIds(prev =>
       prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
     );
@@ -70,16 +74,25 @@ export function DiaryWrite() {
   const handlePhotoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file && photoUrls.length < 3) {
+      // 미리보기용 data URL
       const reader = new FileReader();
-      reader.onloadend = () => setPhotoUrls(prev => [...prev, reader.result as string]);
+      reader.onloadend = () => {
+        setPhotoUrls(prev => [...prev, reader.result as string]);
+      };
       reader.readAsDataURL(file);
+      // S3 업로드 후 파일명 저장
+      import('../../api/s3').then(({ uploadImageToS3 }) => {
+        uploadImageToS3(file).then(fileName => {
+          setImageNames(prev => [...prev, fileName]);
+        });
+      });
     }
-    // input 초기화 (같은 파일 재선택 허용)
     e.target.value = '';
   };
 
   const removePhoto = (idx: number) => {
     setPhotoUrls(prev => prev.filter((_, i) => i !== idx));
+    setImageNames(prev => prev.filter((_, i) => i !== idx));
   };
 
   const handleAiEnhance = useCallback(async () => {
@@ -99,6 +112,7 @@ export function DiaryWrite() {
     perfume: selectedPerfumes[0] ?? null,
     tags,
     photoUrl: photoUrls[0] ?? null,
+    imageNames,
   };
 
   if (stage === 'canvas') {
@@ -195,7 +209,7 @@ export function DiaryWrite() {
             <div className="flex flex-wrap gap-2 mb-2">
               {selectedPerfumes.map(p => (
                 <motion.div
-                  key={p.id}
+                  key={p.perfumeId}
                   className="flex items-center gap-1.5 pl-1.5 pr-2.5 py-1.5 rounded-full"
                   style={{ background: 'linear-gradient(135deg, #EFF3F7 0%, #F5F3EF 100%)', border: '1.5px solid rgba(139,164,184,0.2)' }}
                   initial={{ opacity: 0, scale: 0.9 }}
@@ -209,7 +223,7 @@ export function DiaryWrite() {
                   <motion.button
                     className="w-4 h-4 rounded-full flex items-center justify-center shrink-0"
                     style={{ backgroundColor: 'rgba(139,164,184,0.2)' }}
-                    onClick={() => togglePerfume(p.id)}
+                    onClick={() => togglePerfume(p.perfumeId)}
                     whileTap={{ scale: 0.9 }}
                   >
                     <X size={9} className="text-[#8A8680]" />
@@ -441,11 +455,11 @@ export function DiaryWrite() {
               <div className="flex-1 overflow-y-auto px-5 pb-8">
                 {filteredPerfumes.map(p => (
                   <motion.button
-                    key={p.id}
+                    key={p.perfumeId}
                     className="w-full flex items-center gap-3 py-3 border-b last:border-b-0"
                     style={{ borderColor: '#F0EDE7' }}
                     onClick={() => {
-                      togglePerfume(p.id);
+                      togglePerfume(p.perfumeId);
                     }}
                     whileTap={{ scale: 0.98 }}
                   >
@@ -456,7 +470,7 @@ export function DiaryWrite() {
                       <p className="text-[#B8B4AE]" style={{ fontSize: '0.5625rem', letterSpacing: '0.06em' }}>{p.brand.toUpperCase()}</p>
                       <p className="text-[#1A1A1A] truncate" style={{ fontSize: '0.9375rem' }}>{p.name}</p>
                     </div>
-                    {selectedPerfumeIds.includes(p.id) && (
+                    {selectedPerfumeIds.includes(p.perfumeId) && (
                       <div className="w-5 h-5 rounded-full flex items-center justify-center shrink-0" style={{ backgroundColor: '#6B7B5E' }}>
                         <Check size={10} className="text-white" />
                       </div>

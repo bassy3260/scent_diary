@@ -3,7 +3,6 @@
  * @see src/api/perfume.api.ts
  */
 import type { Perfume } from '../types/perfume.types';
-import type { RecommendationHistory } from '../types/recommendation.types';
 
 export const PERFUME_IMAGES = {
   amber:    'https://images.unsplash.com/photo-1765031117402-93b2e530edec?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxsdXh1cnklMjBwZXJmdW1lJTIwYm90dGxlJTIwYW1iZXIlMjBnbGFzc3xlbnwxfHx8fDE3NzI3NzgwNDl8MA&ixlib=rb-4.1.0&q=80&w=1080',
@@ -89,7 +88,7 @@ export const mockPerfumes: Perfume[] = [
   },
 ];
 
-export const mockRecommendationHistory: RecommendationHistory[] = [
+export const mockRecommendationHistory = [
   {
     id: 'mock-rec-1',
     date: '2026.03.01',

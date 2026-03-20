@@ -1,31 +1,55 @@
 import type { StateCreator } from 'zustand';
-import type { RecommendationHistory } from '../types/recommendation.types';
+import type {
+  RecommendTextRequest,
+  RecommendImageRequest,
+  RecommendTextData,
+  RecommendImageData,
+} from '../types/recommendation.types';
+import { recommendationApi } from '../api/recommendation.api';
 
 export interface RecommendationState {
-  recommendationHistory: RecommendationHistory[];
+  textResult: RecommendTextData | null;
+  imageResult: RecommendImageData | null;
+  isLoading: boolean;
+  error: string | null;
   selectedHistoryId: string | null;
   isGiftMode: boolean;
 
   setSelectedHistoryId: (id: string | null) => void;
   setIsGiftMode: (v: boolean) => void;
-  addRecommendationHistory: (rec: RecommendationHistory) => void;
-  deleteRecommendationHistory: (id: string) => void;
+  recommendByText: (body: RecommendTextRequest) => Promise<void>;
+  recommendByImage: (body: RecommendImageRequest) => Promise<void>;
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const createRecommendationSlice: StateCreator<any, [], [], RecommendationState> = (set) => ({
-  recommendationHistory: [],
+  textResult: null,
+  imageResult: null,
+  isLoading: false,
+  error: null,
   selectedHistoryId: null,
   isGiftMode: false,
 
-  setSelectedHistoryId: (id: string | null) => set({ selectedHistoryId: id }),
-  setIsGiftMode: (v: boolean) => set({ isGiftMode: v }),
-  addRecommendationHistory: (rec: RecommendationHistory) =>
-    set((s: RecommendationState) => ({
-      recommendationHistory: [rec, ...s.recommendationHistory],
-    })),
-  deleteRecommendationHistory: (id: string) =>
-    set((s: RecommendationState) => ({
-      recommendationHistory: s.recommendationHistory.filter((r) => r.id !== id),
-    })),
+  setSelectedHistoryId: (id) => set({ selectedHistoryId: id }),
+  setIsGiftMode: (v) => set({ isGiftMode: v }),
+
+  recommendByText: async (body) => {
+    set({ isLoading: true, error: null });
+    try {
+      const res = await recommendationApi.recommendByText(body);
+      set({ textResult: res.data, isLoading: false });
+    } catch {
+      set({ error: '텍스트 추천에 실패했습니다.', isLoading: false });
+    }
+  },
+
+  recommendByImage: async (body) => {
+    set({ isLoading: true, error: null });
+    try {
+      const res = await recommendationApi.recommendByImage(body);
+      set({ imageResult: res.data, isLoading: false });
+    } catch {
+      set({ error: '이미지 추천에 실패했습니다.', isLoading: false });
+    }
+  },
 });

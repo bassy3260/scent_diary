@@ -1,27 +1,29 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Search, X } from 'lucide-react';
-import { mockPerfumes } from '../../constants/perfumes';
 import { POPULAR_NOTES, TRENDING_TAGS } from '../../constants/ui.constants';
 import { useAppStore } from '../../store';
 import { ImageWithFallback } from '../../components/common/ImageWithFallback';
 
 export function SearchScreen() {
-  const { setSelectedPerfumeId } = useAppStore();
+  const { setSelectedPerfumeId, searchPerfumes, searchResults, isLoading } = useAppStore();
   const [query, setQuery] = useState('');
   const [isFocused, setIsFocused] = useState(false);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const filtered = query.length > 0
-    ? mockPerfumes.filter(p =>
-        p.name.toLowerCase().includes(query.toLowerCase()) ||
-        p.brand.toLowerCase().includes(query.toLowerCase()) ||
-        p.family.toLowerCase().includes(query.toLowerCase()) ||
-        p.tags.some(t => t.toLowerCase().includes(query.toLowerCase()))
-      )
-    : [];
+  useEffect(() => {
+    if (!query) return;
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => {
+      searchPerfumes(query);
+    }, 400);
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
+  }, [query, searchPerfumes]);
 
-  const handleViewDetail = (id: string) => {
-    setSelectedPerfumeId(id);
+  const handleViewDetail = (perfumeId: number) => {
+    setSelectedPerfumeId(perfumeId);
     useAppStore.getState().pushTo('detail');
   };
 
@@ -60,16 +62,20 @@ export function SearchScreen() {
         <AnimatePresence mode="wait">
           {query.length > 0 ? (
             <motion.div key="results" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-              {filtered.length > 0 ? (
+              {isLoading ? (
+                <div className="flex justify-center py-16">
+                  <div className="w-6 h-6 rounded-full border-2 border-[#6B7B5E] border-t-transparent animate-spin" />
+                </div>
+              ) : searchResults.length > 0 ? (
                 <div className="space-y-2 mt-4">
-                  {filtered.map((p, i) => (
+                  {searchResults.map((p, i) => (
                     <motion.div
-                      key={p.id}
+                      key={p.perfumeId}
                       className="flex items-center gap-3 p-3 rounded-xl"
                       style={{ backgroundColor: 'rgba(0,0,0,0.02)' }}
                       initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: i * 0.05 }}
-                      onClick={() => handleViewDetail(p.id)}
+                      onClick={() => handleViewDetail(p.perfumeId)}
                     >
                       <div className="w-12 h-12 rounded-lg overflow-hidden shrink-0">
                         <ImageWithFallback src={p.image} alt={p.name} className="w-full h-full object-cover" />
@@ -77,9 +83,10 @@ export function SearchScreen() {
                       <div className="flex-1">
                         <p className="text-[#8A8680]" style={{ fontSize: '0.6875rem' }}>{p.brand}</p>
                         <p className="text-[#1A1A1A]" style={{ fontSize: '0.9375rem' }}>{p.name}</p>
+                        {p.accords.length > 0 && (
+                          <p className="text-[#8A8680]" style={{ fontSize: '0.75rem' }}>{p.accords.slice(0, 3).join(' · ')}</p>
+                        )}
                       </div>
-                      <span className="px-2 py-0.5 rounded text-white"
-                        style={{ fontSize: '0.5625rem', backgroundColor: p.familyColor }}>{p.family}</span>
                     </motion.div>
                   ))}
                 </div>
@@ -118,27 +125,6 @@ export function SearchScreen() {
                     >
                       {tag}
                     </motion.button>
-                  ))}
-                </div>
-              </div>
-              <div className="mt-6">
-                <p className="text-[#B8B4AE] mb-3" style={{ fontSize: '0.6875rem', letterSpacing: '0.08em' }}>에디터 추천</p>
-                <div className="space-y-2">
-                  {mockPerfumes.slice(0, 3).map(p => (
-                    <motion.div key={p.id}
-                      className="flex items-center gap-3 p-3 rounded-xl bg-white/60"
-                      whileTap={{ scale: 0.98 }}
-                      onClick={() => handleViewDetail(p.id)}
-                    >
-                      <div className="w-14 h-14 rounded-xl overflow-hidden shrink-0">
-                        <ImageWithFallback src={p.image} alt={p.name} className="w-full h-full object-cover" />
-                      </div>
-                      <div className="flex-1">
-                        <p className="text-[#8A8680]" style={{ fontSize: '0.6875rem' }}>{p.brand}</p>
-                        <p className="text-[#1A1A1A]" style={{ fontSize: '0.9375rem' }}>{p.name}</p>
-                        <p className="text-[#8A8680] truncate" style={{ fontSize: '0.75rem' }}>{p.tags.join(' · ')}</p>
-                      </div>
-                    </motion.div>
                   ))}
                 </div>
               </div>

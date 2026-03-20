@@ -1,8 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { ChevronLeft, Check, Camera, X, Clock, Wind, Search } from 'lucide-react';
 import { useAppStore } from '../../store';
-import { mockPerfumes } from '../../constants/perfumes';
+import { usePerfumeStore, useDiaryStore } from '../../store';
 import {
   TASTING_SITUATIONS,
   TASTING_SEASONS,
@@ -32,9 +32,11 @@ function DotRating({ value, onChange, color = '#8BA4B8' }: { value: number; onCh
 }
 
 export function TastingLogWrite() {
-  const { navigateTo, addTastingLog } = useAppStore();
+  const { navigateTo } = useAppStore();
+  const { searchResults, searchPerfumes } = usePerfumeStore();
+  const { createTryDiary } = useDiaryStore();
 
-  const [selectedPerfumeId, setSelectedPerfumeId] = useState<string | null>(null);
+  const [selectedPerfumeId, setSelectedPerfumeId] = useState<number | null>(null);
   const [perfumeSearch, setPerfumeSearch] = useState('');
   const [situation, setSituation] = useState('');
   const [customSituation, setCustomSituation] = useState('');
@@ -49,11 +51,15 @@ export function TastingLogWrite() {
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
   const [showPerfumeList, setShowPerfumeList] = useState(false);
 
-  const selectedPerfume = mockPerfumes.find(p => p.id === selectedPerfumeId);
-  const filteredPerfumes = mockPerfumes.filter(p =>
-    p.name.toLowerCase().includes(perfumeSearch.toLowerCase()) ||
-    p.brand.toLowerCase().includes(perfumeSearch.toLowerCase())
-  );
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      searchPerfumes(perfumeSearch.trim() || '');
+    }, 400);
+    return () => clearTimeout(timer);
+  }, [perfumeSearch, searchPerfumes]);
+
+  const selectedPerfume = searchResults.find(p => p.perfumeId === selectedPerfumeId);
+  const filteredPerfumes = searchResults;
 
   const toggleSeason = (s: string) =>
     setSeasons(prev => prev.includes(s) ? prev.filter(x => x !== s) : [...prev, s]);
@@ -75,23 +81,12 @@ export function TastingLogWrite() {
     }
   };
 
-  const handleSave = () => {
-    const finalSituation = situation === '기타' ? customSituation : situation;
-    addTastingLog({
-      id: `t-${Date.now()}`,
-      type: 'tasting',
-      date: new Date().toISOString().slice(0, 10),
-      perfumeId: selectedPerfumeId || undefined,
-      situation: finalSituation,
-      firstImpression,
-      laterImpression,
-      longevity,
-      sillage,
-      seasons,
-      moods,
-      note,
-      tags,
-      photoUrl: photoUrl || undefined,
+  const handleSave = async () => {
+    await createTryDiary({
+      title: firstImpression.slice(0, 30) || '시향 일지',
+      tryItems: selectedPerfumeId
+        ? [{ perfumeId: selectedPerfumeId, detail: firstImpression }]
+        : [],
     });
     navigateTo('diary');
   };
@@ -412,11 +407,11 @@ export function TastingLogWrite() {
               <div className="flex-1 overflow-y-auto px-5 pb-8">
                 {filteredPerfumes.map(p => (
                   <motion.button
-                    key={p.id}
+                    key={p.perfumeId}
                     className="w-full flex items-center gap-3 py-3 border-b last:border-b-0"
                     style={{ borderColor: '#F5F3EF' }}
                     onClick={() => {
-                      setSelectedPerfumeId(p.id);
+                      setSelectedPerfumeId(p.perfumeId);
                       setShowPerfumeList(false);
                       setPerfumeSearch('');
                     }}
@@ -430,8 +425,8 @@ export function TastingLogWrite() {
                       <p className="text-[#1A1A1A] truncate" style={{ fontSize: '0.9375rem' }}>{p.name}</p>
                     </div>
                     <div className="w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0"
-                      style={{ borderColor: selectedPerfumeId === p.id ? '#8BA4B8' : '#E8E6E1', backgroundColor: selectedPerfumeId === p.id ? '#8BA4B8' : 'transparent' }}>
-                      {selectedPerfumeId === p.id && <Check size={10} className="text-white" />}
+                      style={{ borderColor: selectedPerfumeId === p.perfumeId ? '#8BA4B8' : '#E8E6E1', backgroundColor: selectedPerfumeId === p.perfumeId ? '#8BA4B8' : 'transparent' }}>
+                      {selectedPerfumeId === p.perfumeId && <Check size={10} className="text-white" />}
                     </div>
                   </motion.button>
                 ))}

@@ -1,92 +1,210 @@
 /**
- * App.tsx — 앱 셸 (Application Shell)
- *
- * 이 파일의 책임은 딱 세 가지입니다:
- *  1. 현재 화면(screen)에 맞는 컴포넌트를 렌더링한다 → screenRegistry
- *  2. 화면 전환 애니메이션을 처리한다 → motion variants
- *  3. BottomNav 표시 여부를 결정하고 탭 전환을 처리한다
- *
- * 비즈니스 로직은 store 슬라이스로,
- * 화면 매핑은 navigation/screenRegistry로 이동했습니다.
+ * App.tsx application shell
  */
-import { useCallback, useMemo } from 'react';
-import { AnimatePresence, motion } from 'motion/react';
-import { MobileFrame } from './components/layout/MobileFrame';
-import { BottomNav, type TabId } from './components/layout/BottomNav';
-import { useAppStore } from './store';
-import { mockPerfumes } from './constants/perfumes';
-import { tabVariants, pushVariants, sheetVariants, fadeVariants } from './motion';
-import type { TransitionType } from './types';
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { AnimatePresence, motion } from "motion/react";
+import { authApi } from "./api";
+import { MobileFrame } from "./components/layout/MobileFrame";
+import { BottomNav, type TabId } from "./components/layout/BottomNav";
+import { useAppStore } from "./store";
+import { mockPerfumes } from "./constants/perfumes";
+import {
+  tabVariants,
+  pushVariants,
+  sheetVariants,
+  fadeVariants,
+} from "./motion";
+import type { TransitionType } from "./types";
 import {
   renderScreen,
   getActiveTab,
   BOTTOM_NAV_SCREENS,
-} from './navigation/screenRegistry';
+} from "./navigation/screenRegistry";
 
 function getVariants(type: TransitionType) {
   switch (type) {
-    case 'tab':   return tabVariants;
-    case 'push':  return pushVariants;
-    case 'sheet': return sheetVariants;
-    case 'fade':
-    default:      return fadeVariants;
+    case "tab":
+      return tabVariants;
+    case "push":
+      return pushVariants;
+    case "sheet":
+      return sheetVariants;
+    case "fade":
+    default:
+      return fadeVariants;
   }
 }
 
 export default function App() {
   const {
-    screen, setScreen, navigateTo, goBack,
-    selectedPerfumeId, transitionType,
-    hasOnboarded, setHasOnboarded,
+    screen,
+    setScreen,
+    navigateTo,
+    goBack,
+    selectedPerfumeId,
+    transitionType,
+    hasOnboarded,
+    setHasOnboarded,
+    isAuthenticated,
+    setAuthenticated,
+    clearAuthState,
+    updateProfile,
   } = useAppStore();
 
-  // ─── 화면 전환 핸들러 ─────────────────────────────
+  const [hasCompletedLaunch, setHasCompletedLaunch] = useState(false);
+  const [hasHydrated, setHasHydrated] = useState(
+    useAppStore.persist.hasHydrated(),
+  );
+  const [isAuthReady, setIsAuthReady] = useState(false);
+
+  useEffect(() => {
+    const unsubscribe = useAppStore.persist.onFinishHydration(() => {
+      setHasHydrated(true);
+    });
+
+    setHasHydrated(useAppStore.persist.hasHydrated());
+
+    return unsubscribe;
+  }, []);
+
+  useEffect(() => {
+    if (!hasHydrated) {
+      return;
+    }
+
+    let isCancelled = false;
+
+    const restoreAuthentication = async () => {
+      const storedToken = useAppStore.getState().accessToken;
+
+      if (!storedToken) {
+        clearAuthState();
+        if (!isCancelled) {
+          setIsAuthReady(true);
+        }
+        return;
+      }
+
+      try {
+        const me = await authApi.getMe();
+
+        if (isCancelled) {
+          return;
+        }
+
+        setAuthenticated(storedToken);
+        updateProfile({ nickname: me.nickname ?? "" });
+      } catch {
+        if (!isCancelled) {
+          clearAuthState();
+        }
+      } finally {
+        if (!isCancelled) {
+          setIsAuthReady(true);
+        }
+      }
+    };
+
+    void restoreAuthentication();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [clearAuthState, hasHydrated, setAuthenticated, updateProfile]);
+
   const onLaunchComplete = useCallback(() => {
-    setScreen(hasOnboarded ? 'home' : 'onboarding');
-  }, [hasOnboarded, setScreen]);
+    setHasCompletedLaunch(true);
+  }, []);
 
   const onOnboardingComplete = useCallback(() => {
-    setScreen('auth-entry');
+    setHasOnboarded(true);
+    setScreen("auth-entry");
+  }, [setHasOnboarded, setScreen]);
+
+  const onLoginComplete = useCallback(() => {
+    setScreen("home");
+  }, [setScreen]);
+
+  const onSignupComplete = useCallback(() => {
+    setScreen("login");
   }, [setScreen]);
 
   const onProfileComplete = useCallback(() => {
     setHasOnboarded(true);
-    setScreen('home');
+    setScreen("home");
   }, [setHasOnboarded, setScreen]);
 
   const onEmotionComplete = useCallback(() => {
-    navigateTo('analyzing');
+    navigateTo("analyzing");
   }, [navigateTo]);
 
   const onAnalyzingComplete = useCallback(() => {
-    setScreen('results');
+    setScreen("results");
   }, [setScreen]);
 
-  // screenRegistry에 전달할 핸들러 묶음
-  const handlers = useMemo(() => ({
-    onLaunchComplete,
-    onOnboardingComplete,
-    onProfileComplete,
-    onEmotionComplete,
-    onAnalyzingComplete,
-    navigateTo,
-    goBack,
-  }), [onLaunchComplete, onOnboardingComplete, onProfileComplete,
-      onEmotionComplete, onAnalyzingComplete, navigateTo, goBack]);
+  useEffect(() => {
+    if (!hasCompletedLaunch || !isAuthReady || screen !== "launch") {
+      return;
+    }
 
-  // ─── 탭 전환 ──────────────────────────────────────
-  const handleTabChange = useCallback((tab: TabId) => {
-    const tabScreenMap: Record<TabId, Parameters<typeof setScreen>[0]> = {
-      home:   'home',
-      search: 'search',
-      diary:  'diary',
-      mypage: 'mypage',
-    };
-    setScreen(tabScreenMap[tab]);
-  }, [setScreen]);
+    if (isAuthenticated) {
+      setScreen("home");
+      return;
+    }
 
-  // ─── 렌더링 ───────────────────────────────────────
-  const selectedPerfume = mockPerfumes.find((p) => p.id === selectedPerfumeId);
+    setScreen(hasOnboarded ? "auth-entry" : "onboarding");
+  }, [
+    hasCompletedLaunch,
+    hasOnboarded,
+    isAuthenticated,
+    isAuthReady,
+    screen,
+    setScreen,
+  ]);
+
+  const handlers = useMemo(
+    () => ({
+      onLaunchComplete,
+      onOnboardingComplete,
+      onLoginComplete,
+      onSignupComplete,
+      onProfileComplete,
+      onEmotionComplete,
+      onAnalyzingComplete,
+      navigateTo,
+      goBack,
+    }),
+    [
+      onLaunchComplete,
+      onOnboardingComplete,
+      onLoginComplete,
+      onSignupComplete,
+      onProfileComplete,
+      onEmotionComplete,
+      onAnalyzingComplete,
+      navigateTo,
+      goBack,
+    ],
+  );
+
+  const handleTabChange = useCallback(
+    (tab: TabId) => {
+      const tabScreenMap: Record<TabId, Parameters<typeof setScreen>[0]> = {
+        home: "home",
+        search: "search",
+        diary: "diary",
+        mypage: "mypage",
+      };
+      setScreen(tabScreenMap[tab]);
+    },
+    [setScreen],
+  );
+
+  const selectedPerfume =
+    selectedPerfumeId === null
+      ? null
+      : mockPerfumes.find((perfume) => Number(perfume.id) === selectedPerfumeId) ??
+        null;
   const showBottomNav = BOTTOM_NAV_SCREENS.includes(screen);
   const variants = useMemo(() => getVariants(transitionType), [transitionType]);
 
@@ -95,7 +213,7 @@ export default function App() {
       <div className="relative w-full h-full">
         <AnimatePresence mode="wait">
           <motion.div
-            key={screen + (selectedPerfumeId || '')}
+            key={screen + (selectedPerfumeId || "")}
             className="w-full h-full"
             initial={variants.initial}
             animate={variants.animate}

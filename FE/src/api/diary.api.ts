@@ -1,31 +1,40 @@
 /**
- * 다이어리 / 테이스팅 로그 관련 API
- *
- * 현재는 로컬 상태(Zustand diary.store)로만 관리합니다.
- * API 연결 시 이 파일의 함수들을 실제 구현으로 교체하세요.
+ * 일기 / 시향 일기 관련 API
  */
 
-import type { DiaryEntry, TastingLog } from '../types/diary.types';
+import type {
+  DiaryCreateBody, TryDiaryCreateBody, PageParams,
+  GetDiaryListResponse, GetDiaryDetailResponse, CreateDiaryResponse,
+  GetTryDiaryListResponse, GetTryDiaryDetailResponse, CreateTryDiaryResponse,
+} from '../types/diary.types';
 import { apiClient } from './client';
 
 export const diaryApi = {
-  /** 다이어리 목록 조회 */
-  getEntries: () =>
-    apiClient.get<DiaryEntry[]>('/api/v1/diary'),
+  // ── 일기 ────────────────────────────────────────────────
 
-  /** 다이어리 작성 */
-  createEntry: (body: Omit<DiaryEntry, 'id'>) =>
-    apiClient.post<DiaryEntry>('/api/v1/diary', body),
+  /** 일기 목록 조회 */
+  getEntries: ({ page, size }: PageParams) =>
+    apiClient.get<GetDiaryListResponse>(`/api/v1/diaries?page=${page}&size=${size}`),
 
-  /** 다이어리 수정 */
-  updateEntry: (id: string, body: Partial<DiaryEntry>) =>
-    apiClient.patch<DiaryEntry>(`/api/v1/diary/${id}`, body),
+  /** 일기 상세 조회 */
+  getEntry: (diaryId: number) =>
+    apiClient.get<GetDiaryDetailResponse>(`/api/v1/diaries/${diaryId}`),
 
-  /** 다이어리 삭제 */
-  deleteEntry: (id: string) =>
-    apiClient.delete<void>(`/api/v1/diary/${id}`),
+  /** 일기 작성 - 이미지는 S3에 업로드 후 파일명만 전달 */
+  createEntry: (body: DiaryCreateBody, _images?: File[]) =>
+    apiClient.post<CreateDiaryResponse>('/api/v1/diaries', body),
 
-  /** 테이스팅 로그 작성 */
-  createTastingLog: (body: Omit<TastingLog, 'id'>) =>
-    apiClient.post<TastingLog>('/api/v1/diary/tasting', body),
+  // ── 시향 일기 ────────────────────────────────────────────
+
+  /** 시향 일기 목록 조회 */
+  getTryEntries: ({ page, size }: PageParams) =>
+    apiClient.get<GetTryDiaryListResponse>(`/api/v1/try-diary?page=${page}&size=${size}`),
+
+  /** 시향 일기 상세 조회 */
+  getTryEntry: (tryDiaryId: number) =>
+    apiClient.get<GetTryDiaryDetailResponse>(`/api/v1/try-diary/${tryDiaryId}`),
+
+  /** 시향 일기 작성 */
+  createTryEntry: (body: TryDiaryCreateBody) =>
+    apiClient.post<CreateTryDiaryResponse>('/api/v1/try-diary', body),
 };

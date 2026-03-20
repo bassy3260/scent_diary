@@ -5,10 +5,10 @@ import {
   RotateCcw, RotateCw, Search, X, ChevronsUp,
 } from 'lucide-react';
 import { useAppStore } from '../../store';
-import { mockPerfumes } from '../../constants/perfumes';
+import { usePerfumeStore, useDiaryStore } from '../../store';
 import { ImageWithFallback } from '../../components/common/ImageWithFallback';
 import type { CanvasElement } from '../../types/diary.types';
-import type { Perfume } from '../../types/perfume.types';
+import type { PerfumeListItem } from '../../types/perfume.types';
 
 // DiaryFormData — defined locally to avoid circular imports
 export interface DiaryFormData {
@@ -17,10 +17,11 @@ export interface DiaryFormData {
   weather: string;
   weatherEmoji: string;
   note: string;
-  selectedPerfumeId: string | null;
-  perfume: Perfume | null;
+  selectedPerfumeId: number | null;
+  perfume: PerfumeListItem | null;
   tags: string[];
   photoUrl: string | null;
+  imageNames?: string[];
 }
 
 // ─── 스티커 팩 ────────────────────────────────────────
@@ -369,7 +370,9 @@ interface DiaryCanvasProps {
 }
 
 export function DiaryCanvas({ formData, onBack }: DiaryCanvasProps) {
-  const { addDiaryEntry, navigateTo } = useAppStore();
+  const { navigateTo } = useAppStore();
+  const { createDiary } = useDiaryStore();
+  const { searchResults, searchPerfumes } = usePerfumeStore();
 
   const [elements, setElements] = useState<CanvasElement[]>(() => generateDefaultElements(formData));
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -536,7 +539,7 @@ export function DiaryCanvas({ formData, onBack }: DiaryCanvasProps) {
     setAddingText(false);
   };
 
-  const addPerfume = (perfume: typeof mockPerfumes[0]) => {
+  const addPerfume = (perfume: PerfumeListItem) => {
     const newEl: CanvasElement = {
       id: createElementId('perfume'),
       type: 'perfume',
@@ -562,31 +565,24 @@ export function DiaryCanvas({ formData, onBack }: DiaryCanvasProps) {
   };
 
   // 저장
-  const handleSave = () => {
-    addDiaryEntry({
-      id: `d-${Date.now()}`,
-      type: 'diary',
-      date: new Date().toISOString().slice(0, 10),
-      perfumeId: formData.selectedPerfumeId || undefined,
-      mood: formData.mood || '평온',
-      moodEmoji: formData.moodEmoji || '🌿',
-      weather: formData.weather || '맑음',
-      weatherEmoji: formData.weatherEmoji || '☀️',
-      note: formData.note,
-      tags: formData.tags,
-      photoUrl: formData.photoUrl || undefined,
-      canvasElements: elements,
-      canvasBg,
+  const handleSave = async () => {
+    await createDiary({
+      title: formData.note.slice(0, 30) || '오늘의 향',
+      content: formData.note,
+      perfumeId: formData.selectedPerfumeId ?? 0,
+      imageNames: formData.imageNames,
     });
     navigateTo('diary');
   };
 
-  const filteredPerfumes = perfumeSearch.trim()
-    ? mockPerfumes.filter(p =>
-        p.name.toLowerCase().includes(perfumeSearch.toLowerCase()) ||
-        p.brand.toLowerCase().includes(perfumeSearch.toLowerCase())
-      )
-    : mockPerfumes;
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (perfumeSearch.trim()) searchPerfumes(perfumeSearch.trim());
+    }, 400);
+    return () => clearTimeout(timer);
+  }, [perfumeSearch, searchPerfumes]);
+
+  const filteredPerfumes = searchResults;
 
   const selectedEl = elements.find(el => el.id === selectedId);
   const anyModal = showStickerSheet || showBgPicker || showPerfumeSheet || !!editingText || addingText;
@@ -901,7 +897,7 @@ export function DiaryCanvas({ formData, onBack }: DiaryCanvasProps) {
               <div className="flex-1 overflow-y-auto px-5 pb-8">
                 {filteredPerfumes.map(p => (
                   <motion.button
-                    key={p.id}
+                    key={p.perfumeId}
                     className="w-full flex items-center gap-3 py-3 border-b last:border-b-0"
                     style={{ borderColor: 'rgba(255,255,255,0.06)' }}
                     onClick={() => addPerfume(p)}

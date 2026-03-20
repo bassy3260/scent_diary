@@ -1,15 +1,27 @@
+export type Gender = "FEMALE" | "MALE" | "NONE";
+
 export interface LoginRequest {
-  email: string;
+  id: string;
   password: string;
 }
 
 export interface SignupRequest {
-  email: string;
+  id: string;
   password: string;
   nickname: string;
+  birthYear: number;
+  gender: Gender;
 }
 
-export interface AuthResponse {
+export interface LoginResponse {
   accessToken: string;
-  refreshToken: string;
+}
+
+export interface AuthenticatedMember {
+  memberId: number;
+  id: string;
+  password: string | null;
+  birthYear: number;
+  gender: Gender;
+  nickname: string;
 }

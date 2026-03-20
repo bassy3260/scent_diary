@@ -14,7 +14,7 @@ interface PerfumeCardProps {
 
 export function PerfumeCard({ perfume, isHero = false, rank, onTap, showReason = false }: PerfumeCardProps) {
   const { savedPerfumes, toggleSavedPerfume } = useAppStore();
-  const isSaved = savedPerfumes.includes(perfume.id);
+  const isSaved = savedPerfumes.includes(Number(perfume.id));
 
   if (isHero) {
     return (
@@ -49,7 +49,7 @@ export function PerfumeCard({ perfume, isHero = false, rank, onTap, showReason =
                   backgroundColor: isSaved ? '#1A1A1A' : 'rgba(255,255,255,0.75)',
                   backdropFilter: 'blur(10px)',
                 }}
-                onClick={(e) => { e.stopPropagation(); toggleSavedPerfume(perfume.id); }}
+                onClick={(e) => { e.stopPropagation(); toggleSavedPerfume(Number(perfume.id)); }}
                 whileTap={{ scale: 0.9 }}
               >
                 <Heart size={14} fill={isSaved ? '#FAFAF8' : 'none'} stroke={isSaved ? '#FAFAF8' : '#1A1A1A'} />
@@ -130,7 +130,7 @@ export function PerfumeCard({ perfume, isHero = false, rank, onTap, showReason =
         <div className="flex flex-col gap-1.5 justify-center">
           <motion.button
             className="w-8 h-8 rounded-full flex items-center justify-center border border-[#E8E6E1]"
-            onClick={(e) => { e.stopPropagation(); toggleSavedPerfume(perfume.id); }}
+            onClick={(e) => { e.stopPropagation(); toggleSavedPerfume(Number(perfume.id)); }}
             whileTap={{ scale: 0.9 }}
           >
             <Heart size={12} fill={isSaved ? '#1A1A1A' : 'none'} stroke="#1A1A1A" />

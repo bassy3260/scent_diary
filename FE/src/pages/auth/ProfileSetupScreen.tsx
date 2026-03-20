@@ -1,29 +1,79 @@
 import { useState } from 'react';
 import { motion } from 'motion/react';
+import { User } from 'lucide-react';
 import { useAppStore } from '../../store';
 import { AGE_RANGES, PROFILE_GENDERS } from '../../constants/ui.constants';
-import { User } from 'lucide-react';
 
 interface ProfileSetupScreenProps {
   onComplete: () => void;
 }
 
 export function ProfileSetupScreen({ onComplete }: ProfileSetupScreenProps) {
-  const { profile, updateProfile } = useAppStore();
-  const [ageRange, setAgeRange] = useState('');
-  const [gender, setGender] = useState('');
+  const profile = useAppStore((state) => state.profile);
+  const signupDraft = useAppStore((state) => state.signupDraft);
+  const signup = useAppStore((state) => state.signup);
+  const [ageRange, setAgeRange] = useState(profile.ageRange || profile.age || '');
+  const [gender, setGender] = useState(profile.gender || '');
+  const [loading, setLoading] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
+  const [error, setError] = useState('');
 
-  const handleComplete = () => {
-    if (!ageRange || !gender) return;
-    updateProfile({ ageRange, gender });
-    onComplete();
+  const canContinue = Boolean(signupDraft) && Boolean(ageRange) && Boolean(gender) && !loading;
+
+  const handleComplete = async () => {
+    if (!canContinue) {
+      return;
+    }
+
+    setLoading(true);
+    setError('');
+
+    try {
+      await signup({
+        age: ageRange,
+        gender,
+      });
+      setSubmitted(true);
+      window.setTimeout(() => {
+        onComplete();
+      }, 900);
+    } catch (submitError) {
+      setError(submitError instanceof Error ? submitError.message : '회원가입을 완료하지 못했어요. 다시 시도해 주세요.');
+      setLoading(false);
+    }
   };
 
-  const canContinue = ageRange && gender;
+  if (submitted) {
+    return (
+      <div className="w-full h-full flex flex-col items-center justify-center" style={{ background: '#FAFAF8' }}>
+        <motion.div
+          className="flex flex-col items-center gap-4"
+          initial={{ opacity: 0, scale: 0.92 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ type: 'spring', stiffness: 280, damping: 24 }}
+        >
+          <motion.div
+            className="w-16 h-16 rounded-full flex items-center justify-center"
+            style={{ background: 'linear-gradient(135deg, #6B7B5E, #8FA380)' }}
+            initial={{ scale: 0 }}
+            animate={{ scale: 1 }}
+            transition={{ type: 'spring', stiffness: 360, damping: 18, delay: 0.05 }}
+          >
+            <User size={26} className="text-white" />
+          </motion.div>
+          <p className="text-[#1A1A1A]" style={{ fontSize: '1.125rem', fontFamily: "'Playfair Display', serif" }}>
+            회원가입이 완료되었어요
+          </p>
+          <p className="text-[#8A8680] text-center" style={{ fontSize: '0.875rem', lineHeight: 1.6 }}>
+            이제 로그인해서 ScentLog를 시작해 볼까요?
+          </p>
+        </motion.div>
+      </div>
+    );
+  }
 
   return (
     <div className="w-full h-full flex flex-col" style={{ background: '#FAFAF8' }}>
-      {/* Header */}
       <div className="pt-14 px-6 pb-6">
         <motion.div
           className="w-16 h-16 rounded-full bg-gradient-to-br from-[#6B7B5E] to-[#8FA380] flex items-center justify-center mb-5"
@@ -49,13 +99,13 @@ export function ProfileSetupScreen({ onComplete }: ProfileSetupScreenProps) {
           animate={{ opacity: 1 }}
           transition={{ delay: 0.3 }}
         >
-          당신에게 어울리는 향을 추천하기 위해{'\n'}몇 가지 정보가 필요해요.
+          더 잘 어울리는 향을 추천하기 위해
+          <br />
+          몇 가지 정보를 알려 주세요.
         </motion.p>
       </div>
 
-      {/* Form */}
       <div className="flex-1 overflow-y-auto px-6 pb-6">
-        {/* Nickname (읽기 전용) */}
         <motion.div
           className="mb-6"
           initial={{ opacity: 0, y: 10 }}
@@ -69,14 +119,13 @@ export function ProfileSetupScreen({ onComplete }: ProfileSetupScreenProps) {
             className="w-full px-4 py-3.5 rounded-xl bg-[#F5F3EF] border border-[#E8E6E1] text-[#8A8680]"
             style={{ fontSize: '0.9375rem' }}
           >
-            {profile.nickname || '닉네임 없음'}
+            {signupDraft?.nickname || profile.nickname || '닉네임 정보가 없어요'}
           </div>
           <p className="text-[#B8B4AE] mt-1.5" style={{ fontSize: '0.6875rem' }}>
-            회원가입 시 입력한 닉네임입니다
+            1단계에서 입력한 닉네임이에요
           </p>
         </motion.div>
 
-        {/* Gender */}
         <motion.div
           className="mb-6"
           initial={{ opacity: 0, y: 10 }}
@@ -87,26 +136,30 @@ export function ProfileSetupScreen({ onComplete }: ProfileSetupScreenProps) {
             성별
           </label>
           <div className="grid grid-cols-3 gap-2">
-            {PROFILE_GENDERS.map((g) => (
+            {PROFILE_GENDERS.map((option) => (
               <motion.button
-                key={g}
+                key={option}
                 className="py-3 rounded-xl transition-colors"
                 style={{
-                  background: gender === g ? 'linear-gradient(135deg, #6B7B5E, #8FA380)' : '#FFFFFF',
-                  color: gender === g ? '#FFFFFF' : '#8A8680',
+                  background: gender === option ? 'linear-gradient(135deg, #6B7B5E, #8FA380)' : '#FFFFFF',
+                  color: gender === option ? '#FFFFFF' : '#8A8680',
                   fontSize: '0.875rem',
-                  border: gender === g ? 'none' : '1px solid #E8E6E1',
+                  border: gender === option ? 'none' : '1px solid #E8E6E1',
                 }}
-                onClick={() => setGender(g)}
+                onClick={() => {
+                  setGender(option);
+                  if (error) {
+                    setError('');
+                  }
+                }}
                 whileTap={{ scale: 0.97 }}
               >
-                {g}
+                {option}
               </motion.button>
             ))}
           </div>
         </motion.div>
 
-        {/* Age Range */}
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
@@ -126,7 +179,12 @@ export function ProfileSetupScreen({ onComplete }: ProfileSetupScreenProps) {
                   fontSize: '0.875rem',
                   border: ageRange === range ? 'none' : '1px solid #E8E6E1',
                 }}
-                onClick={() => setAgeRange(range)}
+                onClick={() => {
+                  setAgeRange(range);
+                  if (error) {
+                    setError('');
+                  }
+                }}
                 whileTap={{ scale: 0.97 }}
               >
                 {range}
@@ -134,9 +192,20 @@ export function ProfileSetupScreen({ onComplete }: ProfileSetupScreenProps) {
             ))}
           </div>
         </motion.div>
+
+        {!signupDraft && (
+          <p className="text-[#C45050] mt-5" style={{ fontSize: '0.8125rem', lineHeight: 1.5 }}>
+            회원가입 정보가 없어요. 처음 단계부터 다시 진행해 주세요.
+          </p>
+        )}
+
+        {error && (
+          <p className="text-[#C45050] mt-5" style={{ fontSize: '0.8125rem', lineHeight: 1.5 }}>
+            {error}
+          </p>
+        )}
       </div>
 
-      {/* CTA */}
       <div className="px-6 pb-10">
         <motion.button
           className="w-full py-4 rounded-2xl tracking-wide transition-all"
@@ -145,14 +214,14 @@ export function ProfileSetupScreen({ onComplete }: ProfileSetupScreenProps) {
             color: canContinue ? '#FFFFFF' : '#B8B4AE',
             fontSize: '0.9375rem',
           }}
-          onClick={handleComplete}
+          onClick={() => void handleComplete()}
           disabled={!canContinue}
           whileTap={canContinue ? { scale: 0.98 } : {}}
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.7 }}
         >
-          완료
+          {loading ? '회원가입 중...' : '완료'}
         </motion.button>
       </div>
     </div>

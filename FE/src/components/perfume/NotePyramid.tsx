@@ -1,9 +1,9 @@
 import { motion, AnimatePresence } from 'motion/react';
 import { useState } from 'react';
-import type { Perfume } from '../../types/perfume.types';
+import type { PerfumeNotes } from '../../types/perfume.types';
 
 interface NotePyramidProps {
-  perfume: Perfume;
+  notes: PerfumeNotes;
   compact?: boolean;
 }
 
@@ -67,9 +67,9 @@ const LBL2 = [
 // Right-side indicator dot Y positions
 const DOT_Y2 = [41, 100, 162];
 
-export function NotePyramid({ perfume }: NotePyramidProps) {
+export function NotePyramid({ notes }: NotePyramidProps) {
   const [selectedLayer, setSelectedLayer] = useState<number>(0);
-  const allNotes = [perfume.topNotes, perfume.middleNotes, perfume.baseNotes];
+  const allNotes = [notes.top, notes.middle, notes.base];
 
   const op = (idx: number) => selectedLayer === idx ? 1 : 0.42;
   const tr = 'opacity 0.25s ease';
@@ -271,11 +271,11 @@ export function NotePyramid({ perfume }: NotePyramidProps) {
             </span>
           </div>
 
-          {/* Note pills — name only, no description */}
+          {/* Note pills */}
           <div className="px-4 pb-4 pt-3 flex flex-wrap gap-2">
             {allNotes[selectedLayer].map((note, idx) => (
               <motion.div
-                key={note.name}
+                key={note}
                 className="flex items-center gap-2"
                 initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
@@ -295,7 +295,7 @@ export function NotePyramid({ perfume }: NotePyramidProps) {
                     fontWeight: 600,
                   }}
                 >
-                  {note.name}
+                  {note}
                 </span>
               </motion.div>
             ))}

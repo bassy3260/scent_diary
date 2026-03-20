@@ -1,27 +1,39 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { ChevronLeft, Upload, Camera, X, Sparkles } from 'lucide-react';
 import { useAppStore } from '../../store';
-import { PERFUME_IMAGES, mockPerfumes } from '../../constants/perfumes';
+import { useRecommendationStore } from '../../store';
+import { uploadImageToS3 } from '../../api/s3';
 import { ImageWithFallback } from '../../components/common/ImageWithFallback';
 
 export function PhotoRecommend() {
   const { goBack, navigateTo, setSelectedPerfumeId } = useAppStore();
+  const { recommendByImage, imageResult } = useRecommendationStore();
+  const results = imageResult?.results ?? [];
   const [uploadedImage, setUploadedImage] = useState<string | null>(null);
   const [analyzing, setAnalyzing] = useState(false);
   const [analyzed, setAnalyzed] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const extractedTags = ['차분함', '습한 공기', '우디', '그린', '따뜻한 빛'];
-  const recommendedPerfumes = mockPerfumes.slice(0, 3);
 
-  const handleUpload = () => {
-    setUploadedImage(PERFUME_IMAGES.forest);
+  const handleFileSelect = async (file: File) => {
+    // 미리보기
+    const reader = new FileReader();
+    reader.onloadend = () => setUploadedImage(reader.result as string);
+    reader.readAsDataURL(file);
+
     setAnalyzing(true);
-    setTimeout(() => {
+    try {
+      const fileName = await uploadImageToS3(file);
+      await recommendByImage({ image_route: fileName });
+    } finally {
       setAnalyzing(false);
       setAnalyzed(true);
-    }, 2500);
+    }
   };
+
+  const handleUploadClick = () => fileInputRef.current?.click();
 
   return (
     <div className="w-full h-full flex flex-col" style={{ background: '#FAFAF8' }}>
@@ -44,11 +56,24 @@ export function PhotoRecommend() {
             initial={{ opacity: 0, y: 15 }}
             animate={{ opacity: 1, y: 0 }}
           >
+            {/* 파일 input (숨김) */}
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) void handleFileSelect(file);
+                e.target.value = '';
+              }}
+            />
+
             {/* Upload area */}
             <motion.button
               className="w-full aspect-[4/3] rounded-3xl border-2 border-dashed border-[#E8E6E1] flex flex-col items-center justify-center gap-4"
               style={{ backgroundColor: '#F8F7F4' }}
-              onClick={handleUpload}
+              onClick={handleUploadClick}
               whileTap={{ scale: 0.98 }}
             >
               <div className="w-16 h-16 rounded-full bg-[#B8A5C8]/10 flex items-center justify-center">
@@ -66,7 +91,7 @@ export function PhotoRecommend() {
               <motion.button
                 className="flex-1 py-3.5 rounded-2xl bg-[#1A1A1A] text-white flex items-center justify-center gap-2"
                 style={{ fontSize: '0.875rem' }}
-                onClick={handleUpload}
+                onClick={handleUploadClick}
                 whileTap={{ scale: 0.97 }}
               >
                 <Camera size={16} /> 갤러리에서 선택
@@ -189,15 +214,15 @@ export function PhotoRecommend() {
                   <p className="text-[#B8B4AE] mb-3" style={{ fontSize: '0.6875rem', letterSpacing: '0.08em' }}>
                     이 분위기와 어울리는 향
                   </p>
-                  {recommendedPerfumes.map((p, i) => (
+                  {results.map((p, i) => (
                     <motion.div
-                      key={p.id}
+                      key={p.perfumeId}
                       className="mb-2.5 flex gap-3 p-3 rounded-2xl"
                       style={{ background: 'linear-gradient(145deg, #FFFFFF, #F8F7F4)', boxShadow: '0 2px 12px rgba(0,0,0,0.03)' }}
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: 0.5 + i * 0.1 }}
-                      onClick={() => { setSelectedPerfumeId(p.id); navigateTo('detail'); }}
+                      onClick={() => { setSelectedPerfumeId(p.perfumeId); navigateTo('detail'); }}
                     >
                       <div className="w-16 h-16 rounded-xl overflow-hidden shrink-0">
                         <ImageWithFallback src={p.image} alt={p.name} className="w-full h-full object-cover" />
@@ -211,12 +236,8 @@ export function PhotoRecommend() {
                   ))}
                 </div>
 
-                {/* Save/Compare actions */}
+                {/* Compare actions */}
                 <div className="flex gap-3 mt-4">
-                  <button className="flex-1 py-3 rounded-2xl border border-[#E8E6E1] text-[#8A8680]"
-                    style={{ fontSize: '0.875rem' }}>
-                    이 추천 저장하기
-                  </button>
                   <button className="flex-1 py-3 rounded-2xl bg-[#1A1A1A] text-white"
                     style={{ fontSize: '0.875rem' }}
                     onClick={() => navigateTo('emotion')}>
