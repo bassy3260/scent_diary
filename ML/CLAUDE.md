@@ -26,34 +26,50 @@
 
 ```
 ML/
-├── recommendation/          # FastAPI 앱 패키지 (핵심 서비스)
-│   ├── main.py              # API 엔드포인트 정의, 앱 시작점
-│   ├── recommender.py       # 임베딩 기반 추천 로직
-│   ├── database.py          # DB 연결 및 쿼리
-│   ├── llm_reasoner.py      # LLM 추천 이유 생성
-│   └── recommender_tfidf.py # (아카이브) 초기 TF-IDF 방식
+├── app/                         # FastAPI 앱 패키지 (핵심 서비스)
+│   ├── main.py                  # 앱 시작점: RunPodEmbedder 정의, lifespan, 라우터 등록
+│   ├── api/
+│   │   └── v1/
+│   │       ├── recommend.py     # POST /api/v1/recommend/text 엔드포인트
+│   │       └── schemas.py       # Pydantic 요청/응답 모델, NOTE_RATIO 상수
+│   ├── db/
+│   │   └── database.py          # SQLAlchemy 엔진, get_connection(), fetch_perfumes()
+│   └── services/
+│       ├── recommender.py       # 임베딩 기반 추천 로직 (가중합, 코사인 유사도, 가격 필터)
+│       └── llm_reasoner.py      # GMS API(GPT-4o-mini)로 추천 이유 자연어 생성
 │
-├── dataSets/                # 데이터 준비 스크립트 (1회성)
-│   ├── embed.py             # 향수 임베딩 생성 → DB 저장
-│   └── Insert_perfumes.py   # CSV → PostgreSQL 삽입
+├── scripts/                     # 데이터 준비 스크립트 (1회성 배치 작업)
+│   ├── embed.py                 # 향수 임베딩 생성 → DB 저장
+│   └── insert_perfumes.py       # CSV → PostgreSQL 삽입
 │
-├── runpod/                  # RunPod 서버리스 핸들러
-│   ├── handler.py           # GPU 임베딩 엔드포인트
+├── data/                        # 원본 데이터
+│   └── bysuco_perfumes.csv
+│
+├── archive/                     # 구버전 코드 보관
+│   ├── recommender_tfidf.py     # 초기 TF-IDF 방식 (현재 미사용)
+│   └── NOTES.md
+│
+├── runpod/                      # RunPod 서버리스 핸들러
+│   ├── handler.py               # GPU 임베딩 엔드포인트
+│   ├── Dockerfile               # RunPod용 컨테이너
 │   └── requirements.txt
 │
-├── Dockerfile               # 메인 앱 컨테이너
-├── requirements.txt         # 의존성
-└── .env                     # 환경변수 (git 제외)
+├── Dockerfile                   # 메인 앱 컨테이너
+├── Jenkinsfile                  # CI/CD 파이프라인
+├── requirements.txt             # 의존성
+└── .env                         # 환경변수 (git 제외)
 ```
 
 ### 각 파일의 역할 요약
 
-- **main.py**: 요청을 받아 가중치 계산 후 `recommender.py`에 위임, 응답 포맷팅
-- **recommender.py**: DB에서 임베딩 조회 → 가중합 벡터 생성 → 코사인 유사도 → Top-K 반환
-- **database.py**: DB 연결 설정 및 재사용 가능한 쿼리 함수
-- **llm_reasoner.py**: 추천된 향수에 대한 자연어 설명 생성
-- **embed.py**: 향수 데이터를 한 번 임베딩해서 DB에 저장 (배치 작업)
-- **handler.py**: RunPod에서 동작하는 GPU 임베딩 서버
+- **app/main.py**: `RunPodEmbedder` 클래스 정의, lifespan으로 임베더·향수 데이터 초기화, 라우터 등록
+- **app/api/v1/recommend.py**: 요청을 받아 가중치 계산 후 `recommender.py`에 위임, 응답 포맷팅
+- **app/api/v1/schemas.py**: `RecommendRequest`, `RecommendResponse` Pydantic 모델, `NOTE_RATIO` 상수
+- **app/db/database.py**: SQLAlchemy 엔진 및 커넥션 풀, `fetch_perfumes()` 쿼리 함수
+- **app/services/recommender.py**: 앱 시작 시 DB에서 임베딩 로드 → 가중합 벡터 생성 → 코사인 유사도 → Top-K 반환, 가격 필터링
+- **app/services/llm_reasoner.py**: 추천된 향수에 대한 자연어 설명 생성 (GMS API 호출)
+- **scripts/embed.py**: 향수 데이터를 한 번 임베딩해서 DB에 저장 (배치 작업)
+- **runpod/handler.py**: RunPod에서 동작하는 GPU 임베딩 서버
 
 ---
 
@@ -85,33 +101,33 @@ def recommend(req):
 # 요청 모델: 입력 데이터 검증 자동화
 class RecommendRequest(BaseModel):
     text: str
+    age: str
     note: Literal["top", "middle", "base"] = "middle"  # 허용값 제한
-    money: str
+    price: str
 
 # 응답 모델: 클라이언트가 받는 데이터 구조 보장
 class RecommendResponse(BaseModel):
-    perfume_id: int
+    perfume_id:   int
     perfume_name: str
-    score: float
+    price:        int
+    score:        float
+    accords:      list[str] | None
+    description:  str | None
 ```
 
-**lifespan 이벤트로 앱 시작/종료 처리** (현재 `@app.on_event` 방식은 deprecated)
+**lifespan 이벤트로 앱 시작/종료 처리** (현재 적용됨)
 
 ```python
-# 현재 방식 (작동하지만 deprecated)
-@app.on_event("startup")
-def startup():
-    ...
-
-# 권장 방식 (Python 3.11+)
 from contextlib import asynccontextmanager
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # 시작 시 실행
-    init_embedder()
+    # 시작 시: 임베더 초기화 + 향수 데이터 로드
+    app.state.embedder = RunPodEmbedder(RUNPOD_ENDPOINT_ID, RUNPOD_API_KEY)
+    app.state.perfume_rows = load_perfume_rows()
     yield
-    # 종료 시 실행 (정리 작업)
+    # 종료 시: DB 커넥션 풀 해제
+    engine.dispose()
 
 app = FastAPI(lifespan=lifespan)
 ```
@@ -188,16 +204,20 @@ _prefix        → 내부 전용 함수/변수 (_parse_vec)
 
 ### 7. DB 연결 관리
 
-**현재 방식(매 요청마다 연결/해제)은 개발엔 괜찮지만, 운영 환경에선 Connection Pool을 써야 합니다**
+**SQLAlchemy Connection Pool 사용 중 (현재 적용됨)**
 
 ```python
-# 현재 방식 (단순하지만 성능 비효율)
-def get_connection():
-    return psycopg2.connect(**DB_CONFIG)
-
-# 운영 권장 방식 (SQLAlchemy connection pool)
+# app/db/database.py
 from sqlalchemy import create_engine
-engine = create_engine(DATABASE_URL, pool_size=5, max_overflow=10)
+
+engine = create_engine(
+    DATABASE_URL,
+    pool_size=5,      # 기본 유지할 연결 수
+    max_overflow=10,  # 초과 시 최대 추가 허용
+)
+
+def get_connection():
+    return engine.connect()  # with 블록 종료 시 자동 반환
 ```
 
 ---
@@ -205,24 +225,26 @@ engine = create_engine(DATABASE_URL, pool_size=5, max_overflow=10)
 ## 데이터 플로우
 
 ```
-사용자 요청 (텍스트 + 취향 옵션)
+사용자 요청 POST /api/v1/recommend/text
+  { text, age, note, price }
     │
     ▼
-main.py: 노트 비율 가중치 계산
+app/api/v1/recommend.py: 노트 비율 가중치 계산 (_build_weights)
     │
     ▼
-RunPodEmbedder.encode()  →  RunPod GPU 서버 (BAAI/bge-m3)
-    │  사용자 텍스트 → 1024차원 벡터
+app/main.py: RunPodEmbedder.encode()  →  RunPod GPU 서버 (BAAI/bge-m3)
+    │  "query: " + user_text → 1024차원 벡터
     ▼
-recommender.py:
-    ├─ PostgreSQL에서 향수 임베딩 전체 조회
-    ├─ 향수별 가중합 벡터 생성
-    │   (accord×0.4 + note_levels×0.3 + desc×0.3)
+app/services/recommender.py:
+    ├─ (앱 시작 시 이미 로드된) 향수 임베딩 rows 사용
+    ├─ 가격 필터링 (_filter_by_price) — 현재 엔드포인트에서 미연결
+    ├─ 향수별 가중합 벡터 생성 (_build_weighted_vec)
+    │   (accord×0.4 + note_levels×0.3 + desc×0.3, zero 벡터 제외 후 정규화)
     ├─ 코사인 유사도 계산
     └─ Top-5 반환
     │
     ▼
-main.py: 응답 포맷팅 → JSON 반환
+app/api/v1/recommend.py: RecommendResponse 포맷팅 → JSON 반환
 ```
 
 ---
@@ -256,7 +278,7 @@ DB_PASSWORD=your_db_password
 pip install -r requirements.txt
 
 # 서버 실행 (루트 디렉토리에서)
-uvicorn recommendation.main:app --reload --port 8000
+uvicorn app.main:app --reload --port 8000
 
 # API 문서 확인 (자동 생성됨)
 # http://localhost:8000/docs
@@ -273,19 +295,19 @@ FastAPI와 ML이 처음이라면, 아래 순서로 학습하면 이 코드베이
 이 프로젝트에서 반드시 알아야 하는 파이썬 개념들:
 
 - **타입 힌트** (`str`, `int`, `list[dict]`, `dict[str, float]`) → [공식 docs](https://docs.python.org/3/library/typing.html)
-- **클래스와 메서드** (`RunPodEmbedder`, `BaseModel` 상속) → `recommender.py` 참고
-- **리스트 컴프리헨션** (`[{**rows[i], "score": ...} for i in top_indices]`) → `recommender.py:55`
+- **클래스와 메서드** (`RunPodEmbedder`, `BaseModel` 상속) → `app/main.py` 참고
+- **리스트 컴프리헨션** (`[{**rows[i], "score": ...} for i in top_indices]`) → `app/services/recommender.py:135`
 - **딕셔너리** (`weights.get("accord", 0)`, `{**row, "score": score}`) → 프로젝트 전체에 사용
-- **환경변수** (`os.getenv()`) → `database.py` 참고
+- **환경변수** (`os.getenv()`) → `app/db/database.py` 참고
 
 ### Phase 2: FastAPI 입문 (1-2주)
 
 이 프로젝트 코드와 함께 학습하면 효과적입니다:
 
 1. **왜 FastAPI인가?** — 타입 힌트 기반 자동 검증 + 자동 API 문서 생성
-2. **Pydantic 모델** — `RecommendRequest`, `RecommendResponse` 클래스 읽기 → [main.py:33-48](recommendation/main.py)
-3. **라우터와 엔드포인트** — `@app.post("/recommend")` 패턴 → [main.py:51](recommendation/main.py)
-4. **lifespan/startup** — 앱 시작 시 DB/모델 초기화 → [main.py:28](recommendation/main.py)
+2. **Pydantic 모델** — `RecommendRequest`, `RecommendResponse` 클래스 읽기 → [app/api/v1/schemas.py](app/api/v1/schemas.py)
+3. **라우터와 엔드포인트** — `@router.post("/recommend/text")` 패턴 → [app/api/v1/recommend.py](app/api/v1/recommend.py)
+4. **lifespan/startup** — 앱 시작 시 임베더·향수 데이터 초기화 → [app/main.py:72](app/main.py)
 5. **HTTP 상태코드** — 200 성공, 422 검증 오류, 500 서버 오류
 6. **Swagger UI 활용** — `http://localhost:8000/docs`에서 직접 API 테스트
 
@@ -303,13 +325,13 @@ FastAPI와 ML이 처음이라면, 아래 순서로 학습하면 이 코드베이
 ```
 이 프로젝트에서 보는 곳:
 - runpod/handler.py: 모델이 실제로 임베딩을 생성하는 부분
-- dataSets/embed.py: 향수 데이터를 임베딩해서 저장
-- recommender.py: 저장된 임베딩을 불러와서 사용
+- scripts/embed.py: 향수 데이터를 임베딩해서 저장
+- app/services/recommender.py: 저장된 임베딩을 불러와서 사용
 ```
 
 #### 코사인 유사도(Cosine Similarity)란?
 > 두 벡터가 얼마나 같은 방향을 가리키는지 측정. 1에 가까울수록 유사.
-> `from sklearn.metrics.pairwise import cosine_similarity` → `recommender.py:50`
+> `from sklearn.metrics.pairwise import cosine_similarity` → `app/services/recommender.py:130`
 
 #### BAAI/bge-m3 모델이란?
 > 다국어 지원 임베딩 모델. 한국어 텍스트도 잘 처리합니다.
@@ -318,17 +340,17 @@ FastAPI와 ML이 처음이라면, 아래 순서로 학습하면 이 코드베이
 
 #### TF-IDF vs 임베딩 (이 프로젝트의 발전 과정)
 ```
-recommender_tfidf.py (초기)  →  recommender.py (현재)
-단순 키워드 빈도 기반             의미론적 유사도 기반
-"장미" 검색 시 "장미"만 찾음      "장미" 검색 시 "로즈"도 찾음
+archive/recommender_tfidf.py (초기)  →  app/services/recommender.py (현재)
+단순 키워드 빈도 기반                    의미론적 유사도 기반
+"장미" 검색 시 "장미"만 찾음             "장미" 검색 시 "로즈"도 찾음
 ```
 
 ### Phase 4: 데이터베이스 연동 (1주)
 
-- **psycopg2**: Python ↔ PostgreSQL 연결 라이브러리 → `database.py`
-- **RealDictCursor**: 쿼리 결과를 딕셔너리로 받기 (컬럼명으로 접근 가능)
+- **SQLAlchemy**: Python ↔ PostgreSQL 연결 + 커넥션 풀 관리 → `app/db/database.py`
+- **mappings().all()**: 쿼리 결과를 딕셔너리처럼 접근 가능한 형태로 받기
 - **환경변수로 DB 연결**: 절대 코드에 비밀번호 하드코딩 금지
-- **SQL 서브쿼리**: `STRING_AGG` 함수로 노트 목록 가져오기 → `database.py:15-50`
+- **SQL 서브쿼리**: `STRING_AGG` 함수로 노트 목록 가져오기 → `app/db/database.py:27-63`
 
 ### Phase 5: 배포 이해 (1주)
 
@@ -345,19 +367,19 @@ recommender_tfidf.py (초기)  →  recommender.py (현재)
 서버 실행 후 `http://localhost:8000/docs`에서 Swagger UI로 테스트:
 
 ```json
-POST /recommend
+POST /api/v1/recommend/text
 {
   "text": "신선하고 시트러스한 여름 느낌",
   "age": "20대",
   "note": "top",
-  "money": "100000"
+  "price": "100000"
 }
 ```
 
 ### 임베딩 재생성 (향수 데이터 변경 시)
 
 ```bash
-python dataSets/embed.py
+python scripts/embed.py
 ```
 
 ### RunPod 핸들러 로컬 테스트
@@ -375,8 +397,8 @@ print(len(result["embedding"]))  # 1024
 
 1. ~~**`@app.on_event("startup")` deprecated** → `lifespan` 패턴으로 교체 필요~~ ✅ 완료
 2. ~~**DB 연결 풀링 없음** → 요청마다 연결/해제 중, SQLAlchemy 도입 권장~~ ✅ 완료
-3. **`money`, `age` 파라미터 미활용** → 가격 필터링 로직 연결 필요
-4. **LLM 추천 이유가 엔드포인트에 연결 안 됨** → `llm_reasoner.py` 통합 필요
+3. ~~**`price` 파라미터 미활용** → `recommender.py`에 `_filter_by_price()` 구현은 됐으나 `recommend.py` 엔드포인트에서 `max_price` 인자를 아직 전달하지 않음~~ ✅ 완료
+4. ~~**LLM 추천 이유가 엔드포인트에 연결 안 됨** → `app/services/llm_reasoner.py` 구현은 됐으나 `recommend.py`에 통합 필요~~ ✅ 완료
 5. **벡터 검색 성능** → 데이터 수 증가 시 pgvector 확장 도입 권장
 
 ---
@@ -385,7 +407,7 @@ print(len(result["embedding"]))  # 1024
 
 코드 수정 요청 시 아래처럼 말해주면 빠르게 도울 수 있습니다:
 
-- "현재 `/recommend` 엔드포인트에서 가격 필터링을 추가하고 싶어"
-- "`recommender.py`의 가중치 계산 방식이 이해가 안 돼, 설명해줘"
+- "현재 `/api/v1/recommend/text` 엔드포인트에서 가격 필터링을 연결하고 싶어"
+- "`app/services/recommender.py`의 가중치 계산 방식이 이해가 안 돼, 설명해줘"
 - "LLM 추천 이유를 응답에 포함하려면 어떻게 해야 해?"
-- "DB 연결 방식을 SQLAlchemy로 바꾸고 싶어"
+- "`age` 파라미터를 실제 로직에 활용하고 싶어"
