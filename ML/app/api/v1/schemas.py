@@ -14,7 +14,7 @@ class RecommendRequest(BaseModel):
     text: str
     age: str
     note: Literal["top", "middle", "base"] = "middle"
-    money: str
+    price: str
 
 
 class RecommendResponse(BaseModel):
@@ -24,3 +24,4 @@ class RecommendResponse(BaseModel):
     score:        float
     accords:      list[str] | None
     description:  str | None
+    reason:       str | None
