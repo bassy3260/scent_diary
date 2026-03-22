@@ -1,0 +1,98 @@
+import type { StateCreator } from 'zustand';
+import type {
+  DiaryListItem, DiaryDetailData,
+  TryDiaryListItem, TryDiaryDetailData,
+  DiaryCreateBody, TryDiaryCreateBody, PageParams,
+} from '../types/diary.types';
+import { diaryApi } from '../api/diary.api';
+
+export interface DiaryState {
+  diaryEntries: DiaryListItem[];
+  tryDiaryEntries: TryDiaryListItem[];
+  diaryDetail: DiaryDetailData | null;
+  tryDiaryDetail: TryDiaryDetailData | null;
+  selectedDiaryId: number | null;
+  selectedTryDiaryId: number | null;
+  isDiaryLoading: boolean;
+  diaryError: string | null;
+
+  fetchDiaries: (params: PageParams) => Promise<void>;
+  fetchDiaryDetail: (id: number) => Promise<void>;
+  createDiary: (body: DiaryCreateBody, images?: File[]) => Promise<void>;
+  fetchTryDiaries: (params: PageParams) => Promise<void>;
+  fetchTryDiaryDetail: (id: number) => Promise<void>;
+  createTryDiary: (body: TryDiaryCreateBody) => Promise<void>;
+  setSelectedDiaryId: (id: number | null) => void;
+  setSelectedTryDiaryId: (id: number | null) => void;
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export const createDiarySlice: StateCreator<any, [], [], DiaryState> = (set) => ({
+  diaryEntries: [],
+  tryDiaryEntries: [],
+  diaryDetail: null,
+  tryDiaryDetail: null,
+  selectedDiaryId: null,
+  selectedTryDiaryId: null,
+  isDiaryLoading: false,
+  diaryError: null,
+
+  setSelectedDiaryId: (id) => set({ selectedDiaryId: id }),
+  setSelectedTryDiaryId: (id) => set({ selectedTryDiaryId: id }),
+
+  fetchDiaries: async (params) => {
+    set({ isDiaryLoading: true, diaryError: null });
+    try {
+      const res = await diaryApi.getEntries(params);
+      set({ diaryEntries: res.data.content, isDiaryLoading: false });
+    } catch {
+      set({ diaryError: '일기 목록을 불러오지 못했습니다.', isDiaryLoading: false });
+    }
+  },
+
+  fetchDiaryDetail: async (id) => {
+    set({ isDiaryLoading: true, diaryDetail: null });
+    try {
+      const res = await diaryApi.getEntry(id);
+      set({ diaryDetail: res.data, isDiaryLoading: false });
+    } catch {
+      set({ diaryError: '일기를 불러오지 못했습니다.', isDiaryLoading: false });
+    }
+  },
+
+  createDiary: async (body, images) => {
+    await diaryApi.createEntry(body, images);
+    try {
+      const res = await diaryApi.getEntries({ page: 1, size: 50 });
+      set({ diaryEntries: res.data.content });
+    } catch { /* 목록 갱신 실패는 무시 */ }
+  },
+
+  fetchTryDiaries: async (params) => {
+    set({ isDiaryLoading: true, diaryError: null });
+    try {
+      const res = await diaryApi.getTryEntries(params);
+      set({ tryDiaryEntries: res.data.content, isDiaryLoading: false });
+    } catch {
+      set({ diaryError: '시향 일기 목록을 불러오지 못했습니다.', isDiaryLoading: false });
+    }
+  },
+
+  fetchTryDiaryDetail: async (id) => {
+    set({ isDiaryLoading: true, tryDiaryDetail: null });
+    try {
+      const res = await diaryApi.getTryEntry(id);
+      set({ tryDiaryDetail: res.data, isDiaryLoading: false });
+    } catch {
+      set({ diaryError: '시향 일기를 불러오지 못했습니다.', isDiaryLoading: false });
+    }
+  },
+
+  createTryDiary: async (body) => {
+    await diaryApi.createTryEntry(body);
+    try {
+      const res = await diaryApi.getTryEntries({ page: 1, size: 50 });
+      set({ tryDiaryEntries: res.data.content });
+    } catch { /* 목록 갱신 실패는 무시 */ }
+  },
+});

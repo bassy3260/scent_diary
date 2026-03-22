@@ -1,0 +1,21 @@
+spring:
+  application:
+    name: fragrance
+  datasource:
+    url: jdbc:mysql://54.180.237.147:8306/fragrance_local?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Seoul
+    username: root
+    password: aZq8BbSMpf9uMJKe
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration
+      - org.springframework.boot.autoconfigure.data.redis.RedisRepositoriesAutoConfiguration
+
+jwt:
+  secret: test-secret-key-for-integration-testing-32chars!!
+
+mybatis:
+  mapper-locations: classpath:mapper/**/*.xml
+  type-aliases-package: com.example.fragrance
+  configuration:
+    map-underscore-to-camel-case: true

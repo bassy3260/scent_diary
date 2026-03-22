@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.fragrance.likes.mapper.LikesMapper">
+
+    <resultMap id="likedPerfumeResultMap" type="com.example.fragrance.likes.dto.LikedPerfume">
+        <result property="likesId"  column="likes_id"/>
+        <result property="perfumeId" column="perfume_id"/>
+        <result property="image"    column="image_route"/>
+        <result property="brand"    column="brand"/>
+        <result property="name"     column="perfume_name"/>
+        <result property="price"    column="price"/>
+        <collection property="accords" ofType="string">
+            <result column="accord_name"/>
+        </collection>
+    </resultMap>
+
+    <select id="findLikedPerfumes" resultMap="likedPerfumeResultMap">
+        SELECT l.likes_id,
+        p.perfume_id,
+        p.image_route,
+        p.brand,
+        p.perfume_name,
+        p.price,
+        a.accord_name
+        FROM (
+        SELECT l2.likes_id, l2.perfume_id, l2.create_time
+        FROM likes l2
+        JOIN perfume p2 ON l2.perfume_id = p2.perfume_id
+        WHERE l2.member_id = #{memberId}
+        AND l2.is_delete = FALSE
+        AND p2.is_delete = FALSE
+        ORDER BY l2.create_time DESC
+        LIMIT #{size} OFFSET #{offset}
+        ) l
+        JOIN perfume p ON l.perfume_id = p.perfume_id
+        LEFT JOIN perfume_accord pa ON p.perfume_id = pa.perfume_id
+        AND pa.is_delete = FALSE
+        LEFT JOIN accord a ON pa.accord_id = a.accord_id
+        AND a.is_delete = FALSE
+        ORDER BY l.create_time DESC, pa.accord_order
+    </select>
+
+    <select id="countLikedPerfumes" resultType="long">
+        SELECT COUNT(DISTINCT l.likes_id)
+        FROM likes l
+        JOIN perfume p ON l.perfume_id = p.perfume_id
+        WHERE l.member_id = #{memberId}
+        AND l.is_delete = FALSE
+        AND p.is_delete = FALSE
+    </select>
+
+    <delete id="hardDeleteLikes">
+        DELETE FROM likes
+        WHERE likes_id  = #{likesId}
+        AND member_id = #{memberId}
+    </delete>
+
+    <select id="existsLike" resultType="boolean">
+        SELECT EXISTS (
+            SELECT 1 FROM likes
+            WHERE member_id = #{userId} AND perfume_id = #{perfumeId}
+        )
+    </select>
+
+    <insert id="insertLike">
+        INSERT INTO likes (member_id, perfume_id,<include refid="common.insertCommonColumns"/>)
+        VALUES (#{userId}, #{perfumeId},
+        <include refid="common.insertCommonValues"/>)
+    </insert>
+
+    <delete id="deleteLike">
+        DELETE FROM likes
+        WHERE member_id = #{userId} AND perfume_id = #{perfumeId}
+    </delete>
+
+</mapper>
