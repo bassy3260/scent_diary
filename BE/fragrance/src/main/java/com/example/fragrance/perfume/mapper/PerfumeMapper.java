@@ -16,4 +16,6 @@ public interface PerfumeMapper {
     List<PerfumeSearchDto> searchPerfumes(@Param("search") String search, @Param("size") int size, @Param("offset") int offset);
 
     long countSearchPerfumes(@Param("search") String search);
+
+    List<PerfumeSearchDto> findAllForElasticsearch();
 }

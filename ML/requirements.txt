@@ -1,0 +1,8 @@
+fastAPI
+uvicorn
+scikit-learn
+psycopg2-binary
+numpy
+requests
+sqlalchemy
+python-dotenv

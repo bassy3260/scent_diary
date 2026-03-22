@@ -1,0 +1,6 @@
+# .dockerignore 파일 내용
+bysuco_perfumes.csv
+__pycache__/
+*.pyc
+.env
+.git
