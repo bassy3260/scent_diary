@@ -29,8 +29,7 @@ def recommend(req: RecommendRequest, request: Request) -> List[RecommendResponse
     perfume_rows = request.app.state.perfume_rows
 
     weights = _build_weights(req.note)
-    max_price = int(req.price) if req.price else None
-    top_k = recommend_perfumes(req.text, embedder, weights, rows=perfume_rows, max_price=max_price, top_k=3)
+    top_k = recommend_perfumes(req.text, embedder, weights, rows=perfume_rows, max_price=req.price, top_k=3)
 
     logger.debug("추천 결과 %d건 반환", len(top_k))
 

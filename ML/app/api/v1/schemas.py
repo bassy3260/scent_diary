@@ -12,9 +12,9 @@ NOTE_RATIO: dict[str, dict[str, float]] = {
 
 class RecommendRequest(BaseModel):
     text: str
-    age: str
+    age: int
     note: Literal["top", "middle", "base"] = "middle"
-    price: str
+    price: int
 
 
 class RecommendResponse(BaseModel):

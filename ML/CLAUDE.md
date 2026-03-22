@@ -370,9 +370,9 @@ archive/recommender_tfidf.py (초기)  →  app/services/recommender.py (현재)
 POST /api/v1/recommend/text
 {
   "text": "신선하고 시트러스한 여름 느낌",
-  "age": "20대",
+  "age": 25,
   "note": "top",
-  "price": "100000"
+  "price": 100000
 }
 ```
 
