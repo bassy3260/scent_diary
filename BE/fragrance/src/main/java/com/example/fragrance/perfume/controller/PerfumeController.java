@@ -4,6 +4,7 @@ import com.example.fragrance.perfume.dto.CollectRequest;
 import com.example.fragrance.perfume.dto.PerfumeDetailResponse;
 import com.example.fragrance.perfume.dto.PerfumeSearchListResponse;
 import com.example.fragrance.perfume.service.MemberPerfumeService;
+import com.example.fragrance.perfume.service.PerfumeSearchService;
 import com.example.fragrance.perfume.service.PerfumeService;
 import com.example.fragrance.util.common.ApiResponse;
 import lombok.RequiredArgsConstructor;
@@ -20,6 +21,7 @@ public class PerfumeController {
 
 	private final MemberPerfumeService memberPerfumeService;
 	private final PerfumeService perfumeService;
+    private final PerfumeSearchService perfumeSearchService;
 
 	@GetMapping
 	public ResponseEntity<ApiResponse<PerfumeSearchListResponse>> searchPerfumes(
@@ -27,7 +29,9 @@ public class PerfumeController {
 			@RequestParam(defaultValue = "0") int page,
 			@RequestParam(defaultValue = "10") int size) {
 
-		PerfumeSearchListResponse response = perfumeService.searchPerfumes(search, page, size);
+//		PerfumeSearchListResponse response = perfumeService.searchPerfumes(search, page, size);
+        PerfumeSearchListResponse response = perfumeSearchService.searchPerfumes(search, page, size);
+
 		return ResponseEntity.ok(ApiResponse.ok("SUCCESS", response));
 	}
 
@@ -52,4 +56,10 @@ public class PerfumeController {
 
 		return ResponseEntity.ok(ApiResponse.ok("SUCCESS", response));
 	}
+
+    // 향수 데이터 ES에 옮기는 메소드
+    @GetMapping("/migrate")
+    public ResponseEntity<String> migrate() {
+        return ResponseEntity.ok(perfumeSearchService.migrateAllToElasticsearch());
+    }
 }
