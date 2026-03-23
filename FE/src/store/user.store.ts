@@ -66,9 +66,9 @@ export const createUserSlice: StateCreator<any, [], [], UserState> = (set, get) 
   resetProfile: () => set({ profile: createEmptyProfile() }),
 
   fetchMe: async () => {
-    const response = await userApi.getMe();
-    get().setProfileFromUser(response.data);
-    return response.data;
+    const user = await userApi.getMe();
+    get().setProfileFromUser(user);
+    return user;
   },
 
   updateMe: async (body: UpdateUserRequest) => {

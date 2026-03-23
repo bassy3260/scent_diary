@@ -7,7 +7,6 @@ import { authApi } from "./api";
 import { MobileFrame } from "./components/layout/MobileFrame";
 import { BottomNav, type TabId } from "./components/layout/BottomNav";
 import { useAppStore } from "./store";
-import { mockPerfumes } from "./constants/perfumes";
 import {
   tabVariants,
   pushVariants,
@@ -200,11 +199,7 @@ export default function App() {
     [setScreen],
   );
 
-  const selectedPerfume =
-    selectedPerfumeId === null
-      ? null
-      : mockPerfumes.find((perfume) => Number(perfume.id) === selectedPerfumeId) ??
-        null;
+  const selectedPerfume = null;
   const showBottomNav = BOTTOM_NAV_SCREENS.includes(screen);
   const variants = useMemo(() => getVariants(transitionType), [transitionType]);
 

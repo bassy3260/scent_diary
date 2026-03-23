@@ -1,5 +1,3 @@
-import { mockPerfumes } from '../constants/perfumes';
-import type { Perfume } from '../types/perfume.types';
 
 const ACCORD_COLOR_MAP: Record<string, string> = {
   Woody: '#6B7B5E',
@@ -95,31 +93,6 @@ export function getRecommendationSummaryText(input: {
   return '추천 기록';
 }
 
-export function findMockPerfumeMatch(reference: {
-  perfumeId?: number;
-  brand?: string;
-  name?: string;
-}): Perfume | null {
-  if (reference.perfumeId !== undefined) {
-    const matchedById = mockPerfumes.find((perfume) => perfume.id === String(reference.perfumeId));
-
-    if (matchedById) {
-      return matchedById;
-    }
-  }
-
-  const brand = normalizeText(reference.brand);
-  const name = normalizeText(reference.name);
-
-  if (!brand && !name) {
-    return null;
-  }
-
-  return (
-    mockPerfumes.find(
-      (perfume) =>
-        normalizeText(perfume.brand) === brand &&
-        normalizeText(perfume.name) === name,
-    ) ?? null
-  );
+export function hasPerfumeId(reference: { perfumeId?: number }): boolean {
+  return reference.perfumeId !== undefined && reference.perfumeId !== null;
 }
