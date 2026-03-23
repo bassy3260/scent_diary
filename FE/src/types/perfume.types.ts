@@ -33,6 +33,7 @@ export interface PerfumeReview {
 /** 향수 검색 목록 아이템 */
 export interface PerfumeListItem {
   perfumeId: number;
+  id: number;
   image: string;
   brand: string;
   name: string;

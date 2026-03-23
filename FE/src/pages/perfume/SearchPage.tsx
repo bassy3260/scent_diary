@@ -70,12 +70,12 @@ export function SearchScreen() {
                 <div className="space-y-2 mt-4">
                   {searchResults.map((p, i) => (
                     <motion.div
-                      key={p.perfumeId}
+                      key={p.id}
                       className="flex items-center gap-3 p-3 rounded-xl"
                       style={{ backgroundColor: 'rgba(0,0,0,0.02)' }}
                       initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: i * 0.05 }}
-                      onClick={() => handleViewDetail(p.perfumeId)}
+                      onClick={() => handleViewDetail(p.id)}
                     >
                       <div className="w-12 h-12 rounded-lg overflow-hidden shrink-0">
                         <ImageWithFallback src={p.image} alt={p.name} className="w-full h-full object-cover" />
