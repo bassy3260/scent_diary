@@ -1,6 +1,5 @@
 from pydantic import BaseModel
 from typing import Literal
-from pydantic import BaseModel
 
 
 # 선호 노트 → 노트 내부 비율 매핑 (합 = 1.0)
