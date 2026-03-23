@@ -44,7 +44,7 @@ export const createDiarySlice: StateCreator<any, [], [], DiaryState> = (set) => 
     set({ isDiaryLoading: true, diaryError: null });
     try {
       const res = await diaryApi.getEntries(params);
-      set({ diaryEntries: res.data.content, isDiaryLoading: false });
+      set({ diaryEntries: res.content, isDiaryLoading: false });
     } catch {
       set({ diaryError: '일기 목록을 불러오지 못했습니다.', isDiaryLoading: false });
     }
@@ -54,7 +54,7 @@ export const createDiarySlice: StateCreator<any, [], [], DiaryState> = (set) => 
     set({ isDiaryLoading: true, diaryDetail: null });
     try {
       const res = await diaryApi.getEntry(id);
-      set({ diaryDetail: res.data, isDiaryLoading: false });
+      set({ diaryDetail: res, isDiaryLoading: false });
     } catch {
       set({ diaryError: '일기를 불러오지 못했습니다.', isDiaryLoading: false });
     }
@@ -64,7 +64,7 @@ export const createDiarySlice: StateCreator<any, [], [], DiaryState> = (set) => 
     await diaryApi.createEntry(body, images);
     try {
       const res = await diaryApi.getEntries({ page: 1, size: 50 });
-      set({ diaryEntries: res.data.content });
+      set({ diaryEntries: res.content });
     } catch { /* 목록 갱신 실패는 무시 */ }
   },
 
@@ -72,7 +72,7 @@ export const createDiarySlice: StateCreator<any, [], [], DiaryState> = (set) => 
     set({ isDiaryLoading: true, diaryError: null });
     try {
       const res = await diaryApi.getTryEntries(params);
-      set({ tryDiaryEntries: res.data.content, isDiaryLoading: false });
+      set({ tryDiaryEntries: res.content, isDiaryLoading: false });
     } catch {
       set({ diaryError: '시향 일기 목록을 불러오지 못했습니다.', isDiaryLoading: false });
     }
@@ -82,7 +82,7 @@ export const createDiarySlice: StateCreator<any, [], [], DiaryState> = (set) => 
     set({ isDiaryLoading: true, tryDiaryDetail: null });
     try {
       const res = await diaryApi.getTryEntry(id);
-      set({ tryDiaryDetail: res.data, isDiaryLoading: false });
+      set({ tryDiaryDetail: res, isDiaryLoading: false });
     } catch {
       set({ diaryError: '시향 일기를 불러오지 못했습니다.', isDiaryLoading: false });
     }
@@ -92,7 +92,7 @@ export const createDiarySlice: StateCreator<any, [], [], DiaryState> = (set) => 
     await diaryApi.createTryEntry(body);
     try {
       const res = await diaryApi.getTryEntries({ page: 1, size: 50 });
-      set({ tryDiaryEntries: res.data.content });
+      set({ tryDiaryEntries: res.content });
     } catch { /* 목록 갱신 실패는 무시 */ }
   },
 });

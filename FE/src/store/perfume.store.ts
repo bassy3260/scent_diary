@@ -37,7 +37,7 @@ export const createPerfumeSlice: StateCreator<any, [], [], PerfumeState> = (set,
     set({ isLoading: true, error: null });
     try {
       const res = await perfumeApi.search(query);
-      set({ searchResults: res.data.perfumes, isLoading: false });
+      set({ searchResults: res.perfumes, isLoading: false });
     } catch {
       set({ error: '검색에 실패했습니다.', isLoading: false });
     }
@@ -47,7 +47,7 @@ export const createPerfumeSlice: StateCreator<any, [], [], PerfumeState> = (set,
     set({ isLoading: true, error: null, perfumeDetail: null });
     try {
       const res = await perfumeApi.getById(id);
-      set({ perfumeDetail: res.data, isLoading: false });
+      set({ perfumeDetail: res, isLoading: false });
     } catch {
       set({ error: '향수 정보를 불러오지 못했습니다.', isLoading: false });
     }
@@ -81,6 +81,7 @@ export const createPerfumeSlice: StateCreator<any, [], [], PerfumeState> = (set,
 
   submitReview: async (perfumeId, rating, content) => {
     await perfumeApi.writeReview({ perfumeId, rating, content });
+    await get().fetchPerfumeDetail(perfumeId);
   },
 
   toggleSavedPerfume: async (id) => {

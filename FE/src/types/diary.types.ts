@@ -1,5 +1,3 @@
-import type { BaseResponse, DataResponse } from "./api.types";
-
 export interface DiaryPageInfo {
   totalElements: number;
   totalPages: number;
@@ -13,7 +11,7 @@ export interface DiaryCreateBody {
   title: string;
   content: string;
   perfumeId: number;
-  images?: string[];
+  imageNames?: string[];
 }
 
 /** 시향 일기 작성 Request */
@@ -72,9 +70,9 @@ export interface CreateDiaryData {
   diaryId: number;
 }
 
-export type GetDiaryListResponse = DataResponse<DiaryListData>;
-export type GetDiaryDetailResponse = DataResponse<DiaryDetailData>;
-export type CreateDiaryResponse = DataResponse<CreateDiaryData>;
+export type GetDiaryListResponse = DiaryListData;
+export type GetDiaryDetailResponse = DiaryDetailData;
+export type CreateDiaryResponse = CreateDiaryData;
 
 // ── 시향 일기 응답 타입 ───────────────────────────────────
 
@@ -107,9 +105,9 @@ export interface TryDiaryDetailData {
   tryItem: TryItem[];
 }
 
-export type GetTryDiaryListResponse = DataResponse<TryDiaryListData>;
-export type GetTryDiaryDetailResponse = DataResponse<TryDiaryDetailData>;
-export type CreateTryDiaryResponse = BaseResponse;
+export type GetTryDiaryListResponse = TryDiaryListData;
+export type GetTryDiaryDetailResponse = TryDiaryDetailData;
+export type CreateTryDiaryResponse = void;
 
 // ── 캔버스 UI 타입 (DiaryCanvas 전용) ─────────────────────
 
