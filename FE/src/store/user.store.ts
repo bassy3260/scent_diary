@@ -5,6 +5,7 @@ import { buildProfileUpdatesFromUser } from '../utils/userProfile';
 
 function createEmptyProfile(): UserProfile {
   return {
+    memberId: null,
     nickname: '',
     birthYear: null,
     age: '',
