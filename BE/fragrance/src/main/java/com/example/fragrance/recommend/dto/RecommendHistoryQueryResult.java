@@ -13,7 +13,6 @@ public class RecommendHistoryQueryResult {
 	public static class ListRow {
 		private Long recommendResultId;
 		private LocalDateTime createTime;
-		private String age;
 		private String keyword;
 		private String inputImage;
 		private Long perfumeId;
@@ -28,7 +27,6 @@ public class RecommendHistoryQueryResult {
 	public static class DetailHeaderRow {
 		private Long recommendResultId;
 		private LocalDateTime createTime;
-		private String age;
 		private String keyword;
 		private String inputImage;
 	}

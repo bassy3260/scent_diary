@@ -14,19 +14,19 @@
 
     <select id="findAll" resultMap="tryDiaryListResultMap">
         SELECT td.try_diary_id, td.title, td.create_time,
-               p.image_route, p.perfume_name, p.brand
+        p.image_route, p.perfume_name, p.brand
         FROM try_diary td
         LEFT JOIN try_diary_perfume tdp ON td.try_diary_id = tdp.try_diary_id
-            AND <include refid="common.notDeletedWithAlias"><property name="alias" value="tdp"/></include>
-            AND tdp.try_diary_perfume_id = (
-                SELECT MIN(tdp2.try_diary_perfume_id)
-                FROM try_diary_perfume tdp2
-                WHERE tdp2.try_diary_id = td.try_diary_id
-                  AND <include refid="common.notDeletedWithAlias"><property name="alias" value="tdp2"/></include>
-            )
+        AND <include refid="common.notDeletedWithAlias"><property name="alias" value="tdp"/></include>
+        AND tdp.try_diary_perfume_id = (
+        SELECT MIN(tdp2.try_diary_perfume_id)
+        FROM try_diary_perfume tdp2
+        WHERE tdp2.try_diary_id = td.try_diary_id
+        AND <include refid="common.notDeletedWithAlias"><property name="alias" value="tdp2"/></include>
+        )
         LEFT JOIN perfume p ON tdp.perfume_id = p.perfume_id
         WHERE td.member_id = #{memberId}
-          AND <include refid="common.notDeletedWithAlias"><property name="alias" value="td"/></include>
+        AND <include refid="common.notDeletedWithAlias"><property name="alias" value="td"/></include>
         ORDER BY td.create_time DESC
         LIMIT #{size} OFFSET #{offset}
     </select>
@@ -35,7 +35,7 @@
         SELECT COUNT(*)
         FROM try_diary
         WHERE member_id = #{memberId}
-          AND <include refid="common.notDeleted"/>
+        AND <include refid="common.notDeleted"/>
     </select>
 
     <resultMap id="tryDiaryDetailResultMap" type="com.example.fragrance.tryDiray.dto.TryDiaryDetailResponse">
@@ -47,29 +47,33 @@
             <result property="perfumeImageUrl" column="image_route"/>
             <result property="perfumeName" column="perfume_name"/>
             <result property="brand" column="brand"/>
-            <result property="price" column="price"/>
             <result property="description" column="description"/>
-
+            <result property="place" column="place"/>
+            <result property="lasting" column="lasting"/>
+            <result property="sillage" column="sillage"/>
+            <result property="season" column="season"/>
         </collection>
     </resultMap>
 
     <select id="findById" resultMap="tryDiaryDetailResultMap">
         SELECT td.try_diary_id, td.title, td.create_time,
-               p.perfume_id, p.image_route, p.perfume_name, p.brand,
-               tdp.description
+        p.perfume_id, p.image_route, p.perfume_name, p.brand,
+        tdp.description, tdp.place, tdp.lasting,
+        tdp.sillage,
+        tdp.season
         FROM try_diary td
         LEFT JOIN try_diary_perfume tdp ON td.try_diary_id = tdp.try_diary_id
-            AND <include refid="common.notDeletedWithAlias"><property name="alias" value="tdp"/></include>
+        AND <include refid="common.notDeletedWithAlias"><property name="alias" value="tdp"/></include>
         LEFT JOIN perfume p ON tdp.perfume_id = p.perfume_id
         WHERE td.try_diary_id = #{tryDiaryId}
-          AND <include refid="common.notDeletedWithAlias"><property name="alias" value="td"/></include>
+        AND <include refid="common.notDeletedWithAlias"><property name="alias" value="td"/></include>
     </select>
 
     <insert id="insert" useGeneratedKeys="true" keyProperty="tryDiaryId">
-        INSERT INTO try_diary (member_id, title, image_route,
-            <include refid="common.insertCommonColumns"/>)
-        VALUES (#{memberId}, #{title}, #{imageRoute},
-            <include refid="common.insertCommonValues"/>)
+        INSERT INTO try_diary (member_id, title,
+        <include refid="common.insertCommonColumns"/>)
+        VALUES (#{memberId}, #{title},
+        <include refid="common.insertCommonValues"/>)
     </insert>
 
 </mapper>

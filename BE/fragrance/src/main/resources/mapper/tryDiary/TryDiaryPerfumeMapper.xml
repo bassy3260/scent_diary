@@ -4,12 +4,15 @@
 <mapper namespace="com.example.fragrance.tryDiray.mapper.TryDiaryPerfumeMapper">
 
     <insert id="insertBatch">
-        INSERT INTO try_diary_perfume (try_diary_id, perfume_id, description,
-            <include refid="common.insertCommonColumns"/>)
+        INSERT INTO try_diary_perfume (try_diary_id, perfume_id, description, place, lasting, sillage, season,
+        <include refid="common.insertCommonColumns"/>)
         VALUES
         <foreach collection="list" item="item" separator=",">
             (#{item.tryDiaryId}, #{item.perfumeId}, #{item.description},
-                <include refid="common.insertCommonValues"/>)
+            #{item.place}, #{item.lasting},
+            #{item.sillage}::sillage_type,
+            #{item.season}::season_type,
+            <include refid="common.insertCommonValues"/>)
         </foreach>
     </insert>
 
