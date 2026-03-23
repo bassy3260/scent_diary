@@ -1,5 +1,3 @@
-import type { BaseResponse, DataResponse } from './api.types';
-
 export interface PageInfo {
   page: number;
   size: number;
@@ -23,8 +21,8 @@ export interface LikesData extends PageInfo {
   perfumes: LikeItem[];
 }
 
-export type GetLikesResponse = DataResponse<LikesData>;
-export type DeleteLikeResponse = BaseResponse;
+export type GetLikesResponse = LikesData;
+export type DeleteLikeResponse = void;
 
 export interface MyPerfumeItem extends PerfumeItem {
   memberPerfumeId: number;
@@ -34,8 +32,8 @@ export interface MyPerfumeData extends PageInfo {
   perfumes: MyPerfumeItem[];
 }
 
-export type GetMyPerfumeResponse = DataResponse<MyPerfumeData>;
-export type DeleteMyPerfumeResponse = BaseResponse;
+export type GetMyPerfumeResponse = MyPerfumeData;
+export type DeleteMyPerfumeResponse = void;
 
 export interface ReviewPerfume {
   perfumeId: number;
@@ -56,7 +54,7 @@ export interface ReviewData extends PageInfo {
   reviews: ReviewItem[];
 }
 
-export type GetMyReviewResponse = DataResponse<ReviewData>;
+export type GetMyReviewResponse = ReviewData;
 
 export interface RecommendInput {
   age?: number;
@@ -84,7 +82,7 @@ export interface RecommendData extends PageInfo {
   recommendations: RecommendItem[];
 }
 
-export type GetMyRecommendResponse = DataResponse<RecommendData>;
+export type GetMyRecommendResponse = RecommendData;
 
 export interface RecommendDetailNotes {
   top: string[];
@@ -115,4 +113,4 @@ export interface RecommendDetailData {
   results: RecommendDetailResult[];
 }
 
-export type GetRecommendDetailResponse = DataResponse<RecommendDetailData>;
+export type GetRecommendDetailResponse = RecommendDetailData;
