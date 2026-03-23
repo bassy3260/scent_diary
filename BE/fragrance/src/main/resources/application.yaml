@@ -13,6 +13,8 @@ spring:
       host: ${REDIS_HOST}
       port: ${REDIS_PORT}
       password: ${REDIS_PASSWORD}
+  elasticsearch:
+    uris: http://${ES_HOST}:${ES_PORT}
 
 jwt:
   secret: ${JWT_SECRET:default-dev-secret-key-must-be-at-least-256-bits-long-for-hs256}
