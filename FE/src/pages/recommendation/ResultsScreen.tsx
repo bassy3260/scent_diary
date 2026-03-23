@@ -350,7 +350,7 @@ export function ResultsScreen() {
   const handleRestart = () => {
     clearSelectedRecommendationDetail();
     setSelectedHistoryId(null);
-    navigateTo('text-choice');
+    navigateTo('recommend-prestep');
   };
 
   const heroHistoricalResult = historyDetail?.results[0] ?? null;

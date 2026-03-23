@@ -113,7 +113,7 @@ export function HistoryScreen() {
             <motion.button
               className="mt-4 px-5 py-3 rounded-2xl text-white"
               style={{ background: 'linear-gradient(135deg, #6B7B5E, #8FA380)', fontSize: '0.875rem' }}
-              onClick={() => navigateTo('text-choice')}
+              onClick={() => navigateTo('recommend-prestep')}
               whileTap={{ scale: 0.95 }}
             >
               첫 추천 받으러 가기
