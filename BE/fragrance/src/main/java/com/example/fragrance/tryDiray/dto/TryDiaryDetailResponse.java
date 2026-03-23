@@ -12,20 +12,23 @@ import java.util.List;
 @NoArgsConstructor
 public class TryDiaryDetailResponse {
 
-    private Long tryDiaryId;
-    private String title;
-    private LocalDateTime createTime;
-    private List<TryItemInfo> tryItem;
+	private Long tryDiaryId;
+	private String title;
+	private LocalDateTime createTime;
+	private List<TryItemInfo> tryItem;
 
-    @Getter
-    @Setter
-    @NoArgsConstructor
-    public static class TryItemInfo {
-        private Long perfumeId;
-        private String perfumeImageUrl;
-        private String perfumeName;
-        private String brand;
-        private int price;
-        private String description;
-    }
+	@Getter
+	@Setter
+	@NoArgsConstructor
+	public static class TryItemInfo {
+		private Long perfumeId;
+		private String perfumeImageUrl;
+		private String perfumeName;
+		private String brand;
+		private String description;
+		private String place;
+		private Integer lasting;
+		private String sillage;
+		private String season;
+	}
 }

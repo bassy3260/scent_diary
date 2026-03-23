@@ -13,8 +13,12 @@ import lombok.experimental.SuperBuilder;
 @SuperBuilder
 public class TryDiaryPerfume extends common {
 
-    private Long tryDiaryPerfumeId;
-    private Long perfumeId;
-    private Long tryDiaryId;
-    private String description;
+	private Long tryDiaryPerfumeId;
+	private Long perfumeId;
+	private Long tryDiaryId;
+	private String description;
+	private String place;
+	private Integer lasting;
+	private String sillage;
+	private String season;
 }

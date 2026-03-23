@@ -9,13 +9,17 @@ import java.util.List;
 @NoArgsConstructor
 public class TryDiaryCreateRequest {
 
-    private String title;
-    private List<TryItem> tryItems;
+	private String title;
+	private List<TryItem> tryItems;
 
-    @Getter
-    @NoArgsConstructor
-    public static class TryItem {
-        private Long perfumeId;
-        private String detail;
-    }
+	@Getter
+	@NoArgsConstructor
+	public static class TryItem {
+		private Long perfumeId;
+		private String description;
+		private String place;
+		private Integer lasting;
+		private String sillage;
+		private String season;
+	}
 }
