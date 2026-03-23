@@ -14,7 +14,6 @@ import lombok.experimental.SuperBuilder;
 public class TryDiary extends common {
 
     private Long tryDiaryId;
-    private String imageRoute;
     private Long memberId;
     private String title;
 }

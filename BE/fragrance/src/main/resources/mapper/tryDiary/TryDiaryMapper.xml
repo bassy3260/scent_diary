@@ -70,9 +70,9 @@
     </select>
 
     <insert id="insert" useGeneratedKeys="true" keyProperty="tryDiaryId">
-        INSERT INTO try_diary (member_id, title, image_route,
+        INSERT INTO try_diary (member_id, title,
         <include refid="common.insertCommonColumns"/>)
-        VALUES (#{memberId}, #{title}, #{imageRoute},
+        VALUES (#{memberId}, #{title},
         <include refid="common.insertCommonValues"/>)
     </insert>
 
