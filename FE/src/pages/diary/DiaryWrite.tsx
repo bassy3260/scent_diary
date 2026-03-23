@@ -3,11 +3,8 @@ import { motion, AnimatePresence } from 'motion/react';
 import { ChevronLeft, Check, Camera, X, Search, Sparkles, Wand2, Plus } from 'lucide-react';
 import { useAppStore } from '../../store';
 import { usePerfumeStore } from '../../store';
-import { DIARY_MOODS, DIARY_WEATHERS } from '../../constants/ui.constants';
 import { ImageWithFallback } from '../../components/common/ImageWithFallback';
 import { DiaryCanvas, type DiaryFormData } from './DiaryCanvas';
-
-const TAG_OPTIONS = ['데일리', '갤러리', '데이트', '오피스', '저녁', '독서', '산책', '여행', '기분전환', '특별한 날'];
 
 const AI_SAMPLES = [
   '향이 피부에 스며들듯, 오늘도 조용히 흘러갔다. 기억에 남을 향기와 함께한 하루.',
@@ -21,14 +18,8 @@ export function DiaryWrite() {
   const { searchResults, searchPerfumes } = usePerfumeStore();
 
   const [stage, setStage] = useState<'form' | 'canvas'>('form');
-  const [mood, setMood] = useState('');
-  const [moodEmoji, setMoodEmoji] = useState('');
-  const [weather, setWeather] = useState('');
-  const [weatherEmoji, setWeatherEmoji] = useState('');
   const [note, setNote] = useState('');
-  // 다중 향수 선택
   const [selectedPerfumeIds, setSelectedPerfumeIds] = useState<number[]>([]);
-  const [tags, setTags] = useState<string[]>([]);
   // 사진 최대 3개
   const [photoUrls, setPhotoUrls] = useState<string[]>([]);
   const [imageNames, setImageNames] = useState<string[]>([]);
@@ -39,11 +30,12 @@ export function DiaryWrite() {
   const [aiUsed, setAiUsed] = useState(false);
 
   useEffect(() => {
+    if (!showPerfumeSheet) return;
     const timer = setTimeout(() => {
-      searchPerfumes(perfumeSearch.trim() || '');
+      searchPerfumes(perfumeSearch.trim());
     }, 400);
     return () => clearTimeout(timer);
-  }, [perfumeSearch, searchPerfumes]);
+  }, [perfumeSearch, searchPerfumes, showPerfumeSheet]);
 
   const selectedPerfumes = searchResults.filter(p => selectedPerfumeIds.includes(p.perfumeId));
 
@@ -59,11 +51,8 @@ export function DiaryWrite() {
     if (perfumeSearch.trim()) return '검색 결과가 없어요';
     if (perfumeFilter === 'saved') return '찜한 향수가 없어요';
     if (perfumeFilter === 'collection') return '구매한 향수가 없어요';
-    return '향수 이름을 검색해보세요';
+    return '향수 목록을 불러오는 중이에요';
   })();
-
-  const toggleTag = (t: string) =>
-    setTags(prev => prev.includes(t) ? prev.filter(x => x !== t) : [...prev, t]);
 
   const togglePerfume = (id: number) => {
     setSelectedPerfumeIds(prev =>
@@ -107,10 +96,10 @@ export function DiaryWrite() {
   }, [aiLoading, note]);
 
   const formData: DiaryFormData = {
-    mood, moodEmoji, weather, weatherEmoji, note,
+    mood: '', moodEmoji: '', weather: '', weatherEmoji: '', note,
     selectedPerfumeId: selectedPerfumeIds[0] ?? null,
     perfume: selectedPerfumes[0] ?? null,
-    tags,
+    tags: [],
     photoUrl: photoUrls[0] ?? null,
     imageNames,
   };
@@ -151,54 +140,6 @@ export function DiaryWrite() {
 
       {/* ── 스크롤 폼 ──────────────────────────────────── */}
       <div className="flex-1 overflow-y-auto px-5 pb-4">
-
-        {/* 기분 */}
-        <section className="mb-5">
-          <p className="text-[#B8B4AE] mb-2.5" style={{ fontSize: '0.5625rem', letterSpacing: '0.12em' }}>오늘의 기분</p>
-          <div className="flex flex-wrap gap-2">
-            {DIARY_MOODS.map(m => (
-              <motion.button
-                key={m.label}
-                className="flex items-center gap-1.5 px-3 py-2 rounded-full border whitespace-nowrap transition-colors"
-                style={{
-                  fontSize: '0.8125rem',
-                  borderColor: mood === m.label ? '#6B7B5E' : 'rgba(0,0,0,0.07)',
-                  backgroundColor: mood === m.label ? '#6B7B5E14' : 'transparent',
-                  color: mood === m.label ? '#3D4A32' : '#8A8680',
-                }}
-                onClick={() => { setMood(m.label); setMoodEmoji(m.emoji); }}
-                whileTap={{ scale: 0.94 }}
-              >
-                <span style={{ fontSize: '1rem' }}>{m.emoji}</span>
-                <span>{m.label}</span>
-              </motion.button>
-            ))}
-          </div>
-        </section>
-
-        {/* 날씨 */}
-        <section className="mb-5">
-          <p className="text-[#B8B4AE] mb-2.5" style={{ fontSize: '0.5625rem', letterSpacing: '0.12em' }}>날씨</p>
-          <div className="flex flex-wrap gap-2">
-            {DIARY_WEATHERS.map(w => (
-              <motion.button
-                key={w.label}
-                className="flex items-center gap-1.5 px-3 py-2 rounded-full border whitespace-nowrap transition-colors"
-                style={{
-                  fontSize: '0.8125rem',
-                  borderColor: weather === w.label ? '#6B7B5E' : 'rgba(0,0,0,0.07)',
-                  backgroundColor: weather === w.label ? '#6B7B5E14' : 'transparent',
-                  color: weather === w.label ? '#3D4A32' : '#8A8680',
-                }}
-                onClick={() => { setWeather(w.label); setWeatherEmoji(w.emoji); }}
-                whileTap={{ scale: 0.94 }}
-              >
-                <span style={{ fontSize: '1rem' }}>{w.emoji}</span>
-                <span>{w.label}</span>
-              </motion.button>
-            ))}
-          </div>
-        </section>
 
         {/* 향수 선택 — 다중 선택 */}
         <section className="mb-5">
@@ -247,6 +188,45 @@ export function DiaryWrite() {
           </motion.button>
         </section>
 
+        {/* 사진 — 최대 3개 */}
+        <section className="mb-5">
+          <p className="text-[#B8B4AE] mb-2.5" style={{ fontSize: '0.5625rem', letterSpacing: '0.12em' }}>사진 (최대 3개)</p>
+
+          {photoUrls.length > 0 && (
+            <div className="flex gap-2 mb-2">
+              {photoUrls.map((url, idx) => (
+                <div key={idx} className="relative rounded-xl overflow-hidden" style={{ width: 80, height: 80, flexShrink: 0 }}>
+                  <img src={url} alt="" className="w-full h-full object-cover" />
+                  <motion.button
+                    className="absolute top-1 right-1 w-5 h-5 rounded-full flex items-center justify-center"
+                    style={{ backgroundColor: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(4px)' }}
+                    onClick={() => removePhoto(idx)}
+                    whileTap={{ scale: 0.9 }}
+                  >
+                    <X size={10} className="text-white" />
+                  </motion.button>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {photoUrls.length < 3 && (
+            <label>
+              <input type="file" accept="image/*" onChange={handlePhotoSelect} className="hidden" />
+              <motion.div
+                className="w-full h-20 rounded-2xl border-2 border-dashed flex flex-col items-center justify-center gap-1.5 cursor-pointer transition-colors hover:border-[#6B7B5E]"
+                style={{ borderColor: '#E8E6E1' }}
+                whileTap={{ scale: 0.98 }}
+              >
+                <Camera size={18} className="text-[#B8B4AE]" />
+                <p className="text-[#8A8680]" style={{ fontSize: '0.8125rem' }}>
+                  {photoUrls.length > 0 ? `사진 추가 (${photoUrls.length}/3)` : '사진 추가하기'}
+                </p>
+              </motion.div>
+            </label>
+          )}
+        </section>
+
         {/* 오늘의 기록 */}
         <section className="mb-5">
           <div className="flex items-center justify-between mb-2.5">
@@ -273,7 +253,6 @@ export function DiaryWrite() {
               value={note}
               onChange={e => setNote(e.target.value)}
             />
-            {/* AI 버튼 */}
             <motion.button
               className="absolute bottom-3 right-3 flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl"
               style={{
@@ -302,70 +281,6 @@ export function DiaryWrite() {
                 </>
               )}
             </motion.button>
-          </div>
-        </section>
-
-        {/* 사진 — 최대 3개 */}
-        <section className="mb-5">
-          <p className="text-[#B8B4AE] mb-2.5" style={{ fontSize: '0.5625rem', letterSpacing: '0.12em' }}>사진 (최대 3개)</p>
-
-          {/* 첨부된 사진들 */}
-          {photoUrls.length > 0 && (
-            <div className="flex gap-2 mb-2">
-              {photoUrls.map((url, idx) => (
-                <div key={idx} className="relative rounded-xl overflow-hidden" style={{ width: 80, height: 80, flexShrink: 0 }}>
-                  <img src={url} alt="" className="w-full h-full object-cover" />
-                  <motion.button
-                    className="absolute top-1 right-1 w-5 h-5 rounded-full flex items-center justify-center"
-                    style={{ backgroundColor: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(4px)' }}
-                    onClick={() => removePhoto(idx)}
-                    whileTap={{ scale: 0.9 }}
-                  >
-                    <X size={10} className="text-white" />
-                  </motion.button>
-                </div>
-              ))}
-            </div>
-          )}
-
-          {/* 사진 추가 버튼 — 3개 미만일 때만 표시 */}
-          {photoUrls.length < 3 && (
-            <label>
-              <input type="file" accept="image/*" onChange={handlePhotoSelect} className="hidden" />
-              <motion.div
-                className="w-full h-20 rounded-2xl border-2 border-dashed flex flex-col items-center justify-center gap-1.5 cursor-pointer transition-colors hover:border-[#6B7B5E]"
-                style={{ borderColor: '#E8E6E1' }}
-                whileTap={{ scale: 0.98 }}
-              >
-                <Camera size={18} className="text-[#B8B4AE]" />
-                <p className="text-[#8A8680]" style={{ fontSize: '0.8125rem' }}>
-                  {photoUrls.length > 0 ? `사진 추가 (${photoUrls.length}/3)` : '사진 추가하기'}
-                </p>
-              </motion.div>
-            </label>
-          )}
-        </section>
-
-        {/* 태그 */}
-        <section className="mb-5">
-          <p className="text-[#B8B4AE] mb-2.5" style={{ fontSize: '0.5625rem', letterSpacing: '0.12em' }}>태그</p>
-          <div className="flex flex-wrap gap-2">
-            {TAG_OPTIONS.map(t => (
-              <motion.button
-                key={t}
-                className="px-3 py-1.5 rounded-full border whitespace-nowrap transition-colors"
-                style={{
-                  fontSize: '0.8125rem',
-                  borderColor: tags.includes(t) ? '#6B7B5E' : 'rgba(0,0,0,0.07)',
-                  backgroundColor: tags.includes(t) ? '#6B7B5E14' : 'transparent',
-                  color: tags.includes(t) ? '#3D4A32' : '#8A8680',
-                }}
-                onClick={() => toggleTag(t)}
-                whileTap={{ scale: 0.94 }}
-              >
-                {t}
-              </motion.button>
-            ))}
           </div>
         </section>
       </div>
