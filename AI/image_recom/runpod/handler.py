@@ -118,8 +118,12 @@ def handler(job):
     Output:
         mood_scores: {무드명: 유사도점수, ...} (합 = 1.0)
     """
-    job_input = job["input"]
-    image_base64 = job_input["image_base64"]
+    job_input = job.get("input")
+    if not job_input:
+        return {"error": f"'input' 키가 없습니다. 받은 job: {list(job.keys())}"}
+    image_base64 = job_input.get("image_base64")
+    if not image_base64:
+        return {"error": f"'image_base64' 키가 없습니다. 받은 input 키: {list(job_input.keys())}"}
     temperature = job_input.get("temperature", 15.0)
 
     # base64 → PIL Image

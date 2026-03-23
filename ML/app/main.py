@@ -1,12 +1,16 @@
 import logging
 import os
 import time
+from concurrent.futures import ThreadPoolExecutor
 from contextlib import asynccontextmanager
+
+logging.basicConfig(level=logging.INFO, format="%(asctime)s %(name)s %(levelname)s %(message)s")
 
 import numpy as np
 import requests
 from fastapi import FastAPI, HTTPException
 
+from app.constants import ACCORD_LIST
 from app.db.database import engine
 from app.services.recommender import load_perfume_rows
 
@@ -67,6 +71,13 @@ class RunPodEmbedder:
     def encode(self, text: str) -> np.ndarray:
         job_id = self._submit_job(text)
         return self._poll_job(job_id)
+
+    def encode_many(self, texts: list[str]) -> np.ndarray:
+        """여러 텍스트를 병렬 제출 후 병렬 폴링. 반환 shape: (len(texts), 1024)"""
+        job_ids = [self._submit_job(t) for t in texts]
+        with ThreadPoolExecutor() as pool:
+            vectors = list(pool.map(self._poll_job, job_ids))
+        return np.array(vectors, dtype=np.float32)
 
 class RunPodMoodExtractor:
     """RunPod serverless 무드 추출 엔드포인트 호출 wrapper"""
@@ -131,6 +142,17 @@ async def lifespan(app: FastAPI):
     if RUNPOD_IMAGE_ENDPOINT_ID:
         app.state.mood_extractor = RunPodMoodExtractor(RUNPOD_IMAGE_ENDPOINT_ID, RUNPOD_API_KEY)
         logger.info("이미지 무드 추출기 초기화 완료")
+        ACCORD_EMB_PATH = "accord_embeddings.npy"
+        if os.path.exists(ACCORD_EMB_PATH):
+            accord_vecs = np.load(ACCORD_EMB_PATH)
+            logger.info("어코드 임베딩 파일 로드 완료 (%s)", ACCORD_EMB_PATH)
+        else:
+            t0 = time.time()
+            accord_vecs = app.state.embedder.encode_many([f"query: {a}" for a in ACCORD_LIST])
+            accord_vecs = accord_vecs / np.linalg.norm(accord_vecs, axis=1, keepdims=True)
+            np.save(ACCORD_EMB_PATH, accord_vecs)
+            logger.info("어코드 임베딩 계산 및 저장 완료: %.2fs → %s", time.time() - t0, ACCORD_EMB_PATH)
+        app.state.accord_embeddings = accord_vecs  # shape: (33, 1024)
     logger.info("앱 시작 완료: 임베더 및 향수 데이터 로드됨")
     yield
     # shutdown

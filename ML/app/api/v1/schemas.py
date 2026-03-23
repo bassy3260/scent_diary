@@ -30,6 +30,11 @@ class RecommendListResponse(BaseModel):
     recommendations: list[RecommendResponse]
 
 
+class ImageRecommendListResponse(BaseModel):
+    keyword: str
+    recommendations: list[RecommendResponse]
+
+
 class MoodScore(BaseModel):
     mood: str
     score: float
