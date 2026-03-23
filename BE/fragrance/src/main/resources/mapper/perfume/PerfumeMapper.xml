@@ -62,7 +62,7 @@
             END as nickname,
             r.detail content,
             r.rating,
-            TO_CHAR(r.create_time, 'YYYY-MM-DD') as createAt
+            TO_CHAR(r.create_time, 'YYYY-MM-DD') as createdAt
         FROM public.review r
                  JOIN public.member m ON r.member_id = m.member_Id
         WHERE r.perfume_id = #{perfumeId}
