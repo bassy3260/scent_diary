@@ -9,5 +9,5 @@ public class ReviewDetailResponse {
     private String nickname;
     private String content;
     private int rating;
-    private String createAt;
+    private String createdAt;
 }
