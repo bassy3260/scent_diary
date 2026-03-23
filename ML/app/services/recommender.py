@@ -97,7 +97,7 @@ def _build_corpus_vectors(rows: list, weights: dict[str, float]) -> np.ndarray:
 
 
 def recommend_perfumes(
-    user_text: str,
+    keyword: str,
     model,
     weights: dict[str, float],
     rows: list,
@@ -122,7 +122,7 @@ def recommend_perfumes(
         rows = _filter_by_price(rows, max_price)
 
     t1 = time.time()
-    user_vec = model.encode("query: " + user_text)
+    user_vec = model.encode("query: " + keyword)
     logger.debug("[타이밍] RunPod 임베딩: %.2fs", time.time() - t1)
 
     t2 = time.time()

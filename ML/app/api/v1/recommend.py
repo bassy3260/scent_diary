@@ -3,7 +3,7 @@ from typing import List
 
 from fastapi import APIRouter, Request
 
-from app.api.v1.schemas import NOTE_RATIO, RecommendRequest, RecommendResponse
+from app.api.v1.schemas import NOTE_RATIO, RecommendRequest, RecommendListResponse, RecommendResponse
 from app.services.llm_reasoner import generate_recommendation_reason
 from app.services.recommender import recommend_perfumes
 
@@ -24,24 +24,26 @@ def _build_weights(note: str) -> dict[str, float]:
 
 
 @router.post("/recommend/text")
-def recommend(req: RecommendRequest, request: Request) -> List[RecommendResponse]:
+def recommend(req: RecommendRequest, request: Request) -> RecommendListResponse:
     embedder = request.app.state.embedder
     perfume_rows = request.app.state.perfume_rows
 
     weights = _build_weights(req.note)
-    top_k = recommend_perfumes(req.text, embedder, weights, rows=perfume_rows, max_price=req.price, top_k=3)
+    top_k = recommend_perfumes(req.keyword, embedder, weights, rows=perfume_rows, max_price=req.price, top_k=3)
 
     logger.debug("추천 결과 %d건 반환", len(top_k))
 
-    return [
-        RecommendResponse(
-            perfume_id=p["perfume_id"],
-            perfume_name=p["perfume_name"],
-            price=p["price"],
-            score=p["score"],
-            accords=p["accords"],
-            description=p["description"],
-            reason=generate_recommendation_reason(req.text, p),
-        )
-        for p in top_k
-    ]
+    return RecommendListResponse(
+        recommendations=[
+            RecommendResponse(
+                perfume_id=p["perfume_id"],
+                perfume_name=p["perfume_name"],
+                price=p["price"],
+                score=p["score"],
+                accords=p["accords"],
+                description=p["description"],
+                reason=generate_recommendation_reason(req.keyword, p),
+            )
+            for p in top_k
+        ]
+    )
