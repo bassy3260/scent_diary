@@ -18,10 +18,6 @@ const ACCORD_COLOR_MAP: Record<string, string> = {
   Aquatic: '#7FA9C7',
 };
 
-function normalizeText(value: string | undefined) {
-  return (value ?? '').trim().toLowerCase().replace(/\s+/g, '');
-}
-
 export function getAccordColor(name: string) {
   return ACCORD_COLOR_MAP[name] ?? '#8A8680';
 }

@@ -4,11 +4,12 @@ import { ChevronRight, BookOpen, Clock, Heart, Settings, Package, Edit2, X } fro
 import { useAppStore } from '../../store';
 import { AGE_RANGES, PROFILE_GENDERS } from '../../constants/ui.constants';
 import { buildAccordStats } from '../../utils/mypage';
+import { ageRangeToBirthYear, toApiGender } from '../../utils/userProfile';
 
 export function MyPage() {
   const navigateTo = useAppStore((state) => state.navigateTo);
   const profile = useAppStore((state) => state.profile);
-  const updateProfile = useAppStore((state) => state.updateProfile);
+  const updateMe = useAppStore((state) => state.updateMe);
   const diaryEntries = useAppStore((state) => state.diaryEntries);
   const likedPerfumes = useAppStore((state) => state.likedPerfumes);
   const likesPageInfo = useAppStore((state) => state.likesPageInfo);
@@ -29,6 +30,8 @@ export function MyPage() {
   const [editNickname, setEditNickname] = useState(profile.nickname || '');
   const [editAgeRange, setEditAgeRange] = useState(profile.ageRange || '');
   const [editGender, setEditGender] = useState(profile.gender || '');
+  const [isSavingProfile, setIsSavingProfile] = useState(false);
+  const [profileSaveError, setProfileSaveError] = useState('');
 
   useEffect(() => {
     void Promise.all([
@@ -46,6 +49,42 @@ export function MyPage() {
   const myPerfumesCount = myPerfumesPageInfo?.totalElements ?? myPerfumes.length;
   const reviewsCount = myReviewsPageInfo?.totalElements ?? myReviews.length;
   const historyCount = recommendationHistoryPageInfo?.totalElements ?? recommendationHistory.length;
+
+  const handleSaveProfile = async () => {
+    const nickname = editNickname.trim();
+
+    if (!nickname || !editGender || !editAgeRange) {
+      return;
+    }
+
+    const birthYear =
+      editAgeRange === profile.ageRange && typeof profile.birthYear === 'number'
+        ? profile.birthYear
+        : ageRangeToBirthYear(editAgeRange);
+
+    if (typeof birthYear !== 'number') {
+      setProfileSaveError('연령대 정보를 다시 선택한 뒤 저장해 주세요.');
+      return;
+    }
+
+    setIsSavingProfile(true);
+    setProfileSaveError('');
+
+    try {
+      await updateMe({
+        nickname,
+        birthYear,
+        gender: toApiGender(editGender),
+      });
+      setShowEditModal(false);
+    } catch (saveError) {
+      setProfileSaveError(
+        saveError instanceof Error ? saveError.message : '프로필 저장에 실패했어요. 다시 시도해 주세요.',
+      );
+    } finally {
+      setIsSavingProfile(false);
+    }
+  };
 
   return (
     <div className="w-full h-full flex flex-col" style={{ background: '#FAFAF8' }}>
@@ -101,6 +140,7 @@ export function MyPage() {
               setEditNickname(profile.nickname || '');
               setEditAgeRange(profile.ageRange || '');
               setEditGender(profile.gender || '');
+              setProfileSaveError('');
               setShowEditModal(true);
             }}
             whileTap={{ scale: 0.9 }}
@@ -336,25 +376,25 @@ export function MyPage() {
               </div>
             </div>
 
+            {profileSaveError && (
+              <p className="text-[#C45050] mb-4" style={{ fontSize: '0.8125rem', lineHeight: 1.5 }}>
+                {profileSaveError}
+              </p>
+            )}
+
             <motion.button
               className="w-full py-4 rounded-2xl tracking-wide transition-all"
               style={{
-                background: editNickname.trim() && editGender && editAgeRange ? '#1A1A1A' : '#E8E6E1',
-                color: editNickname.trim() && editGender && editAgeRange ? '#FFFFFF' : '#B8B4AE',
+                background:
+                  editNickname.trim() && editGender && editAgeRange && !isSavingProfile ? '#1A1A1A' : '#E8E6E1',
+                color: editNickname.trim() && editGender && editAgeRange && !isSavingProfile ? '#FFFFFF' : '#B8B4AE',
                 fontSize: '0.9375rem',
               }}
               onClick={() => {
-                if (editNickname.trim() && editGender && editAgeRange) {
-                  updateProfile({
-                    nickname: editNickname.trim(),
-                    ageRange: editAgeRange,
-                    gender: editGender,
-                  });
-                  setShowEditModal(false);
-                }
+                void handleSaveProfile();
               }}
-              disabled={!editNickname.trim() || !editGender || !editAgeRange}
-              whileTap={editNickname.trim() && editGender && editAgeRange ? { scale: 0.98 } : {}}
+              disabled={!editNickname.trim() || !editGender || !editAgeRange || isSavingProfile}
+              whileTap={editNickname.trim() && editGender && editAgeRange && !isSavingProfile ? { scale: 0.98 } : {}}
             >
               저장
             </motion.button>

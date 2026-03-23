@@ -1,18 +1,25 @@
+import type { Gender } from "./auth.types";
+
 export interface UserData {
+  memberId?: number;
+  id?: string;
+  password?: string | null;
   nickname: string;
-  age: string;
-  gender: string;
+  birthYear?: number | null;
+  age?: string;
+  gender: Gender | string;
 }
 
 export interface UpdateUserRequest {
-  password: string;
-  birthYear: string;
-  gender: string;
+  password?: string;
+  birthYear: number;
+  gender: Gender;
   nickname: string;
 }
 
 export interface UserProfile {
   nickname: string;
+  birthYear: number | null;
   age: string;
   ageRange: string;
   gender: string;

@@ -3,7 +3,6 @@
  */
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
-import { authApi } from "./api";
 import { MobileFrame } from "./components/layout/MobileFrame";
 import { BottomNav, type TabId } from "./components/layout/BottomNav";
 import { useAppStore } from "./store";
@@ -13,12 +12,29 @@ import {
   sheetVariants,
   fadeVariants,
 } from "./motion";
-import type { TransitionType } from "./types";
+import type { Screen, TransitionType } from "./types";
 import {
   renderScreen,
   getActiveTab,
   BOTTOM_NAV_SCREENS,
 } from "./navigation/screenRegistry";
+
+const PUBLIC_SCREENS: Screen[] = [
+  "launch",
+  "onboarding",
+  "auth-entry",
+  "login",
+  "signup",
+  "profile",
+];
+
+const AUTH_ENTRY_SCREENS: Screen[] = [
+  "onboarding",
+  "auth-entry",
+  "login",
+  "signup",
+  "profile",
+];
 
 function getVariants(type: TransitionType) {
   switch (type) {
@@ -47,7 +63,7 @@ export default function App() {
     isAuthenticated,
     setAuthenticated,
     clearAuthState,
-    updateProfile,
+    fetchMe,
   } = useAppStore();
 
   const [hasCompletedLaunch, setHasCompletedLaunch] = useState(false);
@@ -85,14 +101,8 @@ export default function App() {
       }
 
       try {
-        const me = await authApi.getMe();
-
-        if (isCancelled) {
-          return;
-        }
-
         setAuthenticated(storedToken);
-        updateProfile({ nickname: me.nickname ?? "" });
+        await fetchMe();
       } catch {
         if (!isCancelled) {
           clearAuthState();
@@ -109,7 +119,7 @@ export default function App() {
     return () => {
       isCancelled = true;
     };
-  }, [clearAuthState, hasHydrated, setAuthenticated, updateProfile]);
+  }, [clearAuthState, fetchMe, hasHydrated, setAuthenticated]);
 
   const onLaunchComplete = useCallback(() => {
     setHasCompletedLaunch(true);
@@ -142,16 +152,28 @@ export default function App() {
   }, [setScreen]);
 
   useEffect(() => {
-    if (!hasCompletedLaunch || !isAuthReady || screen !== "launch") {
+    if (!hasCompletedLaunch || !isAuthReady) {
       return;
     }
 
-    if (isAuthenticated) {
+    if (screen === "launch") {
+      if (isAuthenticated) {
+        setScreen("home");
+        return;
+      }
+
+      setScreen(hasOnboarded ? "auth-entry" : "onboarding");
+      return;
+    }
+
+    if (isAuthenticated && AUTH_ENTRY_SCREENS.includes(screen)) {
       setScreen("home");
       return;
     }
 
-    setScreen(hasOnboarded ? "auth-entry" : "onboarding");
+    if (!isAuthenticated && !PUBLIC_SCREENS.includes(screen)) {
+      setScreen(hasOnboarded ? "auth-entry" : "onboarding");
+    }
   }, [
     hasCompletedLaunch,
     hasOnboarded,
