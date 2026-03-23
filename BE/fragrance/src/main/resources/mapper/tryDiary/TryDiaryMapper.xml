@@ -55,8 +55,8 @@
 
     <select id="findById" resultMap="tryDiaryDetailResultMap">
         SELECT td.try_diary_id, td.title, td.create_time,
-               p.perfume_id, p.image_route, p.perfume_name, p.brand
-               tdp.description,
+               p.perfume_id, p.image_route, p.perfume_name, p.brand,
+               tdp.description
         FROM try_diary td
         LEFT JOIN try_diary_perfume tdp ON td.try_diary_id = tdp.try_diary_id
             AND <include refid="common.notDeletedWithAlias"><property name="alias" value="tdp"/></include>
