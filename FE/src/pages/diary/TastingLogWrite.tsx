@@ -1,16 +1,13 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { ChevronLeft, Check, Camera, X, Clock, Wind, Search } from 'lucide-react';
+import { ChevronLeft, Check, Clock, Wind, Search, X } from 'lucide-react';
 import { useAppStore } from '../../store';
 import { usePerfumeStore, useDiaryStore } from '../../store';
 import {
   TASTING_SITUATIONS,
   TASTING_SEASONS,
-  TASTING_MOODS,
 } from '../../constants/ui.constants';
 import { ImageWithFallback } from '../../components/common/ImageWithFallback';
-
-const TASTING_TAGS = ['클린', '우디', '플로럴', '시트러스', '아로마틱', '오리엔탈', '데일리', '오피스', '저녁', '갤러리', '데이트', '아침'];
 
 function DotRating({ value, onChange, color = '#8BA4B8' }: { value: number; onChange: (v: number) => void; color?: string }) {
   return (
@@ -40,61 +37,45 @@ export function TastingLogWrite() {
   const [perfumeSearch, setPerfumeSearch] = useState('');
   const [situation, setSituation] = useState('');
   const [customSituation, setCustomSituation] = useState('');
-  const [firstImpression, setFirstImpression] = useState('');
-  const [laterImpression, setLaterImpression] = useState('');
   const [longevity, setLongevity] = useState(0);
   const [sillage, setSillage] = useState(0);
   const [seasons, setSeasons] = useState<string[]>([]);
-  const [moods, setMoods] = useState<string[]>([]);
   const [note, setNote] = useState('');
-  const [tags, setTags] = useState<string[]>([]);
-  const [photoUrl, setPhotoUrl] = useState<string | null>(null);
   const [showPerfumeList, setShowPerfumeList] = useState(false);
+  const [saveError, setSaveError] = useState('');
 
   useEffect(() => {
+    if (!showPerfumeList) return;
     const timer = setTimeout(() => {
-      searchPerfumes(perfumeSearch.trim() || '');
+      searchPerfumes(perfumeSearch.trim());
     }, 400);
     return () => clearTimeout(timer);
-  }, [perfumeSearch, searchPerfumes]);
+  }, [perfumeSearch, searchPerfumes, showPerfumeList]);
 
   const selectedPerfume = searchResults.find(p => p.perfumeId === selectedPerfumeId);
-  const filteredPerfumes = searchResults;
 
   const toggleSeason = (s: string) =>
     setSeasons(prev => prev.includes(s) ? prev.filter(x => x !== s) : [...prev, s]);
 
-  const toggleMood = (m: string) =>
-    setMoods(prev => prev.includes(m) ? prev.filter(x => x !== m) : [...prev, m]);
-
-  const toggleTag = (t: string) =>
-    setTags(prev => prev.includes(t) ? prev.filter(x => x !== t) : [...prev, t]);
-
-  const canSave = firstImpression.length > 3;
-
-  const handlePhotoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => setPhotoUrl(reader.result as string);
-      reader.readAsDataURL(file);
-    }
-  };
-
-  const [saveError, setSaveError] = useState('');
+  const canSave = !!selectedPerfumeId;
 
   const handleSave = async () => {
     setSaveError('');
     try {
       await createTryDiary({
-        title: firstImpression.slice(0, 30) || '시향 일지',
+        title: selectedPerfume?.name ?? '시향 일지',
         tryItems: selectedPerfumeId
-          ? [{ perfumeId: selectedPerfumeId, detail: firstImpression }]
+          ? [{ perfumeId: selectedPerfumeId, detail: note }]
           : [],
       });
       navigateTo('diary');
     } catch (e) {
-      setSaveError(e instanceof Error ? e.message : '저장에 실패했습니다.');
+      const msg = e instanceof Error ? e.message : '';
+      if (msg.includes('403') || msg.includes('Forbidden') || msg.includes('401') || msg.includes('Unauthorized')) {
+        setSaveError('로그인이 만료되었습니다. 다시 로그인해주세요.');
+      } else {
+        setSaveError(msg || '저장에 실패했습니다.');
+      }
     }
   };
 
@@ -222,32 +203,6 @@ export function TastingLogWrite() {
           </AnimatePresence>
         </div>
 
-        {/* ── 첫인상 ──────────────────────────────────────── */}
-        <div className="mb-5">
-          <p className="text-[#B8B4AE] mb-2" style={{ fontSize: '0.5625rem', letterSpacing: '0.1em' }}>
-            첫인상 <span className="text-[#8BA4B8]">*</span>
-          </p>
-          <textarea
-            className="w-full min-h-[100px] p-4 rounded-2xl outline-none resize-none text-[#1A1A1A] placeholder:text-[#D4D0CA]"
-            style={{ fontSize: '0.875rem', lineHeight: 1.7, backgroundColor: '#F5F3EF', border: '1px solid transparent' }}
-            placeholder="처음 뿌렸을 때 어떤 향이 느껴졌나요?"
-            value={firstImpression}
-            onChange={e => setFirstImpression(e.target.value)}
-          />
-        </div>
-
-        {/* ── 잔향 ─────────────────────────────────────────── */}
-        <div className="mb-5">
-          <p className="text-[#B8B4AE] mb-2" style={{ fontSize: '0.5625rem', letterSpacing: '0.1em' }}>시간 경과 후 인상 (잔향)</p>
-          <textarea
-            className="w-full min-h-[80px] p-4 rounded-2xl outline-none resize-none text-[#1A1A1A] placeholder:text-[#D4D0CA]"
-            style={{ fontSize: '0.875rem', lineHeight: 1.7, backgroundColor: '#F5F3EF', border: '1px solid transparent' }}
-            placeholder="30분 ~ 2시간 후 어떻게 변했나요?"
-            value={laterImpression}
-            onChange={e => setLaterImpression(e.target.value)}
-          />
-        </div>
-
         {/* ── 지속력 / 확산력 ───────────────────────────────── */}
         <div className="grid grid-cols-2 gap-3 mb-5">
           <div className="p-4 rounded-2xl" style={{ backgroundColor: '#EFF3F7' }}>
@@ -295,29 +250,6 @@ export function TastingLogWrite() {
           </div>
         </div>
 
-        {/* ── 어울리는 무드 ─────────────────────────────────── */}
-        <div className="mb-5">
-          <p className="text-[#B8B4AE] mb-2" style={{ fontSize: '0.5625rem', letterSpacing: '0.1em' }}>어울리는 무드</p>
-          <div className="flex flex-wrap gap-1.5">
-            {TASTING_MOODS.map(m => (
-              <motion.button
-                key={m}
-                className="px-3 py-1.5 rounded-full border whitespace-nowrap transition-colors"
-                style={{
-                  fontSize: '0.8125rem',
-                  borderColor: moods.includes(m) ? '#8BA4B8' : 'rgba(0,0,0,0.06)',
-                  backgroundColor: moods.includes(m) ? '#8BA4B814' : 'transparent',
-                  color: moods.includes(m) ? '#8BA4B8' : '#8A8680',
-                }}
-                onClick={() => toggleMood(m)}
-                whileTap={{ scale: 0.95 }}
-              >
-                {m}
-              </motion.button>
-            ))}
-          </div>
-        </div>
-
         {/* ── 자유 메모 ─────────────────────────────────────── */}
         <div className="mb-5">
           <p className="text-[#B8B4AE] mb-2" style={{ fontSize: '0.5625rem', letterSpacing: '0.1em' }}>자유 메모</p>
@@ -328,59 +260,6 @@ export function TastingLogWrite() {
             value={note}
             onChange={e => setNote(e.target.value)}
           />
-        </div>
-
-        {/* ── 사진 ──────────────────────────────────────────── */}
-        <div className="mb-5">
-          <p className="text-[#B8B4AE] mb-2" style={{ fontSize: '0.5625rem', letterSpacing: '0.1em' }}>사진</p>
-          {photoUrl ? (
-            <div className="relative rounded-2xl overflow-hidden">
-              <img src={photoUrl} alt="Uploaded" className="w-full h-40 object-cover" />
-              <motion.button
-                className="absolute top-3 right-3 w-8 h-8 rounded-full bg-black/60 flex items-center justify-center"
-                style={{ backdropFilter: 'blur(8px)' }}
-                onClick={() => setPhotoUrl(null)}
-                whileTap={{ scale: 0.9 }}
-              >
-                <X size={14} className="text-white" />
-              </motion.button>
-            </div>
-          ) : (
-            <label>
-              <input type="file" accept="image/*" onChange={handlePhotoSelect} className="hidden" />
-              <motion.div
-                className="w-full h-28 rounded-2xl border-2 border-dashed flex flex-col items-center justify-center gap-2 cursor-pointer transition-colors hover:border-[#8BA4B8]"
-                style={{ borderColor: '#E8E6E1' }}
-                whileTap={{ scale: 0.98 }}
-              >
-                <Camera size={20} className="text-[#B8B4AE]" />
-                <p className="text-[#8A8680]" style={{ fontSize: '0.75rem' }}>사진 추가하기</p>
-              </motion.div>
-            </label>
-          )}
-        </div>
-
-        {/* ── 태그 ──────────────────────────────────────────── */}
-        <div className="mb-5">
-          <p className="text-[#B8B4AE] mb-2" style={{ fontSize: '0.5625rem', letterSpacing: '0.1em' }}>태그</p>
-          <div className="flex flex-wrap gap-1.5">
-            {TASTING_TAGS.map(t => (
-              <motion.button
-                key={t}
-                className="px-3 py-1.5 rounded-full border whitespace-nowrap transition-colors"
-                style={{
-                  fontSize: '0.8125rem',
-                  borderColor: tags.includes(t) ? '#8BA4B8' : 'rgba(0,0,0,0.06)',
-                  backgroundColor: tags.includes(t) ? '#8BA4B814' : 'transparent',
-                  color: tags.includes(t) ? '#8BA4B8' : '#8A8680',
-                }}
-                onClick={() => toggleTag(t)}
-                whileTap={{ scale: 0.94 }}
-              >
-                {t}
-              </motion.button>
-            ))}
-          </div>
         </div>
       </div>
 
@@ -403,7 +282,6 @@ export function TastingLogWrite() {
               <div className="px-5 pt-5 pb-3 shrink-0">
                 <div className="w-10 h-1 rounded-full bg-[#E8E6E1] mx-auto mb-4" />
                 <p className="text-[#1A1A1A] mb-3" style={{ fontSize: '1rem', fontFamily: "'Playfair Display', serif" }}>향수 선택</p>
-                {/* Search */}
                 <div className="flex items-center gap-2 px-4 py-2.5 rounded-xl" style={{ backgroundColor: '#F5F3EF' }}>
                   <Search size={14} className="text-[#B8B4AE] shrink-0" />
                   <input
@@ -419,7 +297,7 @@ export function TastingLogWrite() {
               </div>
 
               <div className="flex-1 overflow-y-auto px-5 pb-8">
-                {filteredPerfumes.map(p => (
+                {searchResults.map(p => (
                   <motion.button
                     key={p.perfumeId}
                     className="w-full flex items-center gap-3 py-3 border-b last:border-b-0"
@@ -444,8 +322,8 @@ export function TastingLogWrite() {
                     </div>
                   </motion.button>
                 ))}
-                {filteredPerfumes.length === 0 && (
-                  <p className="text-center text-[#B8B4AE] py-8" style={{ fontSize: '0.875rem' }}>검색 결과가 없어요</p>
+                {searchResults.length === 0 && (
+                  <p className="text-center text-[#B8B4AE] py-8" style={{ fontSize: '0.875rem' }}>향수 목록을 불러오는 중이에요</p>
                 )}
               </div>
             </motion.div>

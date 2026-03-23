@@ -12,15 +12,12 @@ import { apiClient } from './client';
 
 export const recommendationApi = {
   /** 텍스트 기반 향수 추천 */
-  recommendByText: (params: RecommendTextRequest) => {
-    const qs = new URLSearchParams({
+  recommendByText: (params: RecommendTextRequest) =>
+    apiClient.post<RecommendTextResponse>('/api/v1/recommend/text', {
       keyword: params.keyword,
-      price: String(params.price),
+      price: params.price,
       note: params.note,
-      memberId: String(params.memberId),
-    }).toString();
-    return apiClient.get<RecommendTextResponse>(`/api/v1/recommend/text?${qs}`);
-  },
+    }),
 
   /** 이미지 기반 향수 추천 */
   recommendByImage: (body: RecommendImageRequest) =>

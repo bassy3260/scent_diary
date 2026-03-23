@@ -34,10 +34,9 @@ export function AnalyzingScene({ onComplete }: AnalyzingSceneProps) {
       const keyword = profile.emotionText || '';
       const price = priceRangeToInt(profile.priceRange);
       const note = (profile.notePreference || 'top').toUpperCase();
-      const memberId = profile.memberId ?? 0;
 
       const minDelay = new Promise<void>(resolve => setTimeout(resolve, 4000));
-      const apiCall = recommendByText({ keyword, price, note, memberId });
+      const apiCall = recommendByText({ keyword, price, note });
 
       Promise.all([apiCall, minDelay]).then(onComplete).catch(onComplete);
     }

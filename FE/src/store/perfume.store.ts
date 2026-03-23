@@ -37,7 +37,8 @@ export const createPerfumeSlice: StateCreator<any, [], [], PerfumeState> = (set,
     set({ isLoading: true, error: null });
     try {
       const res = await perfumeApi.search(query);
-      set({ searchResults: res.perfumes, isLoading: false });
+      const normalized = res.perfumes.map(p => ({ ...p, perfumeId: Number(p.perfumeId ?? p.id) }));
+      set({ searchResults: normalized, isLoading: false });
     } catch {
       set({ error: '검색에 실패했습니다.', isLoading: false });
     }
