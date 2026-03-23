@@ -105,6 +105,7 @@ export function buildProfileUpdatesFromUser(
   const ageRange = ageRangeFromBirthYear || user.age?.trim() || "";
 
   return {
+    memberId: user.memberId ?? null,
     nickname: user.nickname ?? "",
     birthYear: typeof user.birthYear === "number" ? user.birthYear : null,
     age: ageRange,

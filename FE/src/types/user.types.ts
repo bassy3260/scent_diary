@@ -18,6 +18,7 @@ export interface UpdateUserRequest {
 }
 
 export interface UserProfile {
+  memberId: number | null;
   nickname: string;
   birthYear: number | null;
   age: string;
