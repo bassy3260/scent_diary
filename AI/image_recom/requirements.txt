@@ -1,8 +1,0 @@
-fastapi
-uvicorn
-numpy
-requests
-python-dotenv
-python-multipart
-open_clip_torch
-transformers

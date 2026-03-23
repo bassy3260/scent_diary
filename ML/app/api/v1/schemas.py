@@ -1,5 +1,6 @@
 from pydantic import BaseModel
 from typing import Literal
+from pydantic import BaseModel
 
 
 # 선호 노트 → 노트 내부 비율 매핑 (합 = 1.0)
@@ -28,3 +29,19 @@ class RecommendResponse(BaseModel):
 
 class RecommendListResponse(BaseModel):
     recommendations: list[RecommendResponse]
+
+
+class MoodScore(BaseModel):
+    mood: str
+    score: float
+
+
+class AccordWeight(BaseModel):
+    accord: str
+    weight: float
+
+
+class ImageRecommendResponse(BaseModel):
+    mood_scores: list[MoodScore]
+    accord_vector: list[float]
+    top_accords: list[AccordWeight]
