@@ -1,5 +1,7 @@
 package com.example.fragrance.tryDiray.dto;
 
+import com.example.fragrance.tryDiray.entity.Season;
+import com.example.fragrance.tryDiray.entity.Sillage;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -28,7 +30,7 @@ public class TryDiaryDetailResponse {
 		private String description;
 		private String place;
 		private Integer lasting;
-		private String sillage;
-		private String season;
+		private Sillage sillage;
+		private Season season;
 	}
 }

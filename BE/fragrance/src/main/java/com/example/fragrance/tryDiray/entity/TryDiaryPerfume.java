@@ -19,6 +19,6 @@ public class TryDiaryPerfume extends common {
 	private String description;
 	private String place;
 	private Integer lasting;
-	private String sillage;
-	private String season;
+	private Sillage sillage;
+	private Season season;
 }
