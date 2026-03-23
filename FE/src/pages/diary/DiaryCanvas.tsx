@@ -389,6 +389,7 @@ export function DiaryCanvas({ formData, onBack }: DiaryCanvasProps) {
   const [addingText, setAddingText] = useState(false);
   const [newTextValue, setNewTextValue] = useState('');
   const [draggingId, setDraggingId] = useState<string | null>(null);
+  const [saveError, setSaveError] = useState('');
 
   // 드래그/리사이즈 refs
   const dragRef = useRef<{ id: string; startX: number; startY: number; elX: number; elY: number } | null>(null);
@@ -566,13 +567,18 @@ export function DiaryCanvas({ formData, onBack }: DiaryCanvasProps) {
 
   // 저장
   const handleSave = async () => {
-    await createDiary({
-      title: formData.note.slice(0, 30) || '오늘의 향',
-      content: formData.note,
-      perfumeId: formData.selectedPerfumeId ?? 0,
-      imageNames: formData.imageNames,
-    });
-    navigateTo('diary');
+    setSaveError('');
+    try {
+      await createDiary({
+        title: formData.note.slice(0, 30) || '오늘의 향',
+        content: formData.note,
+        perfumeId: formData.selectedPerfumeId ?? 0,
+        images: formData.imageNames,
+      });
+      navigateTo('diary');
+    } catch (e) {
+      setSaveError(e instanceof Error ? e.message : '저장에 실패했습니다.');
+    }
   };
 
   useEffect(() => {
@@ -619,6 +625,12 @@ export function DiaryCanvas({ formData, onBack }: DiaryCanvasProps) {
           <span className="text-white" style={{ fontSize: '0.8125rem' }}>저장</span>
         </motion.button>
       </div>
+
+      {saveError && (
+        <div className="px-4 py-2 shrink-0" style={{ background: '#1A1A1A' }}>
+          <p className="text-center text-red-400" style={{ fontSize: '0.75rem' }}>{saveError}</p>
+        </div>
+      )}
 
       {/* ── 선택 요소 컨텍스트 툴바 ──────────────────── */}
       <AnimatePresence>
