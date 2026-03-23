@@ -17,5 +17,4 @@ public class RecommendResult extends common {
     private Long memberId;
     private String keyword;
     private String imageRoute;
-    private Age age;
 }

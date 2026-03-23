@@ -8,7 +8,6 @@
     <resultMap id="listRowResultMap" type="com.example.fragrance.recommend.dto.RecommendHistoryQueryResult$ListRow">
         <result property="recommendResultId" column="recommend_result_id"/>
         <result property="createTime"        column="create_time"/>
-        <result property="age"               column="age"/>
         <result property="keyword"           column="keyword"/>
         <result property="inputImage"        column="input_image"/>
         <result property="perfumeId"         column="perfume_id"/>
@@ -20,7 +19,6 @@
     <resultMap id="detailHeaderResultMap" type="com.example.fragrance.recommend.dto.RecommendHistoryQueryResult$DetailHeaderRow">
         <result property="recommendResultId" column="recommend_result_id"/>
         <result property="createTime"        column="create_time"/>
-        <result property="age"               column="age"/>
         <result property="keyword"           column="keyword"/>
         <result property="inputImage"        column="input_image"/>
     </resultMap>
@@ -45,7 +43,6 @@
     <select id="findHistoryList" resultMap="listRowResultMap">
         SELECT rr.recommend_result_id,
         rr.create_time,
-        rr.age::TEXT   AS age,
         rr.keyword,
         rr.image_route AS input_image,
         p.perfume_id,
@@ -55,7 +52,6 @@
         FROM (
         SELECT rr2.recommend_result_id,
         rr2.create_time,
-        rr2.age,
         rr2.keyword,
         rr2.image_route
         FROM recommend_result rr2
@@ -83,7 +79,6 @@
     <select id="findDetailHeader" resultMap="detailHeaderResultMap">
         SELECT recommend_result_id,
         create_time,
-        age::TEXT   AS age,
         keyword,
         image_route AS input_image
         FROM recommend_result
