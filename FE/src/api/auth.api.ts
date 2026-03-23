@@ -13,7 +13,7 @@ export const authApi = {
   signup: (body: SignupRequest) =>
     apiClient.post<void>("/api/v1/auth/signup", body, { auth: false }),
 
-  getMe: () => apiClient.get<AuthenticatedMember>("/api/v1/auth/me"),
+  getMe: () => apiClient.get<AuthenticatedMember>("/api/v1/users/me"),
 
   logout: () => apiClient.post<void>("/api/v1/auth/logout"),
 };

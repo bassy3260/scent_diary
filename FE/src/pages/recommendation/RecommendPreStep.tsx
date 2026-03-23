@@ -2,24 +2,20 @@ import { ChevronLeft, Sparkles } from 'lucide-react';
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useAppStore } from '../../store';
-import { AGE_RANGES, GENDERS, PRICE_RANGES } from '../../constants/ui.constants';
-import { AgeIllustration } from '../../components/mypage/AgeGroupIllustrations';
-import { VibeIllustration } from '../../components/mypage/VibeIllustrations';
+import { PRICE_RANGES } from '../../constants/ui.constants';
 
 interface RecommendPreStepProps {
   onComplete: () => void;
   onBack?: () => void;
 }
 
-// 4단계 플로우: age → gender → price → notePreference
-const STEPS = ['age', 'gender', 'price', 'notePreference'] as const;
+// 2단계 플로우: price → notePreference
+const STEPS = ['price', 'notePreference'] as const;
 type StepKey = typeof STEPS[number];
 
 export function RecommendPreStep({ onComplete, onBack }: RecommendPreStepProps) {
-  const { updateProfile, isGiftMode } = useAppStore();
+  const { updateProfile } = useAppStore();
   const [step, setStep] = useState(0);
-  const [ageRange, setAgeRange] = useState('');
-  const [gender, setGender] = useState('');
   const [priceRange, setPriceRange] = useState('');
   const [notePreference, setNotePreference] = useState('');
 
@@ -34,15 +30,13 @@ export function RecommendPreStep({ onComplete, onBack }: RecommendPreStepProps) 
     if (step < STEPS.length - 1) {
       setStep(step + 1);
     } else {
-      updateProfile({ ageRange, gender, priceRange, notePreference });
+      updateProfile({ priceRange, notePreference });
       onComplete();
     }
   };
 
   const canProceed = () => {
     switch (currentStepKey) {
-      case 'age': return !!ageRange;
-      case 'gender': return !!gender;
       case 'price': return !!priceRange;
       case 'notePreference': return !!notePreference;
       default: return false;
@@ -50,130 +44,17 @@ export function RecommendPreStep({ onComplete, onBack }: RecommendPreStepProps) 
   };
 
   const questionText: Record<StepKey, string> = {
-    age: isGiftMode ? '사용할 분의\n연령대는요?' : '나의\n연령대는요?',
-    gender: isGiftMode ? '원하시는\n분위기는요?' : '원하시는\n분위기는요?',
     price: '예산은\n어느 정도인가요?',
     notePreference: '어떤 향을\n중요하게 생각하시나요?',
   };
 
   const subText: Record<StepKey, string> = {
-    age: '연령대에 따라 더 잘 맞는 향이 달라요.',
-    gender: '향수로 표현하고 싶은 분위기를 선택해주세요.',
     price: '가격대에 맞는 향수를 추천해드릴게요.',
     notePreference: '향수의 변화 과정에서 중요한 부분을 선택해주세요.',
   };
 
   const renderOptions = () => {
     switch (currentStepKey) {
-      case 'age':
-        return (
-          <div className="flex flex-col gap-3 mt-6">
-            {AGE_RANGES.map((age, i) => {
-              const selected = ageRange === age;
-              return (
-                <motion.button
-                  key={age}
-                  className="w-full py-4 px-5 rounded-2xl border-2 flex items-center gap-4 text-left relative overflow-hidden"
-                  style={{
-                    borderColor: selected ? '#6B7B5E' : 'rgba(0,0,0,0.06)',
-                    backgroundColor: selected ? '#6B7B5E08' : '#FFFFFF',
-                  }}
-                  onClick={() => setAgeRange(age)}
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: i * 0.08, type: 'spring', stiffness: 500, damping: 30 }}
-                  whileTap={{ scale: 0.97 }}
-                >
-                  <motion.div
-                    className="w-12 h-12 rounded-full flex items-center justify-center shrink-0 overflow-hidden"
-                    style={{
-                      background: selected ? '#6B7B5E15' : '#F5F3EF',
-                      boxShadow: selected
-                        ? '0 0 0 2.5px #6B7B5E44'
-                        : '0 0 0 1.5px rgba(0,0,0,0.06)',
-                    }}
-                    animate={selected ? { scale: 1.08 } : { scale: 1 }}
-                    transition={{ type: 'spring', stiffness: 600, damping: 15 }}
-                  >
-                    <AgeIllustration ageLabel={age} size={48} />
-                  </motion.div>
-                  <div className="flex-1">
-                    <p className="text-[#1A1A1A]" style={{ fontSize: '0.9375rem' }}>{age}</p>
-                    <p className="text-[#B8B4AE] mt-0.5" style={{ fontSize: '0.75rem' }}>
-                      연령대에 따라 더 잘 맞는 향이 달라요.
-                    </p>
-                  </div>
-                  {selected && (
-                    <motion.div
-                      className="w-6 h-6 rounded-full bg-[#6B7B5E] flex items-center justify-center"
-                      initial={{ scale: 0 }}
-                      animate={{ scale: 1 }}
-                      transition={{ type: 'spring', stiffness: 600, damping: 15 }}
-                    >
-                      <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-                        <path d="M2.5 6L5 8.5L9.5 4" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                      </svg>
-                    </motion.div>
-                  )}
-                </motion.button>
-              );
-            })}
-          </div>
-        );
-
-      case 'gender':
-        return (
-          <div className="flex flex-col gap-3 mt-6">
-            {GENDERS.map((g, i) => {
-              const selected = gender === g;
-              return (
-                <motion.button
-                  key={g}
-                  className="w-full py-4 px-5 rounded-2xl border-2 flex items-center gap-4 text-left relative overflow-hidden"
-                  style={{
-                    borderColor: selected ? '#6B7B5E' : 'rgba(0,0,0,0.06)',
-                    backgroundColor: selected ? '#6B7B5E08' : '#FFFFFF',
-                  }}
-                  onClick={() => setGender(g)}
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: i * 0.08, type: 'spring', stiffness: 500, damping: 30 }}
-                  whileTap={{ scale: 0.97 }}
-                >
-                  <motion.div
-                    className="w-12 h-12 rounded-full flex items-center justify-center shrink-0 overflow-hidden"
-                    style={{
-                      background: selected ? '#6B7B5E15' : '#F5F3EF',
-                      boxShadow: selected
-                        ? '0 0 0 2.5px #6B7B5E44'
-                        : '0 0 0 1.5px rgba(0,0,0,0.06)',
-                    }}
-                    animate={selected ? { scale: 1.08 } : { scale: 1 }}
-                    transition={{ type: 'spring', stiffness: 600, damping: 15 }}
-                  >
-                    <VibeIllustration vibe={g} size={48} />
-                  </motion.div>
-                  <div className="flex-1">
-                    <p className="text-[#1A1A1A]" style={{ fontSize: '0.9375rem' }}>{g}</p>
-                  </div>
-                  {selected && (
-                    <motion.div
-                      className="w-6 h-6 rounded-full bg-[#6B7B5E] flex items-center justify-center"
-                      initial={{ scale: 0 }}
-                      animate={{ scale: 1 }}
-                      transition={{ type: 'spring', stiffness: 600, damping: 15 }}
-                    >
-                      <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-                        <path d="M2.5 6L5 8.5L9.5 4" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                      </svg>
-                    </motion.div>
-                  )}
-                </motion.button>
-              );
-            })}
-          </div>
-        );
-
       case 'price':
         return (
           <div className="flex flex-col gap-3 mt-6">

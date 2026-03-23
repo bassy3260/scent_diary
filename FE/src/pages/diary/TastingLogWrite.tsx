@@ -81,14 +81,21 @@ export function TastingLogWrite() {
     }
   };
 
+  const [saveError, setSaveError] = useState('');
+
   const handleSave = async () => {
-    await createTryDiary({
-      title: firstImpression.slice(0, 30) || '시향 일지',
-      tryItems: selectedPerfumeId
-        ? [{ perfumeId: selectedPerfumeId, detail: firstImpression }]
-        : [],
-    });
-    navigateTo('diary');
+    setSaveError('');
+    try {
+      await createTryDiary({
+        title: firstImpression.slice(0, 30) || '시향 일지',
+        tryItems: selectedPerfumeId
+          ? [{ perfumeId: selectedPerfumeId, detail: firstImpression }]
+          : [],
+      });
+      navigateTo('diary');
+    } catch (e) {
+      setSaveError(e instanceof Error ? e.message : '저장에 실패했습니다.');
+    }
   };
 
   return (
@@ -116,6 +123,13 @@ export function TastingLogWrite() {
           <Check size={16} className={canSave ? 'text-white' : 'text-[#B8B4AE]'} />
         </motion.button>
       </div>
+
+      {/* Save error */}
+      {saveError && (
+        <div className="px-5 pb-2 shrink-0">
+          <p className="text-center text-red-500" style={{ fontSize: '0.8125rem' }}>{saveError}</p>
+        </div>
+      )}
 
       {/* Date strip */}
       <div className="px-5 pb-3 shrink-0">
