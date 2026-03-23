@@ -12,6 +12,7 @@ export interface DiaryCreateBody {
   content: string;
   perfumeId: number;
   imageNames?: string[];
+  images?: string[];
 }
 
 /** 시향 일기 작성 Request */
