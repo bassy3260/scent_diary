@@ -11,8 +11,7 @@ NOTE_RATIO: dict[str, dict[str, float]] = {
 
 
 class RecommendRequest(BaseModel):
-    text: str
-    age: int
+    keyword: str
     note: Literal["top", "middle", "base"] = "middle"
     price: int
 
@@ -25,3 +24,7 @@ class RecommendResponse(BaseModel):
     accords:      list[str] | None
     description:  str | None
     reason:       str | None
+
+
+class RecommendListResponse(BaseModel):
+    recommendations: list[RecommendResponse]

@@ -24,3 +24,7 @@ mybatis:
   type-aliases-package: com.example.fragrance
   configuration:
     map-underscore-to-camel-case: true
+
+fastapi:
+#   url: ${FASTAPI_URL:http://j14e102.p.ssafy.io:8126}
+   url: ${FASTAPI_URL:http://localhost:8000}
