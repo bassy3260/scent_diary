@@ -1,0 +1,6 @@
+runpod
+open_clip_torch
+transformers
+torch
+Pillow
+numpy
