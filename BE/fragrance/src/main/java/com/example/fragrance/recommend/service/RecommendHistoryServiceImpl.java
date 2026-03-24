@@ -149,6 +149,7 @@ public class RecommendHistoryServiceImpl implements RecommendHistoryService {
 			.collect(Collectors.toList());
 
 		return RecommendHistoryDetailResponse.builder()
+			.recommendResultId(recommendResultId)
 			.createTime(header.getCreateTime())
 			.input(InputInfo.builder()
 				.keyword(header.getKeyword())

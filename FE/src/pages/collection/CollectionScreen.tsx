@@ -3,7 +3,7 @@ import { AnimatePresence, motion } from 'motion/react';
 import { Heart, Droplets, ChevronLeft } from 'lucide-react';
 import { useAppStore } from '../../store';
 import { ImageWithFallback } from '../../components/common/ImageWithFallback';
-import { buildAccordStats, findMockPerfumeMatch, getAccordColor } from '../../utils/mypage';
+import { buildAccordStats, getAccordColor } from '../../utils/mypage';
 import type { LikeItem } from '../../types/mypage.types';
 
 const ALL_FILTER = '전체';
@@ -34,13 +34,7 @@ export function CollectionScreen() {
   const totalCount = likesPageInfo?.totalElements ?? likedPerfumes.length;
 
   const handleViewDetail = (perfume: LikeItem) => {
-    const matchedPerfume = findMockPerfumeMatch(perfume);
-
-    if (!matchedPerfume) {
-      return;
-    }
-
-    setSelectedPerfumeId(matchedPerfume.id);
+    setSelectedPerfumeId(perfume.perfumeId);
     useAppStore.getState().pushTo('detail');
   };
 
@@ -234,8 +228,6 @@ export function CollectionScreen() {
             <div className="px-5 space-y-2">
               <AnimatePresence mode="popLayout">
                 {filteredPerfumes.map((perfume, index) => {
-                  const matchedPerfume = findMockPerfumeMatch(perfume);
-
                   return (
                     <motion.div
                       key={perfume.likesId}
@@ -245,13 +237,13 @@ export function CollectionScreen() {
                         background: '#FFFFFF',
                         boxShadow: '0 1px 8px rgba(0,0,0,0.05)',
                         padding: '8px 10px',
-                        cursor: matchedPerfume ? 'pointer' : 'default',
+                        cursor: 'pointer',
                       }}
                       initial={{ opacity: 0, y: 8 }}
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, scale: 0.96 }}
                       transition={{ duration: 0.2, delay: index * 0.03 }}
-                      onClick={() => matchedPerfume && handleViewDetail(perfume)}
+                      onClick={() => handleViewDetail(perfume)}
                     >
                       <div className="w-[48px] h-[48px] rounded-xl overflow-hidden shrink-0">
                         <ImageWithFallback

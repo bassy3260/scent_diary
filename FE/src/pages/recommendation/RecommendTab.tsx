@@ -53,7 +53,7 @@ export function RecommendTab() {
               background: 'linear-gradient(145deg, #F5F3EF, #FAFAF8)',
               boxShadow: '0 2px 16px rgba(0,0,0,0.04)',
             }}
-            onClick={() => navigateTo('text-choice')}
+            onClick={() => navigateTo('recommend-prestep')}
             whileTap={{ scale: 0.95 }}
             whileHover={{ y: -2 }}
             transition={{ type: 'spring', stiffness: 500, damping: 20 }}
@@ -142,7 +142,7 @@ export function RecommendTab() {
             color: 'white',
             boxShadow: '0 4px 20px rgba(26,26,26,0.2)',
           }}
-          onClick={() => navigateTo('text-choice')}
+          onClick={() => navigateTo('recommend-prestep')}
           whileTap={{ scale: 0.96 }}
           whileHover={{ y: -1 }}
           initial={{ opacity: 0 }}

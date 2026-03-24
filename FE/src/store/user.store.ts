@@ -1,10 +1,13 @@
 import type { StateCreator } from 'zustand';
 import { userApi } from '../api';
 import type { UpdateUserRequest, UserData, UserProfile } from '../types/user.types';
+import { buildProfileUpdatesFromUser } from '../utils/userProfile';
 
 function createEmptyProfile(): UserProfile {
   return {
+    memberId: null,
     nickname: '',
+    birthYear: null,
     age: '',
     ageRange: '',
     gender: '',
@@ -55,20 +58,15 @@ export const createUserSlice: StateCreator<any, [], [], UserState> = (set, get) 
 
   setProfileFromUser: (user: UserData) =>
     set((state: UserState) => ({
-      profile: mergeProfile(state.profile, {
-        nickname: user.nickname,
-        age: user.age,
-        ageRange: user.age,
-        gender: user.gender,
-      }),
+      profile: mergeProfile(state.profile, buildProfileUpdatesFromUser(user)),
     })),
 
   resetProfile: () => set({ profile: createEmptyProfile() }),
 
   fetchMe: async () => {
-    const response = await userApi.getMe();
-    get().setProfileFromUser(response.data);
-    return response.data;
+    const user = await userApi.getMe();
+    get().setProfileFromUser(user);
+    return user;
   },
 
   updateMe: async (body: UpdateUserRequest) => {
