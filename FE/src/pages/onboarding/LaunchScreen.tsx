@@ -131,7 +131,7 @@ export function LaunchScreen({ onComplete }: LaunchScreenProps) {
           transition={{ duration: 0.9, ease: [0.16, 1, 0.3, 1] }}
           className="text-center"
         >
-          <h1 className="tracking-[-0.03em] text-[#1A1A1A]" style={{ fontSize: '2.5rem', fontFamily: "'Playfair Display', serif" }}>
+          <h1 className="tracking-[-0.03em]" style={{ fontSize: '2.5rem', fontFamily: "'Playfair Display', serif", color: '#2D4A35', fontWeight: 700 }}>
             향기록(錄)
           </h1>
         </motion.div>
