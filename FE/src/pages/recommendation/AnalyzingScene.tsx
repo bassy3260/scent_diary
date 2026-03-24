@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { motion } from 'motion/react';
 import { ANALYZING_MESSAGES, PRICE_RANGES } from '../../constants/ui.constants';
-import { useAppStore, useRecommendationStore } from '../../store';
+import { useAppStore } from '../../store';
 
 interface AnalyzingSceneProps {
   onComplete: () => void;
@@ -17,8 +17,7 @@ function priceRangeToInt(priceRange: string): number {
 export function AnalyzingScene({ onComplete }: AnalyzingSceneProps) {
   const [messageIdx, setMessageIdx] = useState(0);
   const [progress, setProgress] = useState(0);
-  const { recommendByText } = useRecommendationStore();
-  const { setSelectedHistoryId } = useAppStore();
+  const { recommendByText, setSelectedHistoryId } = useAppStore();
   const called = useRef(false);
 
   useEffect(() => {
@@ -40,7 +39,7 @@ export function AnalyzingScene({ onComplete }: AnalyzingSceneProps) {
       const apiCall = recommendByText({ keyword, price, note });
 
       Promise.all([apiCall, minDelay]).then(() => {
-        const id = useRecommendationStore.getState().textResult?.recommendResultId;
+        const id = useAppStore.getState().textResult?.recommendResultId;
         if (id != null) setSelectedHistoryId(String(id));
         onComplete();
       }).catch(onComplete);
