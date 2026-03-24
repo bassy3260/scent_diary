@@ -1,15 +1,22 @@
 package com.example.fragrance.note.dto;
 
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Getter
 @Setter
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class NotesDetailResponse {
-    private List<String> top;
-    private List<String> middle;
-    private List<String> base;
-    private List<String> single;
+    @Builder.Default
+    private List<String> top = new ArrayList<>();;
+    @Builder.Default
+    private List<String> middle = new ArrayList<>();;
+    @Builder.Default
+    private List<String> base = new ArrayList<>();;
+    @Builder.Default
+    private List<String> single = new ArrayList<>();;
 }
