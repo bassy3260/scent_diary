@@ -27,8 +27,8 @@ const BUCKET = import.meta.env.VITE_AWS_S3_BUCKET as string;
  */
 export async function uploadImageToS3(file: File): Promise<string> {
   const ext = file.name.split('.').pop()?.toLowerCase() ?? 'jpg';
-  const fileName = `${Date.now()}_${crypto.randomUUID().slice(0, 8)}.${ext}`;
-
+  const fileName = `${Date.now()}_${Math.random().toString(36).slice(2, 10)}.${ext}`;
+  
   const command = new PutObjectCommand({
     Bucket: BUCKET,
     Key: fileName,
