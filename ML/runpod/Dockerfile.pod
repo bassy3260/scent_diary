@@ -1,0 +1,21 @@
+FROM pytorch/pytorch:2.6.0-cuda12.4-cudnn9-runtime
+
+WORKDIR /app
+
+COPY requirements.pod.txt .
+RUN pip install --no-cache-dir -r requirements.pod.txt && rm -rf /root/.cache/pip
+
+# 두 모델 모두 빌드 시 다운로드 (콜드스타트 시 네트워크 불필요)
+RUN python -c "\
+import torch; \
+from sentence_transformers import SentenceTransformer; \
+SentenceTransformer('BAAI/bge-m3', model_kwargs={'torch_dtype': torch.float16})"
+
+RUN python -c "\
+import open_clip; \
+open_clip.create_model_and_transforms('hf-hub:Marqo/marqo-fashionSigLIP'); \
+open_clip.get_tokenizer('hf-hub:Marqo/marqo-fashionSigLIP')"
+
+COPY server.py .
+
+CMD ["uvicorn", "server:app", "--host", "0.0.0.0", "--port", "8000"]
