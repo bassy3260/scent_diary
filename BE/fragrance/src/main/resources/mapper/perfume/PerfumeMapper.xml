@@ -7,6 +7,7 @@
         <result property="brand" column="brand"/>
         <result property="name" column="perfume_name"/>
         <result property="price" column="price"/>
+        <result property="description" column="description"/>
 
         <association property="notes" resultMap="NotesMap" />
 
@@ -21,6 +22,7 @@
             p.brand,
             p.perfume_name,
             p.price,
+            p.description,
             CASE WHEN pn.note_level = 'TOP' THEN n.note_name END as top_note,
             CASE WHEN pn.note_level = 'MIDDLE' THEN n.note_name END as mid_note,
             CASE WHEN pn.note_level = 'BASE' THEN n.note_name END as base_note,
@@ -127,7 +129,8 @@
         p.price,
         a.accord_name
         FROM perfume p
-        LEFT JOIN perfume_accord pa ON p.perfume_id = pa.perfume_id
-        LEFT JOIN accord a ON pa.accord_id = a.accord_id
+        LEFT JOIN perfume_accord pa ON p.perfume_id = pa.perfume_id AND pa.is_delete = FALSE
+        LEFT JOIN accord a ON pa.accord_id = a.accord_id AND a.is_delete = FALSE
+        WHERE p.is_delete = FALSE
     </select>
 </mapper>
