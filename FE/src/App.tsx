@@ -64,6 +64,7 @@ export default function App() {
     setAuthenticated,
     clearAuthState,
     fetchMe,
+    initUserActivity
   } = useAppStore();
 
   const [hasCompletedLaunch, setHasCompletedLaunch] = useState(false);
@@ -150,6 +151,10 @@ export default function App() {
   const onAnalyzingComplete = useCallback(() => {
     setScreen("results");
   }, [setScreen]);
+
+  useEffect(() => {
+    initUserActivity();
+  }, [initUserActivity]);
 
   useEffect(() => {
     if (!hasCompletedLaunch || !isAuthReady) {
