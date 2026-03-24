@@ -9,6 +9,16 @@ import type {
 } from '../types/diary.types';
 import { apiClient } from './client';
 
+export interface RefineContentRequest {
+  content: string;
+  perfumeName: string;
+  perfumeBrand: string;
+}
+
+export interface RefineContentResponse {
+  content: string;
+}
+
 export const diaryApi = {
   // ── 일기 ────────────────────────────────────────────────
 
@@ -37,4 +47,8 @@ export const diaryApi = {
   /** 시향 일기 작성 */
   createTryEntry: (body: TryDiaryCreateBody) =>
     apiClient.post<CreateTryDiaryResponse>('/api/v1/try-diary', body),
+
+  /** AI 일기 내용 다듬기 */
+  refineContent: (body: RefineContentRequest) =>
+    apiClient.post<RefineContentResponse>('/api/v1/diaries/refine', body),
 };
