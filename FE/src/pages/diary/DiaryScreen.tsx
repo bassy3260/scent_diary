@@ -23,7 +23,7 @@ function DiaryCard({ entry, onClick }: { entry: DiaryListItem; onClick: () => vo
       onClick={onClick}
     >
       <div className="p-4">
-        <div className="flex items-start justify-between mb-2.5">
+        <div className="flex items-start justify-between mb-1.5">
           <p className="text-[#1A1A1A]" style={{ fontSize: '0.9375rem', fontWeight: 500 }}>{entry.title}</p>
           <div className="flex items-center gap-2 shrink-0 ml-2">
             <span className="text-[#B8B4AE]" style={{ fontSize: '0.6875rem' }}>
@@ -35,6 +35,13 @@ function DiaryCard({ entry, onClick }: { entry: DiaryListItem; onClick: () => vo
             </span>
           </div>
         </div>
+
+        {entry.detail && (
+          <p className="text-[#8A8680] mb-2.5"
+            style={{ fontSize: '0.8125rem', lineHeight: 1.6, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+            {entry.detail}
+          </p>
+        )}
 
         {entry.perfume && (
           <div className="flex items-center gap-1.5">
@@ -147,6 +154,13 @@ function DiaryDetail({ detail, onClose }: { detail: DiaryDetailData; onClose: ()
 }
 
 // ─── 시향 일지 상세 ────────────────────────────────────
+const SEASON_KO: Record<string, string> = {
+  spring: '봄', summer: '여름', fall: '가을', winter: '겨울',
+};
+const SILLAGE_KO: Record<string, string> = {
+  weak: '은은함', middle: '보통', strong: '강함',
+};
+
 function TastingDetail({ detail, onClose }: { detail: TryDiaryDetailData; onClose: () => void }) {
   return (
     <div className="flex flex-col h-full" style={{ background: '#FAFAF8' }}>
@@ -161,24 +175,52 @@ function TastingDetail({ detail, onClose }: { detail: TryDiaryDetailData; onClos
       </div>
 
       <div className="flex-1 overflow-y-auto px-5 pb-10">
-        <p className="text-[#B8B4AE] text-center mb-2" style={{ fontSize: '0.75rem' }}>
+        <p className="text-[#B8B4AE] text-center mb-4" style={{ fontSize: '0.75rem' }}>
           {new Date(detail.createTime).toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric' })}
         </p>
-        <h2 className="text-[#1A1A1A] text-center mb-5" style={{ fontSize: '1.25rem', fontFamily: "'Playfair Display', serif" }}>{detail.title}</h2>
 
-        <div className="space-y-3">
+        <div className="space-y-4">
           {detail.tryItem.map((item) => (
-            <div key={item.perfumeId} className="p-4 rounded-2xl" style={{ background: 'linear-gradient(135deg,#EFF3F7,#F5F3EF)' }}>
-              <div className="flex items-center gap-3 mb-3">
-                <div className="w-12 h-12 rounded-xl overflow-hidden shrink-0">
+            <div key={item.perfumeId} className="rounded-2xl overflow-hidden" style={{ background: 'linear-gradient(145deg,#FFFFFF,#F6F8FA)', boxShadow: '0 2px 12px rgba(0,0,0,0.05)' }}>
+              {/* 향수 헤더 */}
+              <div className="flex items-center gap-3 p-4 pb-3">
+                <div className="w-14 h-14 rounded-xl overflow-hidden shrink-0">
                   <ImageWithFallback src={item.perfumeImageUrl} alt={item.perfumeName} className="w-full h-full object-cover" />
                 </div>
-                <div>
-                  <p className="text-[#8BA4B8]" style={{ fontSize: '0.75rem' }}>{item.brand}</p>
-                  <p className="text-[#1A1A1A]" style={{ fontSize: '1rem', fontFamily: "'Playfair Display', serif" }}>{item.perfumeName}</p>
+                <div className="min-w-0">
+                  <p className="text-[#8BA4B8]" style={{ fontSize: '0.5625rem', letterSpacing: '0.06em' }}>{item.brand.toUpperCase()}</p>
+                  <p className="text-[#1A1A1A] truncate" style={{ fontSize: '1rem', fontFamily: "'Playfair Display', serif" }}>{item.perfumeName}</p>
+                  {item.place && (
+                    <p className="text-[#B8B4AE] mt-0.5" style={{ fontSize: '0.6875rem' }}>📍 {item.place}</p>
+                  )}
                 </div>
               </div>
-              <p className="text-[#4A4A4A]" style={{ fontSize: '0.875rem', lineHeight: 1.7 }}>{item.description}</p>
+
+              {/* 지속력 / 확산력 / 계절 */}
+              <div className="px-4 pb-3 flex flex-wrap gap-2">
+                {item.lasting > 0 && (
+                  <span className="px-2.5 py-1 rounded-full text-[#8BA4B8]" style={{ fontSize: '0.6875rem', backgroundColor: '#EFF3F7' }}>
+                    ⏱ 지속력 {item.lasting}점
+                  </span>
+                )}
+                {item.sillage && (
+                  <span className="px-2.5 py-1 rounded-full text-[#8BA4B8]" style={{ fontSize: '0.6875rem', backgroundColor: '#EFF3F7' }}>
+                    💨 {SILLAGE_KO[item.sillage] ?? item.sillage}
+                  </span>
+                )}
+                {item.season && (
+                  <span className="px-2.5 py-1 rounded-full text-[#8BA4B8]" style={{ fontSize: '0.6875rem', backgroundColor: '#EFF3F7' }}>
+                    🌿 {SEASON_KO[item.season] ?? item.season}
+                  </span>
+                )}
+              </div>
+
+              {/* 메모 */}
+              {item.description && (
+                <div className="mx-4 mb-4 p-3 rounded-xl" style={{ backgroundColor: '#F5F3EF' }}>
+                  <p className="text-[#4A4A4A]" style={{ fontSize: '0.875rem', lineHeight: 1.7 }}>{item.description}</p>
+                </div>
+              )}
             </div>
           ))}
         </div>

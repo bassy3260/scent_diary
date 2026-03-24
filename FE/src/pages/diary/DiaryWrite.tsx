@@ -18,6 +18,7 @@ export function DiaryWrite() {
   const { createDiary } = useDiaryStore();
   const { likedPerfumes, myPerfumes, fetchLikes, fetchMyPerfumes } = useMyPageStore();
 
+  const [title, setTitle] = useState('');
   const [note, setNote] = useState('');
   const [selectedPerfumeId, setSelectedPerfumeId] = useState<number | null>(null);
   const [photoUrls, setPhotoUrls] = useState<string[]>([]);
@@ -47,7 +48,12 @@ export function DiaryWrite() {
   }, [showPerfumeSheet, perfumeFilter]);
 
   const selectedPerfume = selectedPerfumeId !== null
-    ? (searchResults.find(p => p.perfumeId === selectedPerfumeId) ?? null)
+    ? (
+        searchResults.find(p => p.perfumeId === selectedPerfumeId) ??
+        likedPerfumes.find(p => p.perfumeId === selectedPerfumeId) ??
+        myPerfumes.find(p => p.perfumeId === selectedPerfumeId) ??
+        null
+      )
     : null;
 
   const baseFilteredPerfumes = (() => {
@@ -117,7 +123,7 @@ export function DiaryWrite() {
     setSaveError('');
     try {
       await createDiary({
-        title: note.trim().slice(0, 30) || '오늘의 향',
+        title: title.trim() || '오늘의 향',
         content: note,
         perfumeId: selectedPerfumeId ?? 0,
         images: imageNames,
@@ -138,7 +144,7 @@ export function DiaryWrite() {
     year: 'numeric', month: 'long', day: 'numeric', weekday: 'long',
   });
 
-  const hasContent = note.trim().length > 0 || selectedPerfumeId !== null;
+  const hasContent = title.trim().length > 0 || note.trim().length > 0 || selectedPerfumeId !== null;
 
   return (
     <div className="w-full h-full flex flex-col" style={{ background: '#FAFAF8' }}>
@@ -168,6 +174,25 @@ export function DiaryWrite() {
 
       {/* ── 스크롤 폼 ──────────────────────────────────── */}
       <div className="flex-1 overflow-y-auto px-5 pb-4">
+
+        {/* 제목 입력 */}
+        <section className="mb-5">
+          <p className="text-[#B8B4AE] mb-2.5" style={{ fontSize: '0.5625rem', letterSpacing: '0.12em' }}>제목</p>
+          <input
+            type="text"
+            className="w-full px-4 py-3 rounded-2xl outline-none text-[#1A1A1A] placeholder:text-[#D4D0CA]"
+            style={{
+              fontSize: '1rem',
+              backgroundColor: '#F5F3EF',
+              border: '1.5px solid transparent',
+              fontFamily: "'Playfair Display', serif",
+            }}
+            placeholder="일기 제목을 입력하세요"
+            value={title}
+            onChange={e => setTitle(e.target.value)}
+            maxLength={50}
+          />
+        </section>
 
         {/* 향수 선택 */}
         <section className="mb-5">
@@ -328,7 +353,14 @@ export function DiaryWrite() {
 
                 <div className="p-4">
                   {/* 날짜 */}
-                  <p className="text-[#B8B4AE] mb-2" style={{ fontSize: '0.6875rem' }}>{today}</p>
+                  <p className="text-[#B8B4AE] mb-1.5" style={{ fontSize: '0.6875rem' }}>{today}</p>
+
+                  {/* 제목 */}
+                  {title.trim() && (
+                    <p className="text-[#1A1A1A] mb-2.5" style={{ fontSize: '1rem', fontWeight: 600, fontFamily: "'Playfair Display', serif" }}>
+                      {title}
+                    </p>
+                  )}
 
                   {/* 향수 */}
                   {selectedPerfume && (
