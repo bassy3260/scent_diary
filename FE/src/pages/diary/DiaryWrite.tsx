@@ -19,7 +19,7 @@ export function DiaryWrite() {
 
   const [stage, setStage] = useState<'form' | 'canvas'>('form');
   const [note, setNote] = useState('');
-  const [selectedPerfumeIds, setSelectedPerfumeIds] = useState<number[]>([]);
+  const [selectedPerfumeId, setSelectedPerfumeId] = useState<number | null>(null);
   // 사진 최대 3개
   const [photoUrls, setPhotoUrls] = useState<string[]>([]);
   const [imageNames, setImageNames] = useState<string[]>([]);
@@ -37,7 +37,9 @@ export function DiaryWrite() {
     return () => clearTimeout(timer);
   }, [perfumeSearch, searchPerfumes, showPerfumeSheet]);
 
-  const selectedPerfumes = searchResults.filter(p => selectedPerfumeIds.includes(p.perfumeId));
+  const selectedPerfume = selectedPerfumeId !== null
+    ? (searchResults.find(p => p.perfumeId === selectedPerfumeId) ?? null)
+    : null;
 
   const baseFilteredPerfumes = (() => {
     if (perfumeFilter === 'saved') return searchResults.filter(p => savedPerfumes.includes(p.perfumeId));
@@ -54,10 +56,10 @@ export function DiaryWrite() {
     return '향수 목록을 불러오는 중이에요';
   })();
 
-  const togglePerfume = (id: number) => {
-    setSelectedPerfumeIds(prev =>
-      prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
-    );
+  const selectPerfume = (id: number) => {
+    setSelectedPerfumeId(id);
+    setShowPerfumeSheet(false);
+    setPerfumeSearch('');
   };
 
   const handlePhotoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -97,8 +99,8 @@ export function DiaryWrite() {
 
   const formData: DiaryFormData = {
     mood: '', moodEmoji: '', weather: '', weatherEmoji: '', note,
-    selectedPerfumeId: selectedPerfumeIds[0] ?? null,
-    perfume: selectedPerfumes[0] ?? null,
+    selectedPerfumeId,
+    perfume: selectedPerfume,
     tags: [],
     photoUrl: photoUrls[0] ?? null,
     imageNames,
@@ -141,51 +143,48 @@ export function DiaryWrite() {
       {/* ── 스크롤 폼 ──────────────────────────────────── */}
       <div className="flex-1 overflow-y-auto px-5 pb-4">
 
-        {/* 향수 선택 — 다중 선택 */}
+        {/* 향수 선택 — 단일 선택 */}
         <section className="mb-5">
           <p className="text-[#B8B4AE] mb-2.5" style={{ fontSize: '0.5625rem', letterSpacing: '0.12em' }}>오늘 뿌린 향수</p>
 
-          {/* 선택된 향수 칩 목록 */}
-          {selectedPerfumes.length > 0 && (
+          {/* 선택된 향수 칩 */}
+          {selectedPerfume && (
             <div className="flex flex-wrap gap-2 mb-2">
-              {selectedPerfumes.map(p => (
-                <motion.div
-                  key={p.perfumeId}
-                  className="flex items-center gap-1.5 pl-1.5 pr-2.5 py-1.5 rounded-full"
-                  style={{ background: 'linear-gradient(135deg, #EFF3F7 0%, #F5F3EF 100%)', border: '1.5px solid rgba(139,164,184,0.2)' }}
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.9 }}
+              <motion.div
+                className="flex items-center gap-1.5 pl-1.5 pr-2.5 py-1.5 rounded-full"
+                style={{ background: 'linear-gradient(135deg, #EFF3F7 0%, #F5F3EF 100%)', border: '1.5px solid rgba(139,164,184,0.2)' }}
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.9 }}
+              >
+                <div className="w-6 h-6 rounded-full overflow-hidden shrink-0">
+                  <ImageWithFallback src={selectedPerfume.image} alt={selectedPerfume.name} className="w-full h-full object-cover" />
+                </div>
+                <span className="text-[#1A1A1A]" style={{ fontSize: '0.8125rem' }}>{selectedPerfume.name}</span>
+                <motion.button
+                  className="w-4 h-4 rounded-full flex items-center justify-center shrink-0"
+                  style={{ backgroundColor: 'rgba(139,164,184,0.2)' }}
+                  onClick={() => setSelectedPerfumeId(null)}
+                  whileTap={{ scale: 0.9 }}
                 >
-                  <div className="w-6 h-6 rounded-full overflow-hidden shrink-0">
-                    <ImageWithFallback src={p.image} alt={p.name} className="w-full h-full object-cover" />
-                  </div>
-                  <span className="text-[#1A1A1A]" style={{ fontSize: '0.8125rem' }}>{p.name}</span>
-                  <motion.button
-                    className="w-4 h-4 rounded-full flex items-center justify-center shrink-0"
-                    style={{ backgroundColor: 'rgba(139,164,184,0.2)' }}
-                    onClick={() => togglePerfume(p.perfumeId)}
-                    whileTap={{ scale: 0.9 }}
-                  >
-                    <X size={9} className="text-[#8A8680]" />
-                  </motion.button>
-                </motion.div>
-              ))}
+                  <X size={9} className="text-[#8A8680]" />
+                </motion.button>
+              </motion.div>
             </div>
           )}
 
-          {/* 향수 추가 버튼 — 항상 표시 */}
-          <motion.button
-            className="flex items-center gap-2 px-3 py-2.5 rounded-2xl border-2 border-dashed transition-colors hover:border-[#6B7B5E]"
-            style={{ borderColor: '#E8E6E1' }}
-            onClick={() => setShowPerfumeSheet(true)}
-            whileTap={{ scale: 0.98 }}
-          >
-            <Plus size={14} className="text-[#B8B4AE]" />
-            <span className="text-[#B8B4AE]" style={{ fontSize: '0.875rem' }}>
-              {selectedPerfumes.length > 0 ? '향수 추가' : '향수 검색 또는 선택'}
-            </span>
-          </motion.button>
+          {/* 향수 선택/변경 버튼 */}
+          {!selectedPerfume && (
+            <motion.button
+              className="flex items-center gap-2 px-3 py-2.5 rounded-2xl border-2 border-dashed transition-colors hover:border-[#6B7B5E]"
+              style={{ borderColor: '#E8E6E1' }}
+              onClick={() => setShowPerfumeSheet(true)}
+              whileTap={{ scale: 0.98 }}
+            >
+              <Plus size={14} className="text-[#B8B4AE]" />
+              <span className="text-[#B8B4AE]" style={{ fontSize: '0.875rem' }}>향수 검색 또는 선택</span>
+            </motion.button>
+          )}
         </section>
 
         {/* 사진 — 최대 3개 */}
@@ -373,9 +372,7 @@ export function DiaryWrite() {
                     key={p.perfumeId}
                     className="w-full flex items-center gap-3 py-3 border-b last:border-b-0"
                     style={{ borderColor: '#F0EDE7' }}
-                    onClick={() => {
-                      togglePerfume(p.perfumeId);
-                    }}
+                    onClick={() => selectPerfume(p.perfumeId)}
                     whileTap={{ scale: 0.98 }}
                   >
                     <div className="w-11 h-11 rounded-xl overflow-hidden shrink-0">
@@ -385,7 +382,7 @@ export function DiaryWrite() {
                       <p className="text-[#B8B4AE]" style={{ fontSize: '0.5625rem', letterSpacing: '0.06em' }}>{p.brand.toUpperCase()}</p>
                       <p className="text-[#1A1A1A] truncate" style={{ fontSize: '0.9375rem' }}>{p.name}</p>
                     </div>
-                    {selectedPerfumeIds.includes(p.perfumeId) && (
+                    {selectedPerfumeId === p.perfumeId && (
                       <div className="w-5 h-5 rounded-full flex items-center justify-center shrink-0" style={{ backgroundColor: '#6B7B5E' }}>
                         <Check size={10} className="text-white" />
                       </div>
@@ -397,20 +394,6 @@ export function DiaryWrite() {
                 )}
               </div>
 
-              {/* 완료 버튼 */}
-              {selectedPerfumeIds.length > 0 && (
-                <div className="px-5 pb-6 pt-2 shrink-0" style={{ borderTop: '1px solid rgba(0,0,0,0.05)' }}>
-                  <motion.button
-                    className="w-full py-3 rounded-2xl text-white flex items-center justify-center gap-1.5"
-                    style={{ background: 'linear-gradient(135deg, #6B7B5E, #8FA380)', fontSize: '0.875rem' }}
-                    onClick={() => { setShowPerfumeSheet(false); setPerfumeSearch(''); }}
-                    whileTap={{ scale: 0.97 }}
-                  >
-                    <Check size={14} />
-                    {selectedPerfumeIds.length}개 선택 완료
-                  </motion.button>
-                </div>
-              )}
             </motion.div>
           </>
         )}

@@ -23,7 +23,11 @@ export interface TryDiaryCreateBody {
 
 export interface TryItemRequest {
   perfumeId: number;
-  detail: string;
+  description: string;
+  place: string;
+  lasting: number;
+  sillage: string;
+  season: string;
 }
 
 /** 페이지네이션 공통 파라미터 */
@@ -97,6 +101,10 @@ export interface TryItem {
   perfumeName: string;
   brand: string;
   description: string;
+  place: string;
+  lasting: number;
+  sillage: string;
+  season: string;
 }
 
 export interface TryDiaryDetailData {
@@ -108,7 +116,10 @@ export interface TryDiaryDetailData {
 
 export type GetTryDiaryListResponse = TryDiaryListData;
 export type GetTryDiaryDetailResponse = TryDiaryDetailData;
-export type CreateTryDiaryResponse = void;
+export interface CreateTryDiaryData {
+  tryDiaryId: number;
+}
+export type CreateTryDiaryResponse = CreateTryDiaryData;
 
 // ── 캔버스 UI 타입 (DiaryCanvas 전용) ─────────────────────
 
