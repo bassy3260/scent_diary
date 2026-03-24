@@ -9,6 +9,7 @@ export interface PerfumeState {
   browseResults: PerfumeListItem[];
   browsePage: number;
   browseTotalPages: number;
+  browseTotalElements: number;
   savedPerfumes: number[];
   myCollection: number[];
   isLoading: boolean;
@@ -33,6 +34,7 @@ export const createPerfumeSlice: StateCreator<any, [], [], PerfumeState> = (set,
   browseResults: [],
   browsePage: 0,
   browseTotalPages: 1,
+  browseTotalElements: 0,
   savedPerfumes: [],
   myCollection: [],
   isLoading: false,
@@ -56,7 +58,7 @@ export const createPerfumeSlice: StateCreator<any, [], [], PerfumeState> = (set,
     try {
       const res = await perfumeApi.search('', page, 20);
       const normalized = res.perfumes.map(p => ({ ...p, perfumeId: Number(p.perfumeId ?? p.id) }));
-      set({ browseResults: normalized, browsePage: res.page, browseTotalPages: res.totalPages, isLoading: false });
+      set({ browseResults: normalized, browsePage: res.page, browseTotalPages: res.totalPages, browseTotalElements: res.totalElements, isLoading: false });
     } catch {
       set({ error: '향수 목록을 불러오지 못했습니다.', isLoading: false });
     }

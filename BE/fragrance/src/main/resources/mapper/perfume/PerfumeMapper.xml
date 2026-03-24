@@ -7,6 +7,7 @@
         <result property="brand" column="brand"/>
         <result property="name" column="perfume_name"/>
         <result property="price" column="price"/>
+        <result property="description" column="description"/>
 
         <association property="notes" resultMap="NotesMap" />
 
@@ -21,10 +22,11 @@
             p.brand,
             p.perfume_name,
             p.price,
-            CASE WHEN pn.note_level = 'top' THEN n.note_name END as top_note,
-            CASE WHEN pn.note_level = 'middle' THEN n.note_name END as mid_note,
-            CASE WHEN pn.note_level = 'base' THEN n.note_name END as base_note,
-            CASE WHEN pn.note_level = 'single' THEN n.note_name END as single_note
+            p.description,
+            CASE WHEN pn.note_level = 'TOP' THEN n.note_name END as top_note,
+            CASE WHEN pn.note_level = 'MIDDLE' THEN n.note_name END as mid_note,
+            CASE WHEN pn.note_level = 'BASE' THEN n.note_name END as base_note,
+            CASE WHEN pn.note_level = 'SINGLE' THEN n.note_name END as single_note
         FROM public.perfume p
                  LEFT JOIN public.perfume_note pn ON p.perfume_id = pn.perfume_id
                  LEFT JOIN public.note n ON pn.note_id = n.note_id
@@ -127,7 +129,8 @@
         p.price,
         a.accord_name
         FROM perfume p
-        LEFT JOIN perfume_accord pa ON p.perfume_id = pa.perfume_id
-        LEFT JOIN accord a ON pa.accord_id = a.accord_id
+        LEFT JOIN perfume_accord pa ON p.perfume_id = pa.perfume_id AND pa.is_delete = FALSE
+        LEFT JOIN accord a ON pa.accord_id = a.accord_id AND a.is_delete = FALSE
+        WHERE p.is_delete = FALSE
     </select>
 </mapper>

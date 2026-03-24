@@ -12,6 +12,7 @@ export function SearchScreen() {
   const browseResults = useAppStore((s) => s.browseResults);
   const browsePage = useAppStore((s) => s.browsePage);
   const browseTotalPages = useAppStore((s) => s.browseTotalPages);
+  const browseTotalElements = useAppStore((s) => s.browseTotalElements);
   const isLoading = useAppStore((s) => s.isLoading);
 
   const [query, setQuery] = useState('');
@@ -121,7 +122,7 @@ export function SearchScreen() {
             <motion.div key="browse" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
               <div className="px-5 pt-1 pb-3 flex items-center justify-between">
                 <p className="text-[#B8B4AE]" style={{ fontSize: '0.6875rem', letterSpacing: '0.08em' }}>
-                  ALL PERFUMES
+                  ALL PERFUMES{browseTotalElements > 0 ? ` · ${browseTotalElements.toLocaleString()}종` : ''}
                 </p>
                 <p className="text-[#B8B4AE]" style={{ fontSize: '0.6875rem' }}>
                   {browsePage + 1} / {browseTotalPages}

@@ -111,6 +111,7 @@ export const usePerfumeStore = () =>
     browseResults: s.browseResults,
     browsePage: s.browsePage,
     browseTotalPages: s.browseTotalPages,
+    browseTotalElements: s.browseTotalElements,
     savedPerfumes: s.savedPerfumes,
     myCollection: s.myCollection,
     isLoading: s.isLoading,

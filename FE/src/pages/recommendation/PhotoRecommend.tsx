@@ -200,9 +200,9 @@ export function PhotoRecommend() {
               {currentSurveyKey === 'notePreference' && (
                 <div className="flex flex-col gap-3 mt-6">
                   {[
-                    { key: 'top', emoji: '✨', label: '첫향 (탑노트)', desc: '뿌린 직후 5~10분간 느껴지는 첫인상' },
-                    { key: 'middle', emoji: '💫', label: '미들노트 (하트노트)', desc: '향수의 핵심, 30분~2시간 지속되는 향' },
-                    { key: 'base', emoji: '🌙', label: '잔향 (베이스노트)', desc: '오래 지속되는 깊고 묵직한 마지막 향' },
+                    { key: 'TOP', emoji: '✨', label: '첫향 (탑노트)', desc: '뿌린 직후 5~10분간 느껴지는 첫인상' },
+                    { key: 'MIDDLE', emoji: '💫', label: '미들노트 (하트노트)', desc: '향수의 핵심, 30분~2시간 지속되는 향' },
+                    { key: 'BASE', emoji: '🌙', label: '잔향 (베이스노트)', desc: '오래 지속되는 깊고 묵직한 마지막 향' },
                   ].map((item, i) => {
                     const selected = notePreference === item.key;
                     return (
@@ -317,7 +317,7 @@ export function PhotoRecommend() {
               animate={{ opacity: 1, scale: 1 }}
               transition={{ type: 'spring', stiffness: 500, damping: 20, delay: 0.05 }}
             >
-              {notePreference === 'top' ? '첫향' : notePreference === 'middle' ? '미들노트' : '잔향'}
+              {notePreference === 'TOP' ? '첫향' : notePreference === 'MIDDLE' ? '미들노트' : '잔향'}
             </motion.span>
           )}
         </div>

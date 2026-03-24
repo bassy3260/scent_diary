@@ -44,10 +44,10 @@ public class PreferenceServiceImpl implements PreferenceService {
 
 		// 노트 통합 top 10 및 레벨별 top 10 조회 및 ratio 계산
 		List<PreferenceNoteDto> totalNotes = preferenceMapper.findTopNotes(memberId);
-		List<PreferenceNoteDto> topNotes    = preferenceMapper.findTopNotesByLevel(memberId, "top");
-		List<PreferenceNoteDto> middleNotes = preferenceMapper.findTopNotesByLevel(memberId, "middle");
-		List<PreferenceNoteDto> baseNotes   = preferenceMapper.findTopNotesByLevel(memberId, "base");
-		List<PreferenceNoteDto> singleNotes = preferenceMapper.findTopNotesByLevel(memberId, "single");
+		List<PreferenceNoteDto> topNotes    = preferenceMapper.findTopNotesByLevel(memberId, "TOP");
+		List<PreferenceNoteDto> middleNotes = preferenceMapper.findTopNotesByLevel(memberId, "MIDDLE");
+		List<PreferenceNoteDto> baseNotes   = preferenceMapper.findTopNotesByLevel(memberId, "BASE");
+		List<PreferenceNoteDto> singleNotes = preferenceMapper.findTopNotesByLevel(memberId, "SINGLE");
 
 		applyNoteRatio(totalNotes, totalPerfumes);
 		applyNoteRatio(topNotes, totalPerfumes);
