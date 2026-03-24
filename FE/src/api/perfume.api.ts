@@ -14,8 +14,10 @@ import { apiClient } from './client';
 
 export const perfumeApi = {
   /** 향수 검색 */
-  search: (search: string) =>
-    apiClient.get<GetPerfumeListResponse>(`/api/v1/perfume?search=${encodeURIComponent(search)}`),
+  search: (search: string, page = 0, size = 20) =>
+    apiClient.get<GetPerfumeListResponse>(
+      `/api/v1/perfume?search=${encodeURIComponent(search)}&page=${page}&size=${size}`
+    ),
 
   /** 향수 상세 조회 */
   getById: (perfumeId: number) =>

@@ -6,6 +6,9 @@ export interface PerfumeState {
   selectedPerfumeId: number | null;
   perfumeDetail: PerfumeDetail | null;
   searchResults: PerfumeListItem[];
+  browseResults: PerfumeListItem[];
+  browsePage: number;
+  browseTotalPages: number;
   savedPerfumes: number[];
   myCollection: number[];
   isLoading: boolean;
@@ -13,6 +16,7 @@ export interface PerfumeState {
 
   setSelectedPerfumeId: (id: number | null) => void;
   searchPerfumes: (query: string) => Promise<void>;
+  browsePerfumes: (page: number) => Promise<void>;
   fetchPerfumeDetail: (id: number) => Promise<void>;
   likePerfume: (id: number) => Promise<void>;
   collectPerfume: (id: number) => Promise<void>;
@@ -26,6 +30,9 @@ export const createPerfumeSlice: StateCreator<any, [], [], PerfumeState> = (set,
   selectedPerfumeId: null,
   perfumeDetail: null,
   searchResults: [],
+  browseResults: [],
+  browsePage: 0,
+  browseTotalPages: 1,
   savedPerfumes: [],
   myCollection: [],
   isLoading: false,
@@ -41,6 +48,17 @@ export const createPerfumeSlice: StateCreator<any, [], [], PerfumeState> = (set,
       set({ searchResults: normalized, isLoading: false });
     } catch {
       set({ error: '검색에 실패했습니다.', isLoading: false });
+    }
+  },
+
+  browsePerfumes: async (page) => {
+    set({ isLoading: true, error: null });
+    try {
+      const res = await perfumeApi.search('', page, 20);
+      const normalized = res.perfumes.map(p => ({ ...p, perfumeId: Number(p.perfumeId ?? p.id) }));
+      set({ browseResults: normalized, browsePage: res.page, browseTotalPages: res.totalPages, isLoading: false });
+    } catch {
+      set({ error: '향수 목록을 불러오지 못했습니다.', isLoading: false });
     }
   },
 
