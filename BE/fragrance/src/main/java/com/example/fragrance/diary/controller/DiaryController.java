@@ -3,6 +3,9 @@ package com.example.fragrance.diary.controller;
 import com.example.fragrance.diary.dto.DiaryCreateRequest;
 import com.example.fragrance.diary.dto.DiaryDetailResponse;
 import com.example.fragrance.diary.dto.DiaryListResponse;
+import com.example.fragrance.diary.dto.DiaryRefineRequest;
+import com.example.fragrance.diary.dto.DiaryRefineResponse;
+import com.example.fragrance.diary.service.DiaryRefineService;
 import com.example.fragrance.diary.service.DiaryService;
 import com.example.fragrance.util.common.ApiResponse;
 import com.example.fragrance.util.common.PageResponse;
@@ -19,6 +22,7 @@ import java.util.Map;
 public class DiaryController {
 
     private final DiaryService diaryService;
+	private final DiaryRefineService diaryRefineService;
 
     @GetMapping
     public ResponseEntity<ApiResponse<PageResponse<DiaryListResponse>>> getDiaries(
@@ -47,4 +51,13 @@ public class DiaryController {
         Long diaryId = diaryService.createDiary(memberId, request);
         return ResponseEntity.ok(ApiResponse.ok("일기 작성 성공", Map.of("diaryId", diaryId)));
     }
+
+	@PostMapping("/refine")
+	public ResponseEntity<ApiResponse<DiaryRefineResponse>> refineDiary(
+		@RequestAttribute("memberId") Long memberId,
+		@RequestBody DiaryRefineRequest request) {
+
+		DiaryRefineResponse response = diaryRefineService.refine(request);
+		return ResponseEntity.ok(ApiResponse.ok("일기 내용 다듬기 성공", response));
+	}
 }
