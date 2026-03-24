@@ -49,7 +49,6 @@ public class RecommendHistoryServiceImpl implements RecommendHistoryService {
 					.recommendResultId(row.getRecommendResultId())
 					.createTime(row.getCreateTime())
 					.input(RecommendHistoryListResponse.InputInfo.builder()
-						.age(row.getAge())
 						.keyword(row.getKeyword())
 						.image(row.getInputImage())
 						.build())
@@ -150,9 +149,9 @@ public class RecommendHistoryServiceImpl implements RecommendHistoryService {
 			.collect(Collectors.toList());
 
 		return RecommendHistoryDetailResponse.builder()
+			.recommendResultId(recommendResultId)
 			.createTime(header.getCreateTime())
 			.input(InputInfo.builder()
-				.age(header.getAge())
 				.keyword(header.getKeyword())
 				.image(header.getInputImage())
 				.build())

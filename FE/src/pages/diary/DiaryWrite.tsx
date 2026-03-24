@@ -2,12 +2,8 @@ import { useState, useCallback, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { ChevronLeft, Check, Camera, X, Search, Sparkles, Wand2, Plus } from 'lucide-react';
 import { useAppStore } from '../../store';
-import { usePerfumeStore } from '../../store';
-import { DIARY_MOODS, DIARY_WEATHERS } from '../../constants/ui.constants';
+import { usePerfumeStore, useDiaryStore, useMyPageStore } from '../../store';
 import { ImageWithFallback } from '../../components/common/ImageWithFallback';
-import { DiaryCanvas, type DiaryFormData } from './DiaryCanvas';
-
-const TAG_OPTIONS = ['데일리', '갤러리', '데이트', '오피스', '저녁', '독서', '산책', '여행', '기분전환', '특별한 날'];
 
 const AI_SAMPLES = [
   '향이 피부에 스며들듯, 오늘도 조용히 흘러갔다. 기억에 남을 향기와 함께한 하루.',
@@ -17,19 +13,14 @@ const AI_SAMPLES = [
 ];
 
 export function DiaryWrite() {
-  const { navigateTo, savedPerfumes, myCollection } = useAppStore();
+  const { navigateTo } = useAppStore();
   const { searchResults, searchPerfumes } = usePerfumeStore();
+  const { createDiary } = useDiaryStore();
+  const { likedPerfumes, myPerfumes, fetchLikes, fetchMyPerfumes } = useMyPageStore();
 
-  const [stage, setStage] = useState<'form' | 'canvas'>('form');
-  const [mood, setMood] = useState('');
-  const [moodEmoji, setMoodEmoji] = useState('');
-  const [weather, setWeather] = useState('');
-  const [weatherEmoji, setWeatherEmoji] = useState('');
+  const [title, setTitle] = useState('');
   const [note, setNote] = useState('');
-  // 다중 향수 선택
-  const [selectedPerfumeIds, setSelectedPerfumeIds] = useState<number[]>([]);
-  const [tags, setTags] = useState<string[]>([]);
-  // 사진 최대 3개
+  const [selectedPerfumeId, setSelectedPerfumeId] = useState<number | null>(null);
   const [photoUrls, setPhotoUrls] = useState<string[]>([]);
   const [imageNames, setImageNames] = useState<string[]>([]);
   const [showPerfumeSheet, setShowPerfumeSheet] = useState(false);
@@ -37,50 +28,70 @@ export function DiaryWrite() {
   const [perfumeFilter, setPerfumeFilter] = useState<'all' | 'saved' | 'collection'>('all');
   const [aiLoading, setAiLoading] = useState(false);
   const [aiUsed, setAiUsed] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState('');
 
+  // '전체' 탭만 API 검색, 찜/컬렉션은 클라이언트 필터링
   useEffect(() => {
+    if (!showPerfumeSheet || perfumeFilter !== 'all') return;
     const timer = setTimeout(() => {
-      searchPerfumes(perfumeSearch.trim() || '');
+      searchPerfumes(perfumeSearch.trim());
     }, 400);
     return () => clearTimeout(timer);
-  }, [perfumeSearch, searchPerfumes]);
+  }, [perfumeSearch, searchPerfumes, showPerfumeSheet, perfumeFilter]);
 
-  const selectedPerfumes = searchResults.filter(p => selectedPerfumeIds.includes(p.perfumeId));
+  // 찜/컬렉션 탭 진입 시 데이터 로드
+  useEffect(() => {
+    if (!showPerfumeSheet) return;
+    if (perfumeFilter === 'saved' && likedPerfumes.length === 0) fetchLikes(1, 200);
+    if (perfumeFilter === 'collection' && myPerfumes.length === 0) fetchMyPerfumes(1, 200);
+  }, [showPerfumeSheet, perfumeFilter]);
+
+  const selectedPerfume = selectedPerfumeId !== null
+    ? (
+        searchResults.find(p => p.perfumeId === selectedPerfumeId) ??
+        likedPerfumes.find(p => p.perfumeId === selectedPerfumeId) ??
+        myPerfumes.find(p => p.perfumeId === selectedPerfumeId) ??
+        null
+      )
+    : null;
 
   const baseFilteredPerfumes = (() => {
-    if (perfumeFilter === 'saved') return searchResults.filter(p => savedPerfumes.includes(p.perfumeId));
-    if (perfumeFilter === 'collection') return searchResults.filter(p => myCollection.includes(p.perfumeId));
+    const query = perfumeSearch.trim().toLowerCase();
+    if (perfumeFilter === 'saved') {
+      return query
+        ? likedPerfumes.filter(p => p.name.toLowerCase().includes(query) || p.brand.toLowerCase().includes(query))
+        : likedPerfumes;
+    }
+    if (perfumeFilter === 'collection') {
+      return query
+        ? myPerfumes.filter(p => p.name.toLowerCase().includes(query) || p.brand.toLowerCase().includes(query))
+        : myPerfumes;
+    }
     return searchResults;
   })();
-
-  const filteredPerfumes = baseFilteredPerfumes;
 
   const emptyMessage = (() => {
     if (perfumeSearch.trim()) return '검색 결과가 없어요';
     if (perfumeFilter === 'saved') return '찜한 향수가 없어요';
     if (perfumeFilter === 'collection') return '구매한 향수가 없어요';
-    return '향수 이름을 검색해보세요';
+    return '향수 목록을 불러오는 중이에요';
   })();
 
-  const toggleTag = (t: string) =>
-    setTags(prev => prev.includes(t) ? prev.filter(x => x !== t) : [...prev, t]);
-
-  const togglePerfume = (id: number) => {
-    setSelectedPerfumeIds(prev =>
-      prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
-    );
+  const selectPerfume = (id: number) => {
+    setSelectedPerfumeId(id);
+    setShowPerfumeSheet(false);
+    setPerfumeSearch('');
   };
 
   const handlePhotoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file && photoUrls.length < 3) {
-      // 미리보기용 data URL
       const reader = new FileReader();
       reader.onloadend = () => {
         setPhotoUrls(prev => [...prev, reader.result as string]);
       };
       reader.readAsDataURL(file);
-      // S3 업로드 후 파일명 저장
       import('../../api/s3').then(({ uploadImageToS3 }) => {
         uploadImageToS3(file).then(fileName => {
           setImageNames(prev => [...prev, fileName]);
@@ -106,22 +117,34 @@ export function DiaryWrite() {
     setAiLoading(false);
   }, [aiLoading, note]);
 
-  const formData: DiaryFormData = {
-    mood, moodEmoji, weather, weatherEmoji, note,
-    selectedPerfumeId: selectedPerfumeIds[0] ?? null,
-    perfume: selectedPerfumes[0] ?? null,
-    tags,
-    photoUrl: photoUrls[0] ?? null,
-    imageNames,
+  const handleSave = async () => {
+    if (saving) return;
+    setSaving(true);
+    setSaveError('');
+    try {
+      await createDiary({
+        title: title.trim() || '오늘의 향',
+        content: note,
+        perfumeId: selectedPerfumeId ?? 0,
+        images: imageNames,
+      });
+      navigateTo('diary');
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : '';
+      if (msg.includes('403') || msg.includes('401')) {
+        setSaveError('로그인이 만료되었습니다. 다시 로그인해주세요.');
+      } else {
+        setSaveError(msg || '저장에 실패했습니다.');
+      }
+      setSaving(false);
+    }
   };
-
-  if (stage === 'canvas') {
-    return <DiaryCanvas formData={formData} onBack={() => setStage('form')} />;
-  }
 
   const today = new Date().toLocaleDateString('ko-KR', {
     year: 'numeric', month: 'long', day: 'numeric', weekday: 'long',
   });
+
+  const hasContent = title.trim().length > 0 || note.trim().length > 0 || selectedPerfumeId !== null;
 
   return (
     <div className="w-full h-full flex flex-col" style={{ background: '#FAFAF8' }}>
@@ -152,99 +175,98 @@ export function DiaryWrite() {
       {/* ── 스크롤 폼 ──────────────────────────────────── */}
       <div className="flex-1 overflow-y-auto px-5 pb-4">
 
-        {/* 기분 */}
+        {/* 제목 입력 */}
         <section className="mb-5">
-          <p className="text-[#B8B4AE] mb-2.5" style={{ fontSize: '0.5625rem', letterSpacing: '0.12em' }}>오늘의 기분</p>
-          <div className="flex flex-wrap gap-2">
-            {DIARY_MOODS.map(m => (
-              <motion.button
-                key={m.label}
-                className="flex items-center gap-1.5 px-3 py-2 rounded-full border whitespace-nowrap transition-colors"
-                style={{
-                  fontSize: '0.8125rem',
-                  borderColor: mood === m.label ? '#6B7B5E' : 'rgba(0,0,0,0.07)',
-                  backgroundColor: mood === m.label ? '#6B7B5E14' : 'transparent',
-                  color: mood === m.label ? '#3D4A32' : '#8A8680',
-                }}
-                onClick={() => { setMood(m.label); setMoodEmoji(m.emoji); }}
-                whileTap={{ scale: 0.94 }}
-              >
-                <span style={{ fontSize: '1rem' }}>{m.emoji}</span>
-                <span>{m.label}</span>
-              </motion.button>
-            ))}
-          </div>
+          <p className="text-[#B8B4AE] mb-2.5" style={{ fontSize: '0.5625rem', letterSpacing: '0.12em' }}>제목</p>
+          <input
+            type="text"
+            className="w-full px-4 py-3 rounded-2xl outline-none text-[#1A1A1A] placeholder:text-[#D4D0CA]"
+            style={{
+              fontSize: '1rem',
+              backgroundColor: '#F5F3EF',
+              border: '1.5px solid transparent',
+              fontFamily: "'Playfair Display', serif",
+            }}
+            placeholder="일기 제목을 입력하세요"
+            value={title}
+            onChange={e => setTitle(e.target.value)}
+            maxLength={50}
+          />
         </section>
 
-        {/* 날씨 */}
-        <section className="mb-5">
-          <p className="text-[#B8B4AE] mb-2.5" style={{ fontSize: '0.5625rem', letterSpacing: '0.12em' }}>날씨</p>
-          <div className="flex flex-wrap gap-2">
-            {DIARY_WEATHERS.map(w => (
-              <motion.button
-                key={w.label}
-                className="flex items-center gap-1.5 px-3 py-2 rounded-full border whitespace-nowrap transition-colors"
-                style={{
-                  fontSize: '0.8125rem',
-                  borderColor: weather === w.label ? '#6B7B5E' : 'rgba(0,0,0,0.07)',
-                  backgroundColor: weather === w.label ? '#6B7B5E14' : 'transparent',
-                  color: weather === w.label ? '#3D4A32' : '#8A8680',
-                }}
-                onClick={() => { setWeather(w.label); setWeatherEmoji(w.emoji); }}
-                whileTap={{ scale: 0.94 }}
-              >
-                <span style={{ fontSize: '1rem' }}>{w.emoji}</span>
-                <span>{w.label}</span>
-              </motion.button>
-            ))}
-          </div>
-        </section>
-
-        {/* 향수 선택 — 다중 선택 */}
+        {/* 향수 선택 */}
         <section className="mb-5">
           <p className="text-[#B8B4AE] mb-2.5" style={{ fontSize: '0.5625rem', letterSpacing: '0.12em' }}>오늘 뿌린 향수</p>
 
-          {/* 선택된 향수 칩 목록 */}
-          {selectedPerfumes.length > 0 && (
-            <div className="flex flex-wrap gap-2 mb-2">
-              {selectedPerfumes.map(p => (
-                <motion.div
-                  key={p.perfumeId}
-                  className="flex items-center gap-1.5 pl-1.5 pr-2.5 py-1.5 rounded-full"
-                  style={{ background: 'linear-gradient(135deg, #EFF3F7 0%, #F5F3EF 100%)', border: '1.5px solid rgba(139,164,184,0.2)' }}
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.9 }}
-                >
-                  <div className="w-6 h-6 rounded-full overflow-hidden shrink-0">
-                    <ImageWithFallback src={p.image} alt={p.name} className="w-full h-full object-cover" />
-                  </div>
-                  <span className="text-[#1A1A1A]" style={{ fontSize: '0.8125rem' }}>{p.name}</span>
+          {selectedPerfume ? (
+            <div className="flex items-center gap-3 p-3.5 rounded-2xl"
+              style={{ background: 'linear-gradient(135deg, #EFF3F7 0%, #F5F3EF 100%)', border: '1.5px solid rgba(139,164,184,0.15)' }}>
+              <div className="w-12 h-12 rounded-xl overflow-hidden shrink-0">
+                <ImageWithFallback src={selectedPerfume.image} alt={selectedPerfume.name} className="w-full h-full object-cover" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-[#8A8680]" style={{ fontSize: '0.5625rem', letterSpacing: '0.06em' }}>{selectedPerfume.brand.toUpperCase()}</p>
+                <p className="text-[#1A1A1A] truncate" style={{ fontSize: '0.9375rem' }}>{selectedPerfume.name}</p>
+              </div>
+              <motion.button
+                className="w-7 h-7 rounded-full flex items-center justify-center shrink-0"
+                style={{ backgroundColor: 'rgba(139,164,184,0.15)' }}
+                onClick={() => setSelectedPerfumeId(null)}
+                whileTap={{ scale: 0.9 }}
+              >
+                <X size={12} className="text-[#8A8680]" />
+              </motion.button>
+            </div>
+          ) : (
+            <motion.button
+              className="flex items-center gap-2 px-3 py-2.5 rounded-2xl border-2 border-dashed transition-colors hover:border-[#6B7B5E]"
+              style={{ borderColor: '#E8E6E1' }}
+              onClick={() => setShowPerfumeSheet(true)}
+              whileTap={{ scale: 0.98 }}
+            >
+              <Plus size={14} className="text-[#B8B4AE]" />
+              <span className="text-[#B8B4AE]" style={{ fontSize: '0.875rem' }}>향수 검색 또는 선택</span>
+            </motion.button>
+          )}
+        </section>
+
+        {/* 사진 — 최대 3개 */}
+        <section className="mb-5">
+          <p className="text-[#B8B4AE] mb-2.5" style={{ fontSize: '0.5625rem', letterSpacing: '0.12em' }}>사진 (최대 3개)</p>
+
+          {photoUrls.length > 0 && (
+            <div className="flex gap-2 mb-2">
+              {photoUrls.map((url, idx) => (
+                <div key={idx} className="relative rounded-xl overflow-hidden" style={{ width: 80, height: 80, flexShrink: 0 }}>
+                  <img src={url} alt="" className="w-full h-full object-cover" />
                   <motion.button
-                    className="w-4 h-4 rounded-full flex items-center justify-center shrink-0"
-                    style={{ backgroundColor: 'rgba(139,164,184,0.2)' }}
-                    onClick={() => togglePerfume(p.perfumeId)}
+                    className="absolute top-1 right-1 w-5 h-5 rounded-full flex items-center justify-center"
+                    style={{ backgroundColor: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(4px)' }}
+                    onClick={() => removePhoto(idx)}
                     whileTap={{ scale: 0.9 }}
                   >
-                    <X size={9} className="text-[#8A8680]" />
+                    <X size={10} className="text-white" />
                   </motion.button>
-                </motion.div>
+                </div>
               ))}
             </div>
           )}
 
-          {/* 향수 추가 버튼 — 항상 표시 */}
-          <motion.button
-            className="flex items-center gap-2 px-3 py-2.5 rounded-2xl border-2 border-dashed transition-colors hover:border-[#6B7B5E]"
-            style={{ borderColor: '#E8E6E1' }}
-            onClick={() => setShowPerfumeSheet(true)}
-            whileTap={{ scale: 0.98 }}
-          >
-            <Plus size={14} className="text-[#B8B4AE]" />
-            <span className="text-[#B8B4AE]" style={{ fontSize: '0.875rem' }}>
-              {selectedPerfumes.length > 0 ? '향수 추가' : '향수 검색 또는 선택'}
-            </span>
-          </motion.button>
+          {photoUrls.length < 3 && (
+            <label>
+              <input type="file" accept="image/*" onChange={handlePhotoSelect} className="hidden" />
+              <motion.div
+                className="w-full h-20 rounded-2xl border-2 border-dashed flex flex-col items-center justify-center gap-1.5 cursor-pointer transition-colors hover:border-[#6B7B5E]"
+                style={{ borderColor: '#E8E6E1' }}
+                whileTap={{ scale: 0.98 }}
+              >
+                <Camera size={18} className="text-[#B8B4AE]" />
+                <p className="text-[#8A8680]" style={{ fontSize: '0.8125rem' }}>
+                  {photoUrls.length > 0 ? `사진 추가 (${photoUrls.length}/3)` : '사진 추가하기'}
+                </p>
+              </motion.div>
+            </label>
+          )}
         </section>
 
         {/* 오늘의 기록 */}
@@ -273,7 +295,6 @@ export function DiaryWrite() {
               value={note}
               onChange={e => setNote(e.target.value)}
             />
-            {/* AI 버튼 */}
             <motion.button
               className="absolute bottom-3 right-3 flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl"
               style={{
@@ -305,84 +326,110 @@ export function DiaryWrite() {
           </div>
         </section>
 
-        {/* 사진 — 최대 3개 */}
-        <section className="mb-5">
-          <p className="text-[#B8B4AE] mb-2.5" style={{ fontSize: '0.5625rem', letterSpacing: '0.12em' }}>사진 (최대 3개)</p>
+        {/* ── 일기 미리보기 ──────────────────────────────── */}
+        <AnimatePresence>
+          {hasContent && (
+            <motion.section
+              className="mb-5"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 10 }}
+              transition={{ duration: 0.22 }}
+            >
+              <p className="text-[#B8B4AE] mb-2.5" style={{ fontSize: '0.5625rem', letterSpacing: '0.12em' }}>미리보기</p>
+              <div
+                className="rounded-2xl overflow-hidden"
+                style={{ background: 'linear-gradient(145deg, #FFFFFF, #F8F7F4)', boxShadow: '0 2px 16px rgba(0,0,0,0.06)' }}
+              >
+                {/* 사진 영역 */}
+                {photoUrls.length > 0 && (
+                  <div className={`grid gap-0.5 ${photoUrls.length === 1 ? 'grid-cols-1' : photoUrls.length === 2 ? 'grid-cols-2' : 'grid-cols-3'}`}
+                    style={{ maxHeight: 200 }}>
+                    {photoUrls.map((url, idx) => (
+                      <img key={idx} src={url} alt="" className="w-full object-cover" style={{ height: 200 }} />
+                    ))}
+                  </div>
+                )}
 
-          {/* 첨부된 사진들 */}
-          {photoUrls.length > 0 && (
-            <div className="flex gap-2 mb-2">
-              {photoUrls.map((url, idx) => (
-                <div key={idx} className="relative rounded-xl overflow-hidden" style={{ width: 80, height: 80, flexShrink: 0 }}>
-                  <img src={url} alt="" className="w-full h-full object-cover" />
-                  <motion.button
-                    className="absolute top-1 right-1 w-5 h-5 rounded-full flex items-center justify-center"
-                    style={{ backgroundColor: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(4px)' }}
-                    onClick={() => removePhoto(idx)}
-                    whileTap={{ scale: 0.9 }}
-                  >
-                    <X size={10} className="text-white" />
-                  </motion.button>
+                <div className="p-4">
+                  {/* 날짜 */}
+                  <p className="text-[#B8B4AE] mb-1.5" style={{ fontSize: '0.6875rem' }}>{today}</p>
+
+                  {/* 제목 */}
+                  {title.trim() && (
+                    <p className="text-[#1A1A1A] mb-2.5" style={{ fontSize: '1rem', fontWeight: 600, fontFamily: "'Playfair Display', serif" }}>
+                      {title}
+                    </p>
+                  )}
+
+                  {/* 향수 */}
+                  {selectedPerfume && (
+                    <div className="flex items-center gap-2 mb-3">
+                      <div className="w-8 h-8 rounded-lg overflow-hidden shrink-0">
+                        <ImageWithFallback src={selectedPerfume.image} alt={selectedPerfume.name} className="w-full h-full object-cover" />
+                      </div>
+                      <div>
+                        <p className="text-[#B8B4AE]" style={{ fontSize: '0.5625rem' }}>{selectedPerfume.brand}</p>
+                        <p className="text-[#1A1A1A]" style={{ fontSize: '0.8125rem' }}>{selectedPerfume.name}</p>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* 본문 */}
+                  {note.trim() && (
+                    <p className="text-[#2A2A2A]"
+                      style={{
+                        fontSize: '0.875rem', lineHeight: 1.75,
+                        fontFamily: "'Playfair Display', serif",
+                        display: '-webkit-box', WebkitLineClamp: 4,
+                        WebkitBoxOrient: 'vertical', overflow: 'hidden',
+                      }}>
+                      {note}
+                    </p>
+                  )}
                 </div>
-              ))}
-            </div>
+              </div>
+            </motion.section>
           )}
-
-          {/* 사진 추가 버튼 — 3개 미만일 때만 표시 */}
-          {photoUrls.length < 3 && (
-            <label>
-              <input type="file" accept="image/*" onChange={handlePhotoSelect} className="hidden" />
-              <motion.div
-                className="w-full h-20 rounded-2xl border-2 border-dashed flex flex-col items-center justify-center gap-1.5 cursor-pointer transition-colors hover:border-[#6B7B5E]"
-                style={{ borderColor: '#E8E6E1' }}
-                whileTap={{ scale: 0.98 }}
-              >
-                <Camera size={18} className="text-[#B8B4AE]" />
-                <p className="text-[#8A8680]" style={{ fontSize: '0.8125rem' }}>
-                  {photoUrls.length > 0 ? `사진 추가 (${photoUrls.length}/3)` : '사진 추가하기'}
-                </p>
-              </motion.div>
-            </label>
-          )}
-        </section>
-
-        {/* 태그 */}
-        <section className="mb-5">
-          <p className="text-[#B8B4AE] mb-2.5" style={{ fontSize: '0.5625rem', letterSpacing: '0.12em' }}>태그</p>
-          <div className="flex flex-wrap gap-2">
-            {TAG_OPTIONS.map(t => (
-              <motion.button
-                key={t}
-                className="px-3 py-1.5 rounded-full border whitespace-nowrap transition-colors"
-                style={{
-                  fontSize: '0.8125rem',
-                  borderColor: tags.includes(t) ? '#6B7B5E' : 'rgba(0,0,0,0.07)',
-                  backgroundColor: tags.includes(t) ? '#6B7B5E14' : 'transparent',
-                  color: tags.includes(t) ? '#3D4A32' : '#8A8680',
-                }}
-                onClick={() => toggleTag(t)}
-                whileTap={{ scale: 0.94 }}
-              >
-                {t}
-              </motion.button>
-            ))}
-          </div>
-        </section>
+        </AnimatePresence>
       </div>
 
-      {/* ── 하단 CTA ──────────────────────────────────── */}
+      {/* ── 에러 메시지 ────────────────────────────────── */}
+      {saveError && (
+        <div className="px-5 pb-2 shrink-0">
+          <p className="text-center text-red-500" style={{ fontSize: '0.8125rem' }}>{saveError}</p>
+        </div>
+      )}
+
+      {/* ── 하단 저장 버튼 ─────────────────────────────── */}
       <div className="px-5 pt-3 pb-6 shrink-0" style={{ borderTop: '1px solid rgba(0,0,0,0.05)' }}>
         <motion.button
           className="w-full py-4 rounded-2xl flex items-center justify-center gap-2"
           style={{
-            background: 'linear-gradient(135deg, #6B7B5E 0%, #8FA380 100%)',
-            boxShadow: '0 4px 16px rgba(107,123,94,0.3)',
+            background: hasContent
+              ? 'linear-gradient(135deg, #6B7B5E 0%, #8FA380 100%)'
+              : '#E8E6E1',
+            boxShadow: hasContent ? '0 4px 16px rgba(107,123,94,0.3)' : 'none',
           }}
-          onClick={() => setStage('canvas')}
-          whileTap={{ scale: 0.97 }}
+          onClick={handleSave}
+          disabled={!hasContent || saving}
+          whileTap={hasContent ? { scale: 0.97 } : {}}
         >
-          <span style={{ fontSize: '1rem' }}>✦</span>
-          <span className="text-white" style={{ fontSize: '0.9375rem' }}>캔버스에서 꾸미기</span>
+          {saving ? (
+            <>
+              <motion.div
+                className="w-4 h-4 rounded-full border-2 border-white/40 border-t-white"
+                animate={{ rotate: 360 }}
+                transition={{ repeat: Infinity, duration: 0.7, ease: 'linear' }}
+              />
+              <span className="text-white" style={{ fontSize: '0.9375rem' }}>저장 중...</span>
+            </>
+          ) : (
+            <>
+              <Check size={16} className={hasContent ? 'text-white' : 'text-[#B8B4AE]'} />
+              <span style={{ fontSize: '0.9375rem', color: hasContent ? '#FFFFFF' : '#B8B4AE' }}>일기 저장하기</span>
+            </>
+          )}
         </motion.button>
       </div>
 
@@ -453,14 +500,12 @@ export function DiaryWrite() {
 
               {/* 목록 */}
               <div className="flex-1 overflow-y-auto px-5 pb-8">
-                {filteredPerfumes.map(p => (
+                {baseFilteredPerfumes.map(p => (
                   <motion.button
                     key={p.perfumeId}
                     className="w-full flex items-center gap-3 py-3 border-b last:border-b-0"
                     style={{ borderColor: '#F0EDE7' }}
-                    onClick={() => {
-                      togglePerfume(p.perfumeId);
-                    }}
+                    onClick={() => selectPerfume(p.perfumeId)}
                     whileTap={{ scale: 0.98 }}
                   >
                     <div className="w-11 h-11 rounded-xl overflow-hidden shrink-0">
@@ -470,32 +515,17 @@ export function DiaryWrite() {
                       <p className="text-[#B8B4AE]" style={{ fontSize: '0.5625rem', letterSpacing: '0.06em' }}>{p.brand.toUpperCase()}</p>
                       <p className="text-[#1A1A1A] truncate" style={{ fontSize: '0.9375rem' }}>{p.name}</p>
                     </div>
-                    {selectedPerfumeIds.includes(p.perfumeId) && (
+                    {selectedPerfumeId === p.perfumeId && (
                       <div className="w-5 h-5 rounded-full flex items-center justify-center shrink-0" style={{ backgroundColor: '#6B7B5E' }}>
                         <Check size={10} className="text-white" />
                       </div>
                     )}
                   </motion.button>
                 ))}
-                {filteredPerfumes.length === 0 && (
+                {baseFilteredPerfumes.length === 0 && (
                   <p className="text-center text-[#B8B4AE] py-10" style={{ fontSize: '0.875rem' }}>{emptyMessage}</p>
                 )}
               </div>
-
-              {/* 완료 버튼 */}
-              {selectedPerfumeIds.length > 0 && (
-                <div className="px-5 pb-6 pt-2 shrink-0" style={{ borderTop: '1px solid rgba(0,0,0,0.05)' }}>
-                  <motion.button
-                    className="w-full py-3 rounded-2xl text-white flex items-center justify-center gap-1.5"
-                    style={{ background: 'linear-gradient(135deg, #6B7B5E, #8FA380)', fontSize: '0.875rem' }}
-                    onClick={() => { setShowPerfumeSheet(false); setPerfumeSearch(''); }}
-                    whileTap={{ scale: 0.97 }}
-                  >
-                    <Check size={14} />
-                    {selectedPerfumeIds.length}개 선택 완료
-                  </motion.button>
-                </div>
-              )}
             </motion.div>
           </>
         )}

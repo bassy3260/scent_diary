@@ -1,28 +1,59 @@
-import { mockPerfumes } from '../constants/perfumes';
-import type { Perfume } from '../types/perfume.types';
 
 const ACCORD_COLOR_MAP: Record<string, string> = {
+  // ── 영문 ──────────────────────────────
   Woody: '#6B7B5E',
-  Aromatic: '#8BA4B8',
+  Aromatic: '#7A9E8E',
   Musky: '#B8A88A',
-  Leather: '#C4956A',
-  Fresh: '#8BA4B8',
+  Leather: '#8B6442',
+  Fresh: '#7FB5C1',
   Floral: '#C8A5A5',
-  Powdery: '#D8C7DB',
-  Oud: '#8B6442',
+  Powdery: '#C4A8C8',
+  Oud: '#6B4C3B',
   Spicy: '#C4956A',
-  Sweet: '#D4C5A9',
-  Citrus: '#E0B76A',
-  Green: '#A3B18A',
+  Sweet: '#D4A5B0',
+  Citrus: '#E0C050',
+  Green: '#7BAF6E',
   Earthy: '#8D7B68',
-  Amber: '#B88746',
-  Fruity: '#D98B7A',
-  Aquatic: '#7FA9C7',
-};
+  Amber: '#C8882A',
+  Fruity: '#E07878',
+  Aquatic: '#5FA0C8',
 
-function normalizeText(value: string | undefined) {
-  return (value ?? '').trim().toLowerCase().replace(/\s+/g, '');
-}
+  // ── 한국어 ─────────────────────────────
+  시트러스: '#E0C050',
+  프레시: '#7FB5C1',
+  아쿠아틱: '#5FA0C8',
+  그린: '#7BAF6E',
+  플로럴: '#C8A5A5',
+  '화이트 플로럴': '#E8D8D8',
+  프루티: '#E07878',
+  스위트: '#D4A5B0',
+  바닐라: '#D4C4A0',
+  구르망: '#B87840',
+  우디: '#6B7B5E',
+  머스키: '#B8A88A',
+  앰버: '#C8882A',
+  '웜 스파이시': '#C06030',
+  '프레시 스파이시': '#60A890',
+  아로마틱: '#7A9E8E',
+  레더: '#8B6442',
+  파우더리: '#C4A8C8',
+  스모키: '#787878',
+  어시: '#A0A0A0',
+  오리엔탈: '#8050A0',
+  알데하이드: '#B0C0C8',
+  미네랄: '#7890A0',
+  인센스: '#706080',
+  '옐로우 플로럴': '#D8C050',
+  솝: '#A8C8D8',
+  오조닉: '#80C0D8',
+  '소프트 스파이시': '#C89080',
+  모씨: '#4E7A5E',
+  락토닉: '#E0D0B0',
+  애니멀릭: '#806050',
+  솔티: '#7098A8',
+  발사믹: '#7A5030',
+  시프러스: '#6E8060',
+};
 
 export function getAccordColor(name: string) {
   return ACCORD_COLOR_MAP[name] ?? '#8A8680';
@@ -57,31 +88,34 @@ export function buildAccordStats(items: Array<{ accords: string[] }>): AccordSta
 }
 
 export function formatMyPageDate(
-  value: string,
+  value: string | null | undefined,
   options: Intl.DateTimeFormatOptions = {
     year: 'numeric',
     month: '2-digit',
     day: '2-digit',
   },
 ) {
+  if (!value) return '';
+
   const parsed = new Date(value);
 
   if (Number.isNaN(parsed.getTime())) {
-    return value;
+    return '';
   }
 
   return new Intl.DateTimeFormat('ko-KR', options).format(parsed);
 }
 
 export function getRecommendationSummaryText(input: {
+  keyword?: string | null;
   text?: string | null;
   keywords?: string[];
   image?: string | null;
 }) {
-  const text = input.text?.trim();
+  const keyword = input.keyword?.trim() || input.text?.trim();
 
-  if (text) {
-    return `"${text}"`;
+  if (keyword) {
+    return `"${keyword}"`;
   }
 
   if (input.keywords && input.keywords.length > 0) {
@@ -95,31 +129,6 @@ export function getRecommendationSummaryText(input: {
   return '추천 기록';
 }
 
-export function findMockPerfumeMatch(reference: {
-  perfumeId?: number;
-  brand?: string;
-  name?: string;
-}): Perfume | null {
-  if (reference.perfumeId !== undefined) {
-    const matchedById = mockPerfumes.find((perfume) => perfume.id === String(reference.perfumeId));
-
-    if (matchedById) {
-      return matchedById;
-    }
-  }
-
-  const brand = normalizeText(reference.brand);
-  const name = normalizeText(reference.name);
-
-  if (!brand && !name) {
-    return null;
-  }
-
-  return (
-    mockPerfumes.find(
-      (perfume) =>
-        normalizeText(perfume.brand) === brand &&
-        normalizeText(perfume.name) === name,
-    ) ?? null
-  );
+export function hasPerfumeId(reference: { perfumeId?: number }): boolean {
+  return reference.perfumeId !== undefined && reference.perfumeId !== null;
 }

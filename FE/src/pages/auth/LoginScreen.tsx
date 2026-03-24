@@ -15,7 +15,7 @@ export function LoginScreen({
   onComplete,
   onGoSignup,
 }: LoginScreenProps) {
-  const { setAuthenticated, clearAuthState, updateProfile } = useAppStore();
+  const { setAuthenticated, clearAuthState, fetchMe } = useAppStore();
   const [loginId, setLoginId] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -38,9 +38,7 @@ export function LoginScreen({
       });
 
       setAuthenticated(accessToken);
-
-      const me = await authApi.getMe();
-      updateProfile({ nickname: me.nickname ?? "" });
+      await fetchMe();
 
       onComplete();
     } catch (error) {

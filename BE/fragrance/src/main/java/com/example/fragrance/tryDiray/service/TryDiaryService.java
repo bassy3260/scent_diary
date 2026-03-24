@@ -20,39 +20,43 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class TryDiaryService {
 
-    private final TryDiaryMapper tryDiaryMapper;
-    private final TryDiaryPerfumeMapper tryDiaryPerfumeMapper;
+	private final TryDiaryMapper tryDiaryMapper;
+	private final TryDiaryPerfumeMapper tryDiaryPerfumeMapper;
 
-    public PageResponse<TryDiaryListResponse> getTryDiaries(Long memberId, int page, int size) {
-        int offset = (page - 1) * size;
-        List<TryDiaryListResponse> list = tryDiaryMapper.findAll(memberId, offset, size);
-        int totalElements = tryDiaryMapper.countByMemberId(memberId);
-        return PageResponse.of(list, totalElements, page, size);
-    }
+	public PageResponse<TryDiaryListResponse> getTryDiaries(Long memberId, int page, int size) {
+		int offset = (page - 1) * size;
+		List<TryDiaryListResponse> list = tryDiaryMapper.findAll(memberId, offset, size);
+		int totalElements = tryDiaryMapper.countByMemberId(memberId);
+		return PageResponse.of(list, totalElements, page, size);
+	}
 
-    public TryDiaryDetailResponse getTryDiary(Long tryDiaryId) {
-        return tryDiaryMapper.findById(tryDiaryId);
-    }
+	public TryDiaryDetailResponse getTryDiary(Long tryDiaryId) {
+		return tryDiaryMapper.findById(tryDiaryId);
+	}
 
-    @Transactional
-    public Long createTryDiary(Long memberId, TryDiaryCreateRequest request) {
-        TryDiary tryDiary = TryDiary.builder()
-                .memberId(memberId)
-                .title(request.getTitle())
-                .build();
-        tryDiaryMapper.insert(tryDiary);
+	@Transactional
+	public Long createTryDiary(Long memberId, TryDiaryCreateRequest request) {
+		TryDiary tryDiary = TryDiary.builder()
+			.memberId(memberId)
+			.title(request.getTitle())
+			.build();
+		tryDiaryMapper.insert(tryDiary);
 
-        if (request.getTryItems() != null && !request.getTryItems().isEmpty()) {
-            List<TryDiaryPerfume> perfumes = request.getTryItems().stream()
-                    .map(item -> TryDiaryPerfume.builder()
-                            .tryDiaryId(tryDiary.getTryDiaryId())
-                            .perfumeId(item.getPerfumeId())
-                            .description(item.getDetail())
-                            .build())
-                    .collect(Collectors.toList());
-            tryDiaryPerfumeMapper.insertBatch(perfumes);
-        }
+		if (request.getTryItems() != null && !request.getTryItems().isEmpty()) {
+			List<TryDiaryPerfume> perfumes = request.getTryItems().stream()
+				.map(item -> TryDiaryPerfume.builder()
+					.tryDiaryId(tryDiary.getTryDiaryId())
+					.perfumeId(item.getPerfumeId())
+					.description(item.getDescription())
+					.place(item.getPlace())
+					.lasting(item.getLasting())
+					.sillage(item.getSillage())
+					.season(item.getSeason())
+					.build())
+				.collect(Collectors.toList());
+			tryDiaryPerfumeMapper.insertBatch(perfumes);
+		}
 
-        return tryDiary.getTryDiaryId();
-    }
+		return tryDiary.getTryDiaryId();
+	}
 }

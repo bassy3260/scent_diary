@@ -1,14 +1,24 @@
-import { useEffect, useMemo, useState } from 'react';
-import { motion } from 'motion/react';
-import { ChevronRight, BookOpen, Clock, Heart, Settings, Package, Edit2, X } from 'lucide-react';
-import { useAppStore } from '../../store';
-import { AGE_RANGES, PROFILE_GENDERS } from '../../constants/ui.constants';
-import { buildAccordStats } from '../../utils/mypage';
+import { useEffect, useMemo, useState } from "react";
+import { motion } from "motion/react";
+import {
+  ChevronRight,
+  BookOpen,
+  Clock,
+  Heart,
+  Settings,
+  Package,
+  Edit2,
+  X,
+} from "lucide-react";
+import { useAppStore } from "../../store";
+import { AGE_RANGES, PROFILE_GENDERS } from "../../constants/ui.constants";
+import { buildAccordStats } from "../../utils/mypage";
+import { ageRangeToBirthYear, toApiGender } from "../../utils/userProfile";
 
 export function MyPage() {
   const navigateTo = useAppStore((state) => state.navigateTo);
   const profile = useAppStore((state) => state.profile);
-  const updateProfile = useAppStore((state) => state.updateProfile);
+  const updateMe = useAppStore((state) => state.updateMe);
   const diaryEntries = useAppStore((state) => state.diaryEntries);
   const likedPerfumes = useAppStore((state) => state.likedPerfumes);
   const likesPageInfo = useAppStore((state) => state.likesPageInfo);
@@ -16,19 +26,27 @@ export function MyPage() {
   const myPerfumesPageInfo = useAppStore((state) => state.myPerfumesPageInfo);
   const myReviews = useAppStore((state) => state.myReviews);
   const myReviewsPageInfo = useAppStore((state) => state.myReviewsPageInfo);
-  const recommendationHistory = useAppStore((state) => state.recommendationHistory);
-  const recommendationHistoryPageInfo = useAppStore((state) => state.recommendationHistoryPageInfo);
+  const recommendationHistory = useAppStore(
+    (state) => state.recommendationHistory,
+  );
+  const recommendationHistoryPageInfo = useAppStore(
+    (state) => state.recommendationHistoryPageInfo,
+  );
   const fetchLikes = useAppStore((state) => state.fetchLikes);
   const fetchMyPerfumes = useAppStore((state) => state.fetchMyPerfumes);
   const fetchMyReviews = useAppStore((state) => state.fetchMyReviews);
-  const fetchRecommendationHistory = useAppStore((state) => state.fetchRecommendationHistory);
+  const fetchRecommendationHistory = useAppStore(
+    (state) => state.fetchRecommendationHistory,
+  );
   const loading = useAppStore((state) => state.loading);
   const error = useAppStore((state) => state.error);
 
   const [showEditModal, setShowEditModal] = useState(false);
-  const [editNickname, setEditNickname] = useState(profile.nickname || '');
-  const [editAgeRange, setEditAgeRange] = useState(profile.ageRange || '');
-  const [editGender, setEditGender] = useState(profile.gender || '');
+  const [editNickname, setEditNickname] = useState(profile.nickname || "");
+  const [editAgeRange, setEditAgeRange] = useState(profile.ageRange || "");
+  const [editGender, setEditGender] = useState(profile.gender || "");
+  const [isSavingProfile, setIsSavingProfile] = useState(false);
+  const [profileSaveError, setProfileSaveError] = useState("");
 
   useEffect(() => {
     void Promise.all([
@@ -40,30 +58,83 @@ export function MyPage() {
   }, [fetchLikes, fetchMyPerfumes, fetchMyReviews, fetchRecommendationHistory]);
 
   const tasteSource = likedPerfumes.length > 0 ? likedPerfumes : myPerfumes;
-  const topAccords = useMemo(() => buildAccordStats(tasteSource).slice(0, 4), [tasteSource]);
+  const topAccords = useMemo(
+    () => buildAccordStats(tasteSource).slice(0, 4),
+    [tasteSource],
+  );
 
   const likesCount = likesPageInfo?.totalElements ?? likedPerfumes.length;
-  const myPerfumesCount = myPerfumesPageInfo?.totalElements ?? myPerfumes.length;
+  const myPerfumesCount =
+    myPerfumesPageInfo?.totalElements ?? myPerfumes.length;
   const reviewsCount = myReviewsPageInfo?.totalElements ?? myReviews.length;
-  const historyCount = recommendationHistoryPageInfo?.totalElements ?? recommendationHistory.length;
+  const historyCount =
+    recommendationHistoryPageInfo?.totalElements ??
+    recommendationHistory.length;
+
+  const handleSaveProfile = async () => {
+    const nickname = editNickname.trim();
+
+    if (!nickname || !editGender || !editAgeRange) {
+      return;
+    }
+
+    const birthYear =
+      editAgeRange === profile.ageRange && typeof profile.birthYear === "number"
+        ? profile.birthYear
+        : ageRangeToBirthYear(editAgeRange);
+
+    if (typeof birthYear !== "number") {
+      setProfileSaveError("연령대 정보를 다시 선택한 뒤 저장해 주세요.");
+      return;
+    }
+
+    setIsSavingProfile(true);
+    setProfileSaveError("");
+
+    try {
+      await updateMe({
+        nickname,
+        birthYear,
+        gender: toApiGender(editGender),
+      });
+      setShowEditModal(false);
+    } catch (saveError) {
+      setProfileSaveError(
+        saveError instanceof Error
+          ? saveError.message
+          : "프로필 저장에 실패했어요. 다시 시도해 주세요.",
+      );
+    } finally {
+      setIsSavingProfile(false);
+    }
+  };
 
   return (
-    <div className="w-full h-full flex flex-col" style={{ background: '#FAFAF8' }}>
+    <div
+      className="w-full h-full flex flex-col"
+      style={{ background: "#FAFAF8" }}
+    >
       <div className="pt-6 px-6 pb-3 flex items-center justify-between">
         <div>
-          <p className="text-[#B8B4AE]" style={{ fontSize: '0.6875rem', letterSpacing: '0.1em' }}>
+          <p
+            className="text-[#B8B4AE]"
+            style={{ fontSize: "0.6875rem", letterSpacing: "0.1em" }}
+          >
             MY SCENT LOUNGE
           </p>
           <h2
             className="mt-1 text-[#1A1A1A]"
-            style={{ fontSize: '1.5rem', fontFamily: "'Playfair Display', serif" }}
+            style={{
+              fontSize: "1.5rem",
+              fontFamily: "'Playfair Display', serif",
+            }}
           >
             나의 향 라운지
           </h2>
         </div>
         <motion.button
           className="w-10 h-10 rounded-full bg-[#F5F3EF] flex items-center justify-center"
-          onClick={() => navigateTo('settings')}
+          onClick={() => navigateTo("settings")}
           whileTap={{ scale: 0.9 }}
         >
           <Settings size={18} className="text-[#8A8680]" />
@@ -74,14 +145,17 @@ export function MyPage() {
         {(loading || error) && (
           <div className="mb-4 space-y-2">
             {loading && (
-              <p className="text-[#8A8680]" style={{ fontSize: '0.75rem' }}>
+              <p className="text-[#8A8680]" style={{ fontSize: "0.75rem" }}>
                 마이페이지 데이터를 불러오는 중이에요.
               </p>
             )}
             {error && (
               <div
                 className="px-4 py-3 rounded-2xl text-[#C45050]"
-                style={{ backgroundColor: 'rgba(196, 80, 80, 0.08)', fontSize: '0.8125rem' }}
+                style={{
+                  backgroundColor: "rgba(196, 80, 80, 0.08)",
+                  fontSize: "0.8125rem",
+                }}
               >
                 {error}
               </div>
@@ -91,16 +165,19 @@ export function MyPage() {
 
         <motion.div
           className="p-5 rounded-2xl relative"
-          style={{ background: 'linear-gradient(135deg, #1A1A1A 0%, #2A2A28 100%)' }}
+          style={{
+            background: "linear-gradient(135deg, #1A1A1A 0%, #2A2A28 100%)",
+          }}
           initial={{ opacity: 0, y: 15 }}
           animate={{ opacity: 1, y: 0 }}
         >
           <motion.button
             className="absolute top-4 right-4 w-8 h-8 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20 transition-colors"
             onClick={() => {
-              setEditNickname(profile.nickname || '');
-              setEditAgeRange(profile.ageRange || '');
-              setEditGender(profile.gender || '');
+              setEditNickname(profile.nickname || "");
+              setEditAgeRange(profile.ageRange || "");
+              setEditGender(profile.gender || "");
+              setProfileSaveError("");
               setShowEditModal(true);
             }}
             whileTap={{ scale: 0.9 }}
@@ -110,41 +187,47 @@ export function MyPage() {
           <div className="flex items-center gap-4">
             <div
               className="w-14 h-14 rounded-full flex items-center justify-center"
-              style={{ background: 'linear-gradient(135deg, #6B7B5E40 0%, #B8A88A30 100%)' }}
+              style={{
+                background:
+                  "linear-gradient(135deg, #6B7B5E40 0%, #B8A88A30 100%)",
+              }}
             >
-              <span style={{ fontSize: '1.5rem' }}>향</span>
+              <span style={{ fontSize: "1.5rem" }}>향</span>
             </div>
             <div>
-              <p className="text-white" style={{ fontSize: '1rem' }}>
-                {profile.nickname || '향을 기록하는 사용자'}
+              <p className="text-white" style={{ fontSize: "1rem" }}>
+                {profile.nickname || "향을 기록하는 사용자"}
               </p>
-              <p className="text-white/50 mt-0.5" style={{ fontSize: '0.75rem' }}>
-                {profile.gender || '미설정'} · {profile.ageRange || '20대'}
+              <p
+                className="text-white/50 mt-0.5"
+                style={{ fontSize: "0.75rem" }}
+              >
+                {profile.gender || "미설정"} · {profile.ageRange || "20대"}
               </p>
             </div>
           </div>
           <div className="grid grid-cols-3 gap-3 mt-4">
             <div className="text-center">
-              <p className="text-white" style={{ fontSize: '1.25rem' }}>
+              <p className="text-white" style={{ fontSize: "1.25rem" }}>
                 {likesCount}
               </p>
-              <p className="text-white/40" style={{ fontSize: '0.6875rem' }}>
+              <p className="text-white/40" style={{ fontSize: "0.6875rem" }}>
                 좋아요 향수
               </p>
             </div>
             <div className="text-center">
-              <p className="text-white" style={{ fontSize: '1.25rem' }}>
+              <p className="text-white" style={{ fontSize: "1.25rem" }}>
                 {reviewsCount}
               </p>
-              <p className="text-white/40" style={{ fontSize: '0.6875rem' }}>
+              <p className="text-white/40" style={{ fontSize: "0.6875rem" }}>
                 내 리뷰
               </p>
             </div>
             <div className="text-center">
-              <p className="text-white" style={{ fontSize: '1.25rem' }}>
+              <p className="text-white" style={{ fontSize: "1.25rem" }}>
                 {historyCount}
               </p>
-              <p className="text-white/40" style={{ fontSize: '0.6875rem' }}>
+              <p className="text-white/40" style={{ fontSize: "0.6875rem" }}>
                 추천 기록
               </p>
             </div>
@@ -158,13 +241,16 @@ export function MyPage() {
           transition={{ delay: 0.1 }}
         >
           <div className="flex items-center justify-between mb-3">
-            <p className="text-[#B8B4AE]" style={{ fontSize: '0.6875rem', letterSpacing: '0.08em' }}>
+            <p
+              className="text-[#B8B4AE]"
+              style={{ fontSize: "0.6875rem", letterSpacing: "0.08em" }}
+            >
               취향 요약
             </p>
             <button
               className="text-[#6B7B5E] flex items-center gap-0.5"
-              style={{ fontSize: '0.6875rem' }}
-              onClick={() => navigateTo('taste-profile')}
+              style={{ fontSize: "0.6875rem" }}
+              onClick={() => navigateTo("taste-profile")}
             >
               상세 보기 <ChevronRight size={12} />
             </button>
@@ -172,39 +258,75 @@ export function MyPage() {
           {topAccords.length > 0 ? (
             <div className="flex gap-3">
               {topAccords.map((accord) => (
-                <div key={accord.name} className="flex-1 flex flex-col items-center">
+                <div
+                  key={accord.name}
+                  className="flex-1 flex flex-col items-center"
+                >
                   <div
                     className="w-10 h-10 rounded-full flex items-center justify-center mb-1"
                     style={{ backgroundColor: `${accord.color}18` }}
                   >
-                    <div className="w-4 h-4 rounded-full" style={{ backgroundColor: `${accord.color}70` }} />
+                    <div
+                      className="w-4 h-4 rounded-full"
+                      style={{ backgroundColor: `${accord.color}70` }}
+                    />
                   </div>
-                  <span className="text-[#1A1A1A] text-center" style={{ fontSize: '0.6875rem' }}>
+                  <span
+                    className="text-[#1A1A1A] text-center"
+                    style={{ fontSize: "0.6875rem" }}
+                  >
                     {accord.name}
                   </span>
                 </div>
               ))}
             </div>
           ) : (
-            <p className="text-[#8A8680]" style={{ fontSize: '0.8125rem', lineHeight: 1.7 }}>
-              좋아요 향수나 내 향수가 쌓이면 취향 요약이 여기에 표시돼요.
+            <p
+              className="text-[#8A8680]"
+              style={{ fontSize: "0.8125rem", lineHeight: 1.7 }}
+            >
+              마이 컬렉션 향수가 쌓이면 취향 요약이 여기에 표시돼요.
             </p>
           )}
         </motion.div>
 
         <div className="grid grid-cols-2 gap-3 mt-5">
           {[
-            { icon: Heart, label: '좋아요 향수', count: likesCount, screen: 'collection' as const, color: '#C8A5A5' },
-            { icon: Clock, label: '추천 히스토리', count: historyCount, screen: 'history' as const, color: '#8BA4B8' },
-            { icon: Package, label: '마이 컬렉션', count: myPerfumesCount, screen: 'my-collection' as const, color: '#9BA88B' },
-            { icon: BookOpen, label: '다이어리', count: diaryEntries.length, screen: 'diary' as const, color: '#B8A88A' },
+            {
+              icon: Heart,
+              label: "좋아요 향수",
+              count: likesCount,
+              screen: "collection" as const,
+              color: "#C8A5A5",
+            },
+            {
+              icon: Clock,
+              label: "추천 히스토리",
+              count: historyCount,
+              screen: "history" as const,
+              color: "#8BA4B8",
+            },
+            {
+              icon: Package,
+              label: "마이 컬렉션",
+              count: myPerfumesCount,
+              screen: "my-collection" as const,
+              color: "#9BA88B",
+            },
+            {
+              icon: BookOpen,
+              label: "다이어리",
+              count: diaryEntries.length,
+              screen: "diary" as const,
+              color: "#B8A88A",
+            },
           ].map((item, index) => (
             <motion.button
               key={item.label}
               className="p-4 rounded-2xl text-left"
               style={{
-                background: 'linear-gradient(145deg, #FFFFFF, #F8F7F4)',
-                boxShadow: '0 2px 12px rgba(0,0,0,0.03)',
+                background: "linear-gradient(145deg, #FFFFFF, #F8F7F4)",
+                boxShadow: "0 2px 12px rgba(0,0,0,0.03)",
               }}
               onClick={() => navigateTo(item.screen)}
               whileTap={{ scale: 0.97 }}
@@ -218,10 +340,13 @@ export function MyPage() {
               >
                 <item.icon size={16} style={{ color: item.color }} />
               </div>
-              <p className="text-[#1A1A1A]" style={{ fontSize: '0.875rem' }}>
+              <p className="text-[#1A1A1A]" style={{ fontSize: "0.875rem" }}>
                 {item.label}
               </p>
-              <p className="text-[#B8B4AE] mt-0.5" style={{ fontSize: '0.6875rem' }}>
+              <p
+                className="text-[#B8B4AE] mt-0.5"
+                style={{ fontSize: "0.6875rem" }}
+              >
                 {item.count}개
               </p>
             </motion.button>
@@ -239,7 +364,7 @@ export function MyPage() {
         >
           <motion.div
             className="bg-white rounded-2xl p-6 w-full max-w-sm"
-            style={{ boxShadow: '0 20px 50px rgba(0,0,0,0.2)' }}
+            style={{ boxShadow: "0 20px 50px rgba(0,0,0,0.2)" }}
             initial={{ scale: 0.9, y: 20 }}
             animate={{ scale: 1, y: 0 }}
             exit={{ scale: 0.9, y: 20 }}
@@ -248,7 +373,10 @@ export function MyPage() {
             <div className="flex items-center justify-between mb-5">
               <h3
                 className="text-[#1A1A1A]"
-                style={{ fontSize: '1.25rem', fontFamily: "'Playfair Display', serif" }}
+                style={{
+                  fontSize: "1.25rem",
+                  fontFamily: "'Playfair Display', serif",
+                }}
               >
                 프로필 편집
               </h3>
@@ -264,7 +392,7 @@ export function MyPage() {
             <div className="mb-5">
               <label
                 className="block text-[#B8B4AE] mb-2"
-                style={{ fontSize: '0.6875rem', letterSpacing: '0.08em' }}
+                style={{ fontSize: "0.6875rem", letterSpacing: "0.08em" }}
               >
                 닉네임
               </label>
@@ -274,10 +402,13 @@ export function MyPage() {
                 onChange={(event) => setEditNickname(event.target.value)}
                 placeholder="닉네임을 입력해 주세요"
                 className="w-full px-4 py-3 rounded-xl bg-[#FAFAF8] border border-[#E8E6E1] text-[#1A1A1A] placeholder:text-[#D4D0C8] focus:outline-none focus:border-[#6B7B5E] transition-colors"
-                style={{ fontSize: '0.9375rem' }}
+                style={{ fontSize: "0.9375rem" }}
                 maxLength={12}
               />
-              <p className="text-[#B8B4AE] mt-1.5 text-right" style={{ fontSize: '0.6875rem' }}>
+              <p
+                className="text-[#B8B4AE] mt-1.5 text-right"
+                style={{ fontSize: "0.6875rem" }}
+              >
                 {editNickname.length}/12
               </p>
             </div>
@@ -285,7 +416,7 @@ export function MyPage() {
             <div className="mb-5">
               <label
                 className="block text-[#B8B4AE] mb-3"
-                style={{ fontSize: '0.6875rem', letterSpacing: '0.08em' }}
+                style={{ fontSize: "0.6875rem", letterSpacing: "0.08em" }}
               >
                 성별
               </label>
@@ -295,10 +426,14 @@ export function MyPage() {
                     key={gender}
                     className="py-3 rounded-xl transition-colors"
                     style={{
-                      background: editGender === gender ? 'linear-gradient(135deg, #6B7B5E, #8FA380)' : '#FAFAF8',
-                      color: editGender === gender ? '#FFFFFF' : '#8A8680',
-                      fontSize: '0.875rem',
-                      border: editGender === gender ? 'none' : '1px solid #E8E6E1',
+                      background:
+                        editGender === gender
+                          ? "linear-gradient(135deg, #6B7B5E, #8FA380)"
+                          : "#FAFAF8",
+                      color: editGender === gender ? "#FFFFFF" : "#8A8680",
+                      fontSize: "0.875rem",
+                      border:
+                        editGender === gender ? "none" : "1px solid #E8E6E1",
                     }}
                     onClick={() => setEditGender(gender)}
                     whileTap={{ scale: 0.97 }}
@@ -312,7 +447,7 @@ export function MyPage() {
             <div className="mb-6">
               <label
                 className="block text-[#B8B4AE] mb-3"
-                style={{ fontSize: '0.6875rem', letterSpacing: '0.08em' }}
+                style={{ fontSize: "0.6875rem", letterSpacing: "0.08em" }}
               >
                 연령대
               </label>
@@ -322,10 +457,14 @@ export function MyPage() {
                     key={range}
                     className="py-3 rounded-xl transition-colors"
                     style={{
-                      background: editAgeRange === range ? 'linear-gradient(135deg, #6B7B5E, #8FA380)' : '#FAFAF8',
-                      color: editAgeRange === range ? '#FFFFFF' : '#8A8680',
-                      fontSize: '0.875rem',
-                      border: editAgeRange === range ? 'none' : '1px solid #E8E6E1',
+                      background:
+                        editAgeRange === range
+                          ? "linear-gradient(135deg, #6B7B5E, #8FA380)"
+                          : "#FAFAF8",
+                      color: editAgeRange === range ? "#FFFFFF" : "#8A8680",
+                      fontSize: "0.875rem",
+                      border:
+                        editAgeRange === range ? "none" : "1px solid #E8E6E1",
                     }}
                     onClick={() => setEditAgeRange(range)}
                     whileTap={{ scale: 0.97 }}
@@ -336,25 +475,51 @@ export function MyPage() {
               </div>
             </div>
 
+            {profileSaveError && (
+              <p
+                className="text-[#C45050] mb-4"
+                style={{ fontSize: "0.8125rem", lineHeight: 1.5 }}
+              >
+                {profileSaveError}
+              </p>
+            )}
+
             <motion.button
               className="w-full py-4 rounded-2xl tracking-wide transition-all"
               style={{
-                background: editNickname.trim() && editGender && editAgeRange ? '#1A1A1A' : '#E8E6E1',
-                color: editNickname.trim() && editGender && editAgeRange ? '#FFFFFF' : '#B8B4AE',
-                fontSize: '0.9375rem',
+                background:
+                  editNickname.trim() &&
+                  editGender &&
+                  editAgeRange &&
+                  !isSavingProfile
+                    ? "#1A1A1A"
+                    : "#E8E6E1",
+                color:
+                  editNickname.trim() &&
+                  editGender &&
+                  editAgeRange &&
+                  !isSavingProfile
+                    ? "#FFFFFF"
+                    : "#B8B4AE",
+                fontSize: "0.9375rem",
               }}
               onClick={() => {
-                if (editNickname.trim() && editGender && editAgeRange) {
-                  updateProfile({
-                    nickname: editNickname.trim(),
-                    ageRange: editAgeRange,
-                    gender: editGender,
-                  });
-                  setShowEditModal(false);
-                }
+                void handleSaveProfile();
               }}
-              disabled={!editNickname.trim() || !editGender || !editAgeRange}
-              whileTap={editNickname.trim() && editGender && editAgeRange ? { scale: 0.98 } : {}}
+              disabled={
+                !editNickname.trim() ||
+                !editGender ||
+                !editAgeRange ||
+                isSavingProfile
+              }
+              whileTap={
+                editNickname.trim() &&
+                editGender &&
+                editAgeRange &&
+                !isSavingProfile
+                  ? { scale: 0.98 }
+                  : {}
+              }
             >
               저장
             </motion.button>

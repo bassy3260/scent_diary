@@ -10,6 +10,7 @@ import lombok.Getter;
 @Builder
 public class RecommendHistoryDetailResponse {
 
+	private Long recommendResultId;
 	private LocalDateTime createTime;
 	private InputInfo input;
 	private List<PerfumeDetail> results;
@@ -17,7 +18,6 @@ public class RecommendHistoryDetailResponse {
 	@Getter
 	@Builder
 	public static class InputInfo {
-		private String age;
 		private String keyword;
 		private String image;
 	}

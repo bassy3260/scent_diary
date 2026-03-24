@@ -48,7 +48,11 @@ public class PerfumeSearchService {
 
         // 리스트 추출
         List<PerfumeSearchDto> perfumes = searchHits.getSearchHits().stream()
-                .map(SearchHit::getContent)
+                .map(hit -> {
+                    PerfumeSearchDto dto = hit.getContent();
+                    dto.setId(hit.getId());
+                    return dto;
+                })
                 .collect(Collectors.toList());
 
         // 페이징 계산

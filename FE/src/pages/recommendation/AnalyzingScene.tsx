@@ -1,14 +1,25 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { motion } from 'motion/react';
-import { ANALYZING_MESSAGES } from '../../constants/ui.constants';
+import { ANALYZING_MESSAGES, PRICE_RANGES } from '../../constants/ui.constants';
+import { useAppStore, useRecommendationStore } from '../../store';
 
 interface AnalyzingSceneProps {
   onComplete: () => void;
 }
 
+function priceRangeToInt(priceRange: string): number {
+  const found = PRICE_RANGES.find(p => p.label === priceRange);
+  if (!found || found.value === 'any') return 0;
+  const upper = found.value.split('~').filter(Boolean).pop();
+  return upper ? parseInt(upper, 10) : 0;
+}
+
 export function AnalyzingScene({ onComplete }: AnalyzingSceneProps) {
   const [messageIdx, setMessageIdx] = useState(0);
   const [progress, setProgress] = useState(0);
+  const { recommendByText } = useRecommendationStore();
+  const { setSelectedHistoryId } = useAppStore();
+  const called = useRef(false);
 
   useEffect(() => {
     const msgInterval = setInterval(() => {
@@ -17,9 +28,26 @@ export function AnalyzingScene({ onComplete }: AnalyzingSceneProps) {
     const progInterval = setInterval(() => {
       setProgress(prev => prev >= 100 ? 100 : prev + 1.2);
     }, 55);
-    const completeTimer = setTimeout(onComplete, 5500);
-    return () => { clearInterval(msgInterval); clearInterval(progInterval); clearTimeout(completeTimer); };
-  }, [onComplete]);
+
+    if (!called.current) {
+      called.current = true;
+      const { profile } = useAppStore.getState();
+      const keyword = profile.emotionText || '';
+      const price = priceRangeToInt(profile.priceRange);
+      const note = profile.notePreference || 'TOP';
+
+      const minDelay = new Promise<void>(resolve => setTimeout(resolve, 4000));
+      const apiCall = recommendByText({ keyword, price, note });
+
+      Promise.all([apiCall, minDelay]).then(() => {
+        const id = useRecommendationStore.getState().textResult?.recommendResultId;
+        if (id != null) setSelectedHistoryId(String(id));
+        onComplete();
+      }).catch(onComplete);
+    }
+
+    return () => { clearInterval(msgInterval); clearInterval(progInterval); };
+  }, [onComplete, recommendByText]);
 
   const emergingNotes = ['Cedar', 'Moss', 'Amber', 'Musk', 'Bergamot', 'Vetiver'];
 

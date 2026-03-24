@@ -96,6 +96,26 @@ def _build_corpus_vectors(rows: list, weights: dict[str, float]) -> np.ndarray:
     return np.array([_build_weighted_vec(row, weights) for row in rows])
 
 
+def rank_perfumes(
+    query_vec: np.ndarray,
+    weights: dict[str, float],
+    rows: list,
+    max_price: int | None = None,
+    top_k: int = 5,
+) -> list[dict[str, Any]]:
+    """사전에 계산된 query_vec으로 코사인 유사도 기반 Top-K 향수 반환"""
+    if max_price is not None:
+        rows = _filter_by_price(rows, max_price)
+
+    t0 = time.time()
+    corpus_vectors = _build_corpus_vectors(rows, weights)
+    scores = cosine_similarity(query_vec.reshape(1, -1), corpus_vectors)[0]
+    top_indices = scores.argsort()[::-1][:top_k]
+    logger.debug("[타이밍] 유사도 계산: %.2fs", time.time() - t0)
+
+    return [{**rows[i], "score": float(scores[i])} for i in top_indices]
+
+
 def recommend_perfumes(
     keyword: str,
     model,
@@ -104,32 +124,8 @@ def recommend_perfumes(
     max_price: int | None = None,
     top_k: int = 5,
 ) -> list[dict[str, Any]]:
-    """
-    weights 예시:
-    {
-        "accord": 0.3,
-        "top":    0.3,
-        "middle": 0.2,
-        "base":   0.1,
-        "desc":   0.1
-    }
-    합이 1.0이 되도록 전달할 것.
-    max_price: None이면 가격 필터 없음, 숫자면 해당 가격 이하만 조회
-    """
+    """텍스트 키워드 기반 향수 추천 (RunPod 임베딩 → rank_perfumes)"""
     t0 = time.time()
-
-    if max_price is not None:
-        rows = _filter_by_price(rows, max_price)
-
-    t1 = time.time()
     user_vec = model.encode("query: " + keyword)
-    logger.debug("[타이밍] RunPod 임베딩: %.2fs", time.time() - t1)
-
-    t2 = time.time()
-    corpus_vectors = _build_corpus_vectors(rows, weights)
-    scores = cosine_similarity(user_vec.reshape(1, -1), corpus_vectors)[0]
-    top_indices = scores.argsort()[::-1][:top_k]
-    logger.debug("[타이밍] 유사도 계산: %.2fs", time.time() - t2)
-    logger.debug("[타이밍] 전체: %.2fs", time.time() - t0)
-
-    return [{**rows[i], "score": float(scores[i])} for i in top_indices]
+    logger.debug("[타이밍] RunPod 임베딩: %.2fs", time.time() - t0)
+    return rank_perfumes(user_vec, weights, rows, max_price, top_k)

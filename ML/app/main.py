@@ -2,10 +2,13 @@ import logging
 import os
 from contextlib import asynccontextmanager
 
+logging.basicConfig(level=logging.INFO, format="%(asctime)s %(name)s %(levelname)s %(message)s")
+
 import numpy as np
 import requests
 from fastapi import FastAPI, HTTPException
 
+from app.constants import ACCORD_LIST
 from app.db.database import engine
 from app.services.recommender import load_perfume_rows
 
@@ -64,6 +67,17 @@ async def lifespan(app: FastAPI):
     if POD_MOOD_URL:
         app.state.mood_extractor = PodMoodExtractor(POD_MOOD_URL)
         logger.info("이미지 무드 추출기 초기화 완료")
+        ACCORD_EMB_PATH = "accord_embeddings.npy"
+        if os.path.exists(ACCORD_EMB_PATH):
+            accord_vecs = np.load(ACCORD_EMB_PATH)
+            logger.info("어코드 임베딩 파일 로드 완료 (%s)", ACCORD_EMB_PATH)
+        else:
+            t0 = time.time()
+            accord_vecs = app.state.embedder.encode_many([f"query: {a}" for a in ACCORD_LIST])
+            accord_vecs = accord_vecs / np.linalg.norm(accord_vecs, axis=1, keepdims=True)
+            np.save(ACCORD_EMB_PATH, accord_vecs)
+            logger.info("어코드 임베딩 계산 및 저장 완료: %.2fs → %s", time.time() - t0, ACCORD_EMB_PATH)
+        app.state.accord_embeddings = accord_vecs  # shape: (33, 1024)
     logger.info("앱 시작 완료: 임베더 및 향수 데이터 로드됨")
     yield
     # shutdown

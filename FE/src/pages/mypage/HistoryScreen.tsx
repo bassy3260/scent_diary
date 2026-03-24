@@ -113,7 +113,7 @@ export function HistoryScreen() {
             <motion.button
               className="mt-4 px-5 py-3 rounded-2xl text-white"
               style={{ background: 'linear-gradient(135deg, #6B7B5E, #8FA380)', fontSize: '0.875rem' }}
-              onClick={() => navigateTo('text-choice')}
+              onClick={() => navigateTo('recommend-prestep')}
               whileTap={{ scale: 0.95 }}
             >
               첫 추천 받으러 가기
@@ -141,61 +141,60 @@ export function HistoryScreen() {
                 whileTap={{ scale: 0.98 }}
                 disabled={isOpening}
               >
-                <div className="p-5">
-                  <div className="flex items-center justify-between mb-2 gap-3">
-                    <span className="text-[#B8B4AE]" style={{ fontSize: '0.75rem' }}>
+                <div className="px-4 py-3">
+                  <div className="flex items-center justify-between mb-1.5 gap-3">
+                    <span className="text-[#B8B4AE]" style={{ fontSize: '0.6875rem' }}>
                       {formatMyPageDate(item.createTime)}
                     </span>
-                    <div className="flex items-center gap-2 flex-wrap justify-end">
-                      {chips.map((keyword) => (
+                    <div className="flex items-center gap-1.5 flex-wrap justify-end">
+                      {item.input.image ? (
                         <span
-                          key={keyword}
-                          className="px-2 py-0.5 rounded-full bg-[#F5F3EF] text-[#8A8680]"
+                          className="px-2 py-0.5 rounded-full bg-[#B8A5C8]/10 text-[#B8A5C8] border border-[#B8A5C8]/20"
                           style={{ fontSize: '0.625rem' }}
                         >
-                          {keyword}
+                          이미지 추천
                         </span>
-                      ))}
-                      {item.input.gender && (
-                        <span className="text-[#B8B4AE]" style={{ fontSize: '0.6875rem' }}>
-                          {item.input.gender}
-                        </span>
+                      ) : (
+                        chips.map((kw) => (
+                          <span
+                            key={kw}
+                            className="px-2 py-0.5 rounded-full bg-[#F5F3EF] text-[#8A8680]"
+                            style={{ fontSize: '0.625rem' }}
+                          >
+                            {kw}
+                          </span>
+                        ))
                       )}
                     </div>
                   </div>
 
-                  <p className="text-[#1A1A1A]" style={{ fontSize: '0.9375rem', lineHeight: 1.6 }}>
+                  <p
+                    className="text-[#1A1A1A] truncate"
+                    style={{ fontSize: '0.875rem', lineHeight: 1.5 }}
+                  >
                     {summary}
                   </p>
 
-                  <div className="flex items-center justify-between mt-3">
-                    <div className="flex items-center gap-2">
-                      {item.input.age !== undefined && (
-                        <span className="text-[#B8B4AE]" style={{ fontSize: '0.6875rem' }}>
-                          {item.input.age}세
-                        </span>
+                  <div className="flex items-center justify-between mt-2">
+                    <div className="flex gap-1.5 items-center">
+                      {item.input.image && (
+                        <div className="w-7 h-9 rounded overflow-hidden border border-[#B8A5C8]/30 shrink-0">
+                          <img src={item.input.image} alt="업로드 사진" className="w-full h-full object-cover" />
+                        </div>
                       )}
-                      <span className="text-[#B8B4AE]" style={{ fontSize: '0.6875rem' }}>
-                        추천 {item.results.length}개
-                      </span>
-                    </div>
-                    <span className="text-[#6B7B5E]" style={{ fontSize: '0.6875rem' }}>
-                      {isOpening ? '불러오는 중...' : '결과 보기 →'}
-                    </span>
-                  </div>
-
-                  {item.results.length > 0 && (
-                    <div className="flex gap-1.5 mt-3">
                       {item.results.slice(0, 3).map((result) => (
                         <div
                           key={`${item.recommendResultId}-${result.name}`}
-                          className="w-9 h-9 rounded-lg overflow-hidden border border-[#E8E6E1]"
+                          className="w-7 h-7 rounded overflow-hidden border border-[#E8E6E1]"
                         >
                           <img src={result.image} alt={result.name} className="w-full h-full object-cover" />
                         </div>
                       ))}
                     </div>
-                  )}
+                    <span className="text-[#6B7B5E]" style={{ fontSize: '0.6875rem' }}>
+                      {isOpening ? '불러오는 중...' : '결과 보기 →'}
+                    </span>
+                  </div>
                 </div>
               </motion.button>
             );
