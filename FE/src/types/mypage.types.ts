@@ -60,6 +60,7 @@ export interface RecommendInput {
   age?: number;
   price?: number;
   gender?: string;
+  keyword?: string | null;
   keywords?: string[];
   text?: string | null;
   image?: string | null;
@@ -102,6 +103,7 @@ export interface RecommendDetailResult {
 
 export interface RecommendDetailInput {
   age?: number;
+  keyword?: string | null;
   keywords?: string[];
   text?: string | null;
   image?: string | null;

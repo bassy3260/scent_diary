@@ -56,6 +56,7 @@ export interface PerfumeDetail {
   reviews: PerfumeReview[];
   isLiked?: boolean;
   isCollected?: boolean;
+  description?: string | null;
 }
 
 // ── 응답 타입 ─────────────────────────────────────────────

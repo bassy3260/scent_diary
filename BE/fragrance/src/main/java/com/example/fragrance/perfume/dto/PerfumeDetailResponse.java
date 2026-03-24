@@ -14,7 +14,8 @@ public class PerfumeDetailResponse {
     private String brand;
     private String name;
     private int price;
+    private String description;
     private List<String> accords;
-    private NotesDetailResponse notes;
+    private NotesDetailResponse notes = new NotesDetailResponse();
     private List<ReviewDetailResponse> reviews;
 }

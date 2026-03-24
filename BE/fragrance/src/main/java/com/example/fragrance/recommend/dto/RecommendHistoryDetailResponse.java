@@ -18,7 +18,6 @@ public class RecommendHistoryDetailResponse {
 	@Getter
 	@Builder
 	public static class InputInfo {
-		private String age;
 		private String keyword;
 		private String image;
 	}

@@ -10,6 +10,8 @@ import com.example.fragrance.diary.mapper.DiaryMapper;
 import com.example.fragrance.util.common.PageResponse;
 
 import lombok.RequiredArgsConstructor;
+
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -20,6 +22,8 @@ public class DiaryService {
 
     private final DiaryMapper diaryMapper;
     private final DiaryImageMapper diaryImageMapper;
+	@Value("${s3.url}")
+	private String s3URL;
 
     public PageResponse<DiaryListResponse> getDiaries(Long memberId, int page, int size) {
         int offset = (page - 1) * size;
@@ -45,7 +49,7 @@ public class DiaryService {
             for (String imageUrl : request.getImages()) {
                 DiaryImage diaryImage = DiaryImage.builder()
                         .diaryId(diary.getDiaryId())
-                        .imageRoute(imageUrl)
+                        .imageRoute(s3URL+imageUrl)
                         .build();
                 diaryImageMapper.insert(diaryImage);
             }

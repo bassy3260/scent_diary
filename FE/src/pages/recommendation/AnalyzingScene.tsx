@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { motion } from 'motion/react';
 import { ANALYZING_MESSAGES, PRICE_RANGES } from '../../constants/ui.constants';
-import { useAppStore, useRecommendationStore } from '../../store';
+import { useAppStore } from '../../store';
 
 interface AnalyzingSceneProps {
   onComplete: () => void;
@@ -9,7 +9,7 @@ interface AnalyzingSceneProps {
 
 function priceRangeToInt(priceRange: string): number {
   const found = PRICE_RANGES.find(p => p.label === priceRange);
-  if (!found || found.value === 'any') return 0;
+  if (!found || found.value === 'any' || found.value === null) return 1000000;
   const upper = found.value.split('~').filter(Boolean).pop();
   return upper ? parseInt(upper, 10) : 0;
 }
@@ -17,7 +17,7 @@ function priceRangeToInt(priceRange: string): number {
 export function AnalyzingScene({ onComplete }: AnalyzingSceneProps) {
   const [messageIdx, setMessageIdx] = useState(0);
   const [progress, setProgress] = useState(0);
-  const { recommendByText } = useRecommendationStore();
+  const { recommendByText, setSelectedHistoryId } = useAppStore();
   const called = useRef(false);
 
   useEffect(() => {
@@ -33,12 +33,16 @@ export function AnalyzingScene({ onComplete }: AnalyzingSceneProps) {
       const { profile } = useAppStore.getState();
       const keyword = profile.emotionText || '';
       const price = priceRangeToInt(profile.priceRange);
-      const note = (profile.notePreference || 'top').toUpperCase();
+      const note = profile.notePreference || 'TOP';
 
       const minDelay = new Promise<void>(resolve => setTimeout(resolve, 4000));
       const apiCall = recommendByText({ keyword, price, note });
 
-      Promise.all([apiCall, minDelay]).then(onComplete).catch(onComplete);
+      Promise.all([apiCall, minDelay]).then(() => {
+        const id = useAppStore.getState().textResult?.recommendResultId;
+        if (id != null) setSelectedHistoryId(String(id));
+        onComplete();
+      }).catch(onComplete);
     }
 
     return () => { clearInterval(msgInterval); clearInterval(progInterval); };

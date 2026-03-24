@@ -12,7 +12,9 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @RequiredArgsConstructor
@@ -29,9 +31,14 @@ public class RecommendServiceImpl implements RecommendService{
     public RecommendHistoryDetailResponse getTextRecommendResponse(Long memberId, RecommendTextRequest request){
         // 파라미터를 fastAPI에게 보낸다, 데이터를 받는다.
         // restTemplate.postForObject(url, requestBody, ResponseType.class):
+        Map<String, Object> body = new HashMap<>();
+        body.put("keyword", request.getKeyword());
+        body.put("price", request.getPrice());
+        body.put("note", request.getNote() != null ? request.getNote().toUpperCase() : null);
+
         FastApiRecommendResponse fastApiRecommendResponse = restTemplate.postForObject(
                 fastapiUrl+"/api/v1/recommend/text",
-                request,
+                body,
                 FastApiRecommendResponse.class
         );
 

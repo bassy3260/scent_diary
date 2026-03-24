@@ -8,7 +8,7 @@ export const PRICE_RANGES = [
   { label: '10만원 ~ 20만원', value: '100000~200000', emoji: '💰', color: '#6B7B5E' },
   { label: '20만원 ~ 30만원', value: '200000~300000', emoji: '💎', color: '#B8A88A' },
   { label: '30만원 이상',     value: '300000~',       emoji: '👑', color: '#C4A574' },
-  { label: '가격 상관없음',   value: 'any',           emoji: '✨', color: '#B8A5C8' },
+  { label: '가격 상관없음',   value: null,           emoji: '✨', color: '#B8A5C8' },
 ];
 
 export const SEASONS = ['봄', '여름', '가을', '겨울', '사계절'];
