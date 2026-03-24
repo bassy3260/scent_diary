@@ -39,7 +39,7 @@ export function TastingLogWrite() {
   const [customSituation, setCustomSituation] = useState('');
   const [longevity, setLongevity] = useState(0);
   const [sillage, setSillage] = useState(0);
-  const [seasons, setSeasons] = useState<string[]>([]);
+  const [season, setSeason] = useState('');
   const [note, setNote] = useState('');
   const [showPerfumeList, setShowPerfumeList] = useState(false);
   const [saveError, setSaveError] = useState('');
@@ -54,10 +54,19 @@ export function TastingLogWrite() {
 
   const selectedPerfume = searchResults.find(p => p.perfumeId === selectedPerfumeId);
 
-  const toggleSeason = (s: string) =>
-    setSeasons(prev => prev.includes(s) ? prev.filter(x => x !== s) : [...prev, s]);
+  const selectSeason = (s: string) => setSeason(prev => prev === s ? '' : s);
 
   const canSave = !!selectedPerfumeId;
+
+  const SEASON_MAP: Record<string, string> = {
+    '봄': 'spring', '여름': 'summer', '가을': 'fall', '겨울': 'winter',
+  };
+
+  const SILLAGE_MAP = (val: number): string => {
+    if (val <= 2) return 'weak';
+    if (val <= 3) return 'middle';
+    return 'strong';
+  };
 
   const handleSave = async () => {
     setSaveError('');
@@ -65,7 +74,14 @@ export function TastingLogWrite() {
       await createTryDiary({
         title: selectedPerfume?.name ?? '시향 일지',
         tryItems: selectedPerfumeId
-          ? [{ perfumeId: selectedPerfumeId, detail: note }]
+          ? [{
+              perfumeId: selectedPerfumeId,
+              description: note,
+              place: situation === '기타' ? customSituation : situation,
+              lasting: longevity,
+              sillage: SILLAGE_MAP(sillage),
+              season: SEASON_MAP[season] ?? season,
+            }]
           : [],
       });
       navigateTo('diary');
@@ -237,11 +253,11 @@ export function TastingLogWrite() {
                 className="flex-1 py-2.5 rounded-xl border whitespace-nowrap transition-colors"
                 style={{
                   fontSize: '0.8125rem',
-                  borderColor: seasons.includes(s) ? '#8BA4B8' : 'rgba(0,0,0,0.06)',
-                  backgroundColor: seasons.includes(s) ? '#8BA4B814' : '#F5F3EF',
-                  color: seasons.includes(s) ? '#8BA4B8' : '#8A8680',
+                  borderColor: season === s ? '#8BA4B8' : 'rgba(0,0,0,0.06)',
+                  backgroundColor: season === s ? '#8BA4B814' : '#F5F3EF',
+                  color: season === s ? '#8BA4B8' : '#8A8680',
                 }}
-                onClick={() => toggleSeason(s)}
+                onClick={() => selectSeason(s)}
                 whileTap={{ scale: 0.95 }}
               >
                 {s}
