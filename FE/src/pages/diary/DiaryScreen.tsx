@@ -36,11 +36,6 @@ function DiaryCard({ entry, onClick }: { entry: DiaryListItem; onClick: () => vo
           </div>
         </div>
 
-        <p className="text-[#4A4A4A] mb-3"
-          style={{ fontSize: '0.8125rem', lineHeight: 1.65, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
-          {entry.detail}
-        </p>
-
         {entry.perfume && (
           <div className="flex items-center gap-1.5">
             <div className="w-6 h-6 rounded-lg overflow-hidden">
@@ -90,7 +85,6 @@ function TastingCard({ entry, onClick }: { entry: TryDiaryListItem; onClick: () 
             </span>
           </div>
         </div>
-        <p className="text-[#4A4A4A]" style={{ fontSize: '0.8125rem', lineHeight: 1.6 }}>{entry.title}</p>
       </div>
     </motion.div>
   );

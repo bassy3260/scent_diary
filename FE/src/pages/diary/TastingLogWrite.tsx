@@ -38,7 +38,7 @@ export function TastingLogWrite() {
   const [situation, setSituation] = useState('');
   const [customSituation, setCustomSituation] = useState('');
   const [longevity, setLongevity] = useState(0);
-  const [sillage, setSillage] = useState(0);
+  const [sillage, setSillage] = useState<'weak' | 'middle' | 'strong' | ''>('');
   const [season, setSeason] = useState('');
   const [note, setNote] = useState('');
   const [showPerfumeList, setShowPerfumeList] = useState(false);
@@ -62,12 +62,6 @@ export function TastingLogWrite() {
     '봄': 'spring', '여름': 'summer', '가을': 'fall', '겨울': 'winter',
   };
 
-  const SILLAGE_MAP = (val: number): string => {
-    if (val <= 2) return 'weak';
-    if (val <= 3) return 'middle';
-    return 'strong';
-  };
-
   const handleSave = async () => {
     setSaveError('');
     try {
@@ -79,7 +73,7 @@ export function TastingLogWrite() {
               description: note,
               place: situation === '기타' ? customSituation : situation,
               lasting: longevity,
-              sillage: SILLAGE_MAP(sillage),
+              sillage,
               season: SEASON_MAP[season] ?? season,
             }]
           : [],
@@ -236,9 +230,26 @@ export function TastingLogWrite() {
               <Wind size={13} className="text-[#8BA4B8]" />
               <p className="text-[#8BA4B8] whitespace-nowrap" style={{ fontSize: '0.6875rem' }}>확산력</p>
             </div>
-            <DotRating value={sillage} onChange={setSillage} />
+            <div className="flex gap-1.5">
+              {(['weak', 'middle', 'strong'] as const).map(v => (
+                <motion.button
+                  key={v}
+                  className="flex-1 py-1.5 rounded-lg border text-center transition-colors"
+                  style={{
+                    fontSize: '0.5625rem',
+                    borderColor: sillage === v ? '#8BA4B8' : '#E8E6E1',
+                    backgroundColor: sillage === v ? '#8BA4B8' : 'transparent',
+                    color: sillage === v ? '#FFFFFF' : '#8A8680',
+                  }}
+                  onClick={() => setSillage(sillage === v ? '' : v)}
+                  whileTap={{ scale: 0.93 }}
+                >
+                  {v === 'weak' ? '은은함' : v === 'middle' ? '보통' : '강함'}
+                </motion.button>
+              ))}
+            </div>
             <p className="text-[#B8B4AE] mt-2" style={{ fontSize: '0.5625rem' }}>
-              {sillage === 0 ? '평가 전' : sillage <= 2 ? '은은함' : sillage <= 3 ? '보통' : sillage <= 4 ? '풍성함' : '매우 강함'}
+              {sillage === '' ? '평가 전' : sillage === 'weak' ? '은은함' : sillage === 'middle' ? '보통' : '강함'}
             </p>
           </div>
         </div>
