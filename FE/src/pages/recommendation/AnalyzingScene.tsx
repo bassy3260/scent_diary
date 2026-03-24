@@ -9,7 +9,7 @@ interface AnalyzingSceneProps {
 
 function priceRangeToInt(priceRange: string): number {
   const found = PRICE_RANGES.find(p => p.label === priceRange);
-  if (!found || found.value === 'any') return 0;
+  if (!found || found.value === 'any' || found.value === null) return 1000000;
   const upper = found.value.split('~').filter(Boolean).pop();
   return upper ? parseInt(upper, 10) : 0;
 }
