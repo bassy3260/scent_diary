@@ -37,7 +37,7 @@ export const createRecommendationSlice: StateCreator<any, [], [], Recommendation
     set({ isLoading: true, error: null });
     try {
       const res = await recommendationApi.recommendByText(body);
-      set({ textResult: res.data, isLoading: false });
+      set({ textResult: res, isLoading: false });
     } catch {
       set({ error: '텍스트 추천에 실패했습니다.', isLoading: false });
     }
@@ -47,7 +47,7 @@ export const createRecommendationSlice: StateCreator<any, [], [], Recommendation
     set({ isLoading: true, error: null });
     try {
       const res = await recommendationApi.recommendByImage(body);
-      set({ imageResult: res.data, isLoading: false });
+      set({ imageResult: res, isLoading: false });
     } catch {
       set({ error: '이미지 추천에 실패했습니다.', isLoading: false });
     }

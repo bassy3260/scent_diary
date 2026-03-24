@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { useShallow } from "zustand/react/shallow";
 import { createJSONStorage, persist } from "zustand/middleware";
 import {
   createNavigationSlice,
@@ -62,7 +63,7 @@ export const useAppStore = create<AppState>()(
 );
 
 export const useNavigationStore = () =>
-  useAppStore((s) => ({
+  useAppStore(useShallow((s) => ({
     screen: s.screen,
     prevScreen: s.prevScreen,
     transitionType: s.transitionType,
@@ -71,10 +72,10 @@ export const useNavigationStore = () =>
     pushTo: s.pushTo,
     sheetTo: s.sheetTo,
     goBack: s.goBack,
-  }));
+  })));
 
 export const useAuthStore = () =>
-  useAppStore((s) => ({
+  useAppStore(useShallow((s) => ({
     hasOnboarded: s.hasOnboarded,
     isAuthenticated: s.isAuthenticated,
     accessToken: s.accessToken,
@@ -90,20 +91,20 @@ export const useAuthStore = () =>
     login: s.login,
     signup: s.signup,
     logout: s.logout,
-  }));
+  })));
 
 export const useUserStore = () =>
-  useAppStore((s) => ({
+  useAppStore(useShallow((s) => ({
     profile: s.profile,
     updateProfile: s.updateProfile,
     fetchMe: s.fetchMe,
     updateMe: s.updateMe,
     deleteMe: s.deleteMe,
     resetProfile: s.resetProfile,
-  }));
+  })));
 
 export const usePerfumeStore = () =>
-  useAppStore((s) => ({
+  useAppStore(useShallow((s) => ({
     selectedPerfumeId: s.selectedPerfumeId,
     perfumeDetail: s.perfumeDetail,
     searchResults: s.searchResults,
@@ -118,10 +119,10 @@ export const usePerfumeStore = () =>
     submitReview: s.submitReview,
     toggleSavedPerfume: s.toggleSavedPerfume,
     toggleMyCollection: s.toggleMyCollection,
-  }));
+  })));
 
 export const useRecommendationStore = () =>
-  useAppStore((s) => ({
+  useAppStore(useShallow((s) => ({
     textResult: s.textResult,
     imageResult: s.imageResult,
     isLoading: s.isLoading,
@@ -132,10 +133,10 @@ export const useRecommendationStore = () =>
     setIsGiftMode: s.setIsGiftMode,
     recommendByText: s.recommendByText,
     recommendByImage: s.recommendByImage,
-  }));
+  })));
 
 export const useDiaryStore = () =>
-  useAppStore((s) => ({
+  useAppStore(useShallow((s) => ({
     diaryEntries: s.diaryEntries,
     tryDiaryEntries: s.tryDiaryEntries,
     diaryDetail: s.diaryDetail,
@@ -152,10 +153,10 @@ export const useDiaryStore = () =>
     createTryDiary: s.createTryDiary,
     setSelectedDiaryId: s.setSelectedDiaryId,
     setSelectedTryDiaryId: s.setSelectedTryDiaryId,
-  }));
+  })));
 
 export const useMyPageStore = () =>
-  useAppStore((s) => ({
+  useAppStore(useShallow((s) => ({
     likedPerfumes: s.likedPerfumes,
     likesPageInfo: s.likesPageInfo,
     myPerfumes: s.myPerfumes,
@@ -176,4 +177,4 @@ export const useMyPageStore = () =>
     fetchRecommendationDetail: s.fetchRecommendationDetail,
     clearSelectedRecommendationDetail: s.clearSelectedRecommendationDetail,
     resetMyPageState: s.resetMyPageState,
-  }));
+  })));

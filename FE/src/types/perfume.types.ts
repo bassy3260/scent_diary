@@ -1,4 +1,3 @@
-import type { BaseResponse, DataResponse } from './api.types';
 import type { PageInfo } from './mypage.types';
 
 // ── Request 타입 ──────────────────────────────────────────
@@ -34,6 +33,7 @@ export interface PerfumeReview {
 /** 향수 검색 목록 아이템 */
 export interface PerfumeListItem {
   perfumeId: number;
+  id: number;
   image: string;
   brand: string;
   name: string;
@@ -57,10 +57,10 @@ export interface PerfumeDetail {
 }
 
 // ── 응답 타입 ─────────────────────────────────────────────
-export type GetPerfumeListResponse = DataResponse<PerfumeListData>;
-export type GetPerfumeDetailResponse = DataResponse<PerfumeDetail>;
-export type CollectPerfumeResponse = BaseResponse;
-export type PostPerfumeReviewResponse = BaseResponse;
+export type GetPerfumeListResponse = PerfumeListData;
+export type GetPerfumeDetailResponse = PerfumeDetail;
+export type CollectPerfumeResponse = void;
+export type PostPerfumeReviewResponse = void;
 
 // ── 프론트엔드 목업 타입 ──────────────────────────────────
 interface PerfumeNote {

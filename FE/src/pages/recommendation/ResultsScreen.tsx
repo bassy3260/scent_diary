@@ -1,10 +1,9 @@
 import { useEffect, useMemo } from 'react';
 import { motion } from 'motion/react';
 import { RefreshCw, BookOpen, Leaf, Droplets, Wind, Sun, Flower2 } from 'lucide-react';
-import { mockPerfumes } from '../../constants/perfumes';
 import { useAppStore } from '../../store';
-import { PerfumeCard } from '../../components/perfume/PerfumeCard';
-import { findMockPerfumeMatch, formatMyPageDate, getAccordColor, getRecommendationSummaryText } from '../../utils/mypage';
+import { useRecommendationStore } from '../../store';
+import { hasPerfumeId, formatMyPageDate, getAccordColor, getRecommendationSummaryText } from '../../utils/mypage';
 import type { RecommendDetailNotes, RecommendDetailResult } from '../../types/mypage.types';
 
 function ScentRadar() {
@@ -319,9 +318,13 @@ export function ResultsScreen() {
     selectedRecommendationDetailId,
   ]);
 
-  const fallbackDisplayPerfumes = useMemo(() => mockPerfumes.slice(0, 3), []);
-  const fallbackHeroPerfume = fallbackDisplayPerfumes[0] ?? mockPerfumes[0];
-  const fallbackRestPerfumes = fallbackDisplayPerfumes.slice(1);
+  const { textResult, imageResult } = useRecommendationStore();
+  const currentResults = useMemo(
+    () => textResult?.results ?? imageResult?.results ?? [],
+    [textResult, imageResult],
+  );
+  const fallbackHeroResult = currentResults[0] ?? null;
+  const fallbackRestResults = currentResults.slice(1);
 
   const summaryLine = historyDetail
     ? getRecommendationSummaryText(historyDetail.input)
@@ -333,19 +336,8 @@ export function ResultsScreen() {
     ? historyDetail.input.keywords ?? []
     : profile.moodKeywords.slice(0, 3);
 
-  const handleViewMockDetail = (id: string) => {
-    setSelectedPerfumeId(Number(id));
-    useAppStore.getState().pushTo('detail');
-  };
-
-  const handleViewHistoricalDetail = (result: RecommendDetailResult) => {
-    const matchedPerfume = findMockPerfumeMatch(result);
-
-    if (!matchedPerfume) {
-      return;
-    }
-
-    setSelectedPerfumeId(Number(matchedPerfume.id));
+  const handleViewDetail = (perfumeId: number) => {
+    setSelectedPerfumeId(perfumeId);
     useAppStore.getState().pushTo('detail');
   };
 
@@ -358,7 +350,7 @@ export function ResultsScreen() {
   const handleRestart = () => {
     clearSelectedRecommendationDetail();
     setSelectedHistoryId(null);
-    navigateTo('text-choice');
+    navigateTo('recommend-prestep');
   };
 
   const heroHistoricalResult = historyDetail?.results[0] ?? null;
@@ -438,7 +430,7 @@ export function ResultsScreen() {
                 result={heroHistoricalResult}
                 isHero
                 rank={1}
-                onTap={findMockPerfumeMatch(heroHistoricalResult) ? () => handleViewHistoricalDetail(heroHistoricalResult) : null}
+                onTap={hasPerfumeId(heroHistoricalResult) ? () => handleViewDetail(heroHistoricalResult.perfumeId!) : null}
               />
             </motion.div>
 
@@ -458,7 +450,7 @@ export function ResultsScreen() {
                       <HistoricalResultCard
                         result={result}
                         rank={index + 2}
-                        onTap={findMockPerfumeMatch(result) ? () => handleViewHistoricalDetail(result) : null}
+                        onTap={hasPerfumeId(result) ? () => handleViewDetail(result.perfumeId!) : null}
                       />
                     </motion.div>
                   ))}
@@ -468,27 +460,38 @@ export function ResultsScreen() {
 
             <HistoricalNotesSection notes={heroHistoricalResult.notes} />
           </>
-        ) : (
+        ) : fallbackHeroResult ? (
           <>
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3, duration: 0.5 }}>
               <p className="px-2 mb-2 text-[#B8B4AE]" style={{ fontSize: '0.6875rem', letterSpacing: '0.08em' }}>
                 BEST MATCH
               </p>
-              <PerfumeCard perfume={fallbackHeroPerfume} isHero rank={1} onTap={() => handleViewMockDetail(fallbackHeroPerfume.id)} showReason />
+              <HistoricalResultCard
+                result={fallbackHeroResult as RecommendDetailResult}
+                isHero
+                rank={1}
+                onTap={hasPerfumeId(fallbackHeroResult) ? () => handleViewDetail(fallbackHeroResult.perfumeId!) : null}
+              />
             </motion.div>
 
-            <motion.div className="mt-6" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.7 }}>
-              <p className="px-2 mb-3 text-[#B8B4AE]" style={{ fontSize: '0.6875rem', letterSpacing: '0.08em' }}>
-                더 많은 추천
-              </p>
-              <div className="space-y-2.5">
-                {fallbackRestPerfumes.map((perfume, index) => (
-                  <motion.div key={perfume.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.8 + index * 0.08 }}>
-                    <PerfumeCard perfume={perfume} rank={index + 2} onTap={() => handleViewMockDetail(perfume.id)} showReason />
-                  </motion.div>
-                ))}
-              </div>
-            </motion.div>
+            {fallbackRestResults.length > 0 && (
+              <motion.div className="mt-6" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.7 }}>
+                <p className="px-2 mb-3 text-[#B8B4AE]" style={{ fontSize: '0.6875rem', letterSpacing: '0.08em' }}>
+                  더 많은 추천
+                </p>
+                <div className="space-y-2.5">
+                  {fallbackRestResults.map((result, index) => (
+                    <motion.div key={`${result.perfumeId}-${index}`} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.8 + index * 0.08 }}>
+                      <HistoricalResultCard
+                        result={result as RecommendDetailResult}
+                        rank={index + 2}
+                        onTap={hasPerfumeId(result) ? () => handleViewDetail(result.perfumeId!) : null}
+                      />
+                    </motion.div>
+                  ))}
+                </div>
+              </motion.div>
+            )}
 
             <motion.div
               className="mt-6 p-5 rounded-2xl"
@@ -556,7 +559,7 @@ export function ResultsScreen() {
               </div>
             </motion.div>
           </>
-        )}
+        ) : null}
 
         <motion.div
           className="flex gap-2 mt-6"

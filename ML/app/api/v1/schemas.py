@@ -28,3 +28,24 @@ class RecommendResponse(BaseModel):
 
 class RecommendListResponse(BaseModel):
     recommendations: list[RecommendResponse]
+
+
+class ImageRecommendListResponse(BaseModel):
+    keyword: str
+    recommendations: list[RecommendResponse]
+
+
+class MoodScore(BaseModel):
+    mood: str
+    score: float
+
+
+class AccordWeight(BaseModel):
+    accord: str
+    weight: float
+
+
+class ImageRecommendResponse(BaseModel):
+    mood_scores: list[MoodScore]
+    accord_vector: list[float]
+    top_accords: list[AccordWeight]

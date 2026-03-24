@@ -1,5 +1,3 @@
-import type { DataResponse } from './api.types';
-
 // ── 공유 도메인 타입 ──────────────────────────────────────
 
 export interface RecommendNotes {
@@ -24,9 +22,8 @@ export interface RecommendResult {
 /** 텍스트 기반 향수 추천 Request */
 export interface RecommendTextRequest {
   keyword: string;
-  money: number;
-  age: string;
-  note: string;
+  price: number;
+  note: string;   // "TOP" | "MIDDLE" | "BASE"
 }
 
 /** 이미지 기반 향수 추천 Request */
@@ -37,17 +34,19 @@ export interface RecommendImageRequest {
 // ── Response 타입 ─────────────────────────────────────────
 
 export interface RecommendTextInput {
-  age: string;
+  age: number | null;
   keyword: string;
+  image: string | null;
 }
 
 export interface RecommendTextData {
-  createTime: string;
+  recommendResultId: number;
+  createTime: string | null;
   input: RecommendTextInput;
   results: RecommendResult[];
 }
 
-export type RecommendTextResponse = DataResponse<RecommendTextData>;
+export type RecommendTextResponse = RecommendTextData;
 
 export interface RecommendImageInput {
   image: string;
@@ -59,4 +58,4 @@ export interface RecommendImageData {
   results: RecommendResult[];
 }
 
-export type RecommendImageResponse = DataResponse<RecommendImageData>;
+export type RecommendImageResponse = RecommendImageData;

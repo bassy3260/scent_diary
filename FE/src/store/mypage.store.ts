@@ -1,5 +1,5 @@
-import type { StateCreator } from 'zustand';
-import { myApi } from '../api';
+import type { StateCreator } from "zustand";
+import { myApi } from "../api";
 import type {
   LikeItem,
   MyPerfumeItem,
@@ -7,7 +7,7 @@ import type {
   RecommendDetailData,
   RecommendItem,
   ReviewItem,
-} from '../types/mypage.types';
+} from "../types/mypage.types";
 
 let activeMyPageRequests = 0;
 
@@ -26,7 +26,10 @@ function decrementPageInfo(pageInfo: PageInfo | null): PageInfo | null {
   }
 
   const totalElements = Math.max(0, pageInfo.totalElements - 1);
-  const totalPages = pageInfo.size > 0 ? Math.ceil(totalElements / pageInfo.size) : pageInfo.totalPages;
+  const totalPages =
+    pageInfo.size > 0
+      ? Math.ceil(totalElements / pageInfo.size)
+      : pageInfo.totalPages;
 
   return {
     ...pageInfo,
@@ -40,7 +43,7 @@ function getErrorMessage(error: unknown) {
     return error.message;
   }
 
-  return '마이페이지 데이터를 불러오지 못했어요.';
+  return "마이페이지 데이터를 불러오지 못했어요.";
 }
 
 export interface MyPageState {
@@ -69,7 +72,9 @@ export interface MyPageState {
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export const createMyPageSlice: StateCreator<any, [], [], MyPageState> = (set) => {
+export const createMyPageSlice: StateCreator<any, [], [], MyPageState> = (
+  set,
+) => {
   const beginRequest = () => {
     activeMyPageRequests += 1;
     set({ loading: true, error: null });
@@ -112,9 +117,11 @@ export const createMyPageSlice: StateCreator<any, [], [], MyPageState> = (set) =
         const response = await myApi.getLikes(page, size);
 
         set({
-          likedPerfumes: response.data.perfumes,
-          likesPageInfo: getPageInfo(response.data),
-          savedPerfumes: response.data.perfumes.map((item) => String(item.perfumeId)),
+          likedPerfumes: response.perfumes,
+          likesPageInfo: getPageInfo(response),
+          savedPerfumes: response.perfumes.map((item) =>
+            String(item.perfumeId),
+          ),
         });
       });
     },
@@ -124,12 +131,16 @@ export const createMyPageSlice: StateCreator<any, [], [], MyPageState> = (set) =
         await myApi.deleteLike(likesId);
 
         set((state: MyPageState) => {
-          const nextLikedPerfumes = state.likedPerfumes.filter((item) => item.likesId !== likesId);
+          const nextLikedPerfumes = state.likedPerfumes.filter(
+            (item) => item.likesId !== likesId,
+          );
 
           return {
             likedPerfumes: nextLikedPerfumes,
             likesPageInfo: decrementPageInfo(state.likesPageInfo),
-            savedPerfumes: nextLikedPerfumes.map((item) => String(item.perfumeId)),
+            savedPerfumes: nextLikedPerfumes.map((item) =>
+              String(item.perfumeId),
+            ),
           };
         });
       });
@@ -140,9 +151,9 @@ export const createMyPageSlice: StateCreator<any, [], [], MyPageState> = (set) =
         const response = await myApi.getMyPerfumes(page, size);
 
         set({
-          myPerfumes: response.data.perfumes,
-          myPerfumesPageInfo: getPageInfo(response.data),
-          myCollection: response.data.perfumes.map((item) => String(item.perfumeId)),
+          myPerfumes: response.perfumes,
+          myPerfumesPageInfo: getPageInfo(response),
+          myCollection: response.perfumes.map((item) => String(item.perfumeId)),
         });
       });
     },
@@ -170,8 +181,8 @@ export const createMyPageSlice: StateCreator<any, [], [], MyPageState> = (set) =
         const response = await myApi.getMyReviews(page, size);
 
         set({
-          myReviews: response.data.reviews,
-          myReviewsPageInfo: getPageInfo(response.data),
+          myReviews: response.reviews,
+          myReviewsPageInfo: getPageInfo(response),
         });
       });
     },
@@ -181,8 +192,8 @@ export const createMyPageSlice: StateCreator<any, [], [], MyPageState> = (set) =
         const response = await myApi.getMyRecommendations(page, size);
 
         set({
-          recommendationHistory: response.data.recommendations,
-          recommendationHistoryPageInfo: getPageInfo(response.data),
+          recommendationHistory: response.recommendations,
+          recommendationHistoryPageInfo: getPageInfo(response),
         });
       });
     },
@@ -192,7 +203,7 @@ export const createMyPageSlice: StateCreator<any, [], [], MyPageState> = (set) =
         const response = await myApi.getMyRecommendationDetail(id);
 
         set({
-          selectedRecommendationDetail: response.data,
+          selectedRecommendationDetail: response,
           selectedRecommendationDetailId: id,
         });
       });
