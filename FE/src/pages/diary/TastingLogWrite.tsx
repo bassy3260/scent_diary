@@ -38,8 +38,8 @@ export function TastingLogWrite() {
   const [situation, setSituation] = useState('');
   const [customSituation, setCustomSituation] = useState('');
   const [longevity, setLongevity] = useState(0);
-  const [sillage, setSillage] = useState(0);
-  const [seasons, setSeasons] = useState<string[]>([]);
+  const [sillage, setSillage] = useState<'weak' | 'middle' | 'strong' | ''>('');
+  const [season, setSeason] = useState('');
   const [note, setNote] = useState('');
   const [showPerfumeList, setShowPerfumeList] = useState(false);
   const [saveError, setSaveError] = useState('');
@@ -54,10 +54,13 @@ export function TastingLogWrite() {
 
   const selectedPerfume = searchResults.find(p => p.perfumeId === selectedPerfumeId);
 
-  const toggleSeason = (s: string) =>
-    setSeasons(prev => prev.includes(s) ? prev.filter(x => x !== s) : [...prev, s]);
+  const selectSeason = (s: string) => setSeason(prev => prev === s ? '' : s);
 
   const canSave = !!selectedPerfumeId;
+
+  const SEASON_MAP: Record<string, string> = {
+    '봄': 'spring', '여름': 'summer', '가을': 'fall', '겨울': 'winter',
+  };
 
   const handleSave = async () => {
     setSaveError('');
@@ -65,7 +68,14 @@ export function TastingLogWrite() {
       await createTryDiary({
         title: selectedPerfume?.name ?? '시향 일지',
         tryItems: selectedPerfumeId
-          ? [{ perfumeId: selectedPerfumeId, detail: note }]
+          ? [{
+              perfumeId: selectedPerfumeId,
+              description: note,
+              place: situation === '기타' ? customSituation : situation,
+              lasting: longevity,
+              sillage,
+              season: SEASON_MAP[season] ?? season,
+            }]
           : [],
       });
       navigateTo('diary');
@@ -220,9 +230,26 @@ export function TastingLogWrite() {
               <Wind size={13} className="text-[#8BA4B8]" />
               <p className="text-[#8BA4B8] whitespace-nowrap" style={{ fontSize: '0.6875rem' }}>확산력</p>
             </div>
-            <DotRating value={sillage} onChange={setSillage} />
+            <div className="flex gap-1.5">
+              {(['weak', 'middle', 'strong'] as const).map(v => (
+                <motion.button
+                  key={v}
+                  className="flex-1 py-1.5 rounded-lg border text-center transition-colors"
+                  style={{
+                    fontSize: '0.5625rem',
+                    borderColor: sillage === v ? '#8BA4B8' : '#E8E6E1',
+                    backgroundColor: sillage === v ? '#8BA4B8' : 'transparent',
+                    color: sillage === v ? '#FFFFFF' : '#8A8680',
+                  }}
+                  onClick={() => setSillage(sillage === v ? '' : v)}
+                  whileTap={{ scale: 0.93 }}
+                >
+                  {v === 'weak' ? '은은함' : v === 'middle' ? '보통' : '강함'}
+                </motion.button>
+              ))}
+            </div>
             <p className="text-[#B8B4AE] mt-2" style={{ fontSize: '0.5625rem' }}>
-              {sillage === 0 ? '평가 전' : sillage <= 2 ? '은은함' : sillage <= 3 ? '보통' : sillage <= 4 ? '풍성함' : '매우 강함'}
+              {sillage === '' ? '평가 전' : sillage === 'weak' ? '은은함' : sillage === 'middle' ? '보통' : '강함'}
             </p>
           </div>
         </div>
@@ -237,11 +264,11 @@ export function TastingLogWrite() {
                 className="flex-1 py-2.5 rounded-xl border whitespace-nowrap transition-colors"
                 style={{
                   fontSize: '0.8125rem',
-                  borderColor: seasons.includes(s) ? '#8BA4B8' : 'rgba(0,0,0,0.06)',
-                  backgroundColor: seasons.includes(s) ? '#8BA4B814' : '#F5F3EF',
-                  color: seasons.includes(s) ? '#8BA4B8' : '#8A8680',
+                  borderColor: season === s ? '#8BA4B8' : 'rgba(0,0,0,0.06)',
+                  backgroundColor: season === s ? '#8BA4B814' : '#F5F3EF',
+                  color: season === s ? '#8BA4B8' : '#8A8680',
                 }}
-                onClick={() => toggleSeason(s)}
+                onClick={() => selectSeason(s)}
                 whileTap={{ scale: 0.95 }}
               >
                 {s}
