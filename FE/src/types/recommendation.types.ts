@@ -24,7 +24,6 @@ export interface RecommendTextRequest {
   keyword: string;
   price: number;
   note: string;   // "TOP" | "MIDDLE" | "BASE"
-  memberId: number;
 }
 
 /** 이미지 기반 향수 추천 Request */
