@@ -12,7 +12,7 @@ interface EmotionInputProps {
 export function EmotionInput({ onComplete, onBack }: EmotionInputProps) {
   const { profile, updateProfile } = useAppStore();
   const [text, setText] = useState(profile.emotionText);
-  const [moodKeywords, setMoodKeywords] = useState<string[]>(profile.moodKeywords || []);
+  const [moodKeywords, setMoodKeywords] = useState<string[]>([]);
   const [placeholderIdx, setPlaceholderIdx] = useState(0);
   const [isFocused, setIsFocused] = useState(false);
 

@@ -1,5 +1,5 @@
 package com.example.fragrance.perfume.entity;
 
 public enum NoteLevel {
-    TOP, MIDDLE, BASE, SINGLE
+    top, middle, base, single
 }

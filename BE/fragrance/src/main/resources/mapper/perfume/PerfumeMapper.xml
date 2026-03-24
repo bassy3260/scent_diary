@@ -21,10 +21,10 @@
             p.brand,
             p.perfume_name,
             p.price,
-            CASE WHEN pn.note_level = 'TOP' THEN n.note_name END as top_note,
-            CASE WHEN pn.note_level = 'MIDDLE' THEN n.note_name END as mid_note,
-            CASE WHEN pn.note_level = 'BASE' THEN n.note_name END as base_note,
-            CASE WHEN pn.note_level = 'SINGLE' THEN n.note_name END as single_note
+            CASE WHEN pn.note_level = 'top' THEN n.note_name END as top_note,
+            CASE WHEN pn.note_level = 'middle' THEN n.note_name END as mid_note,
+            CASE WHEN pn.note_level = 'base' THEN n.note_name END as base_note,
+            CASE WHEN pn.note_level = 'single' THEN n.note_name END as single_note
         FROM public.perfume p
                  LEFT JOIN public.perfume_note pn ON p.perfume_id = pn.perfume_id
                  LEFT JOIN public.note n ON pn.note_id = n.note_id
