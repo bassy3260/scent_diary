@@ -28,3 +28,6 @@ mybatis:
 fastapi:
 #   url: ${FASTAPI_URL:http://j14e102.p.ssafy.io:8126}
    url: ${FASTAPI_URL:http://localhost:8000}
+
+s3:
+  url: ${S3_URL}
