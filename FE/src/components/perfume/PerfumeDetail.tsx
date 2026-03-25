@@ -23,8 +23,13 @@ export function PerfumeDetail({ onBack }: PerfumeDetailProps) {
   const [reviewContent, setReviewContent] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const isSaved = selectedPerfumeId !== null && savedPerfumes.includes(selectedPerfumeId);
-  const isCollected = selectedPerfumeId !== null && myCollection.includes(selectedPerfumeId);
+//   const isSaved = selectedPerfumeId !== null && savedPerfumes.includes(selectedPerfumeId);
+//   const isCollected = selectedPerfumeId !== null && myCollection.includes(selectedPerfumeId);
+
+  const isSaved = perfumeDetail?.isLiked ??
+    savedPerfumes.some(id => String(id) === String(selectedPerfumeId));
+  const isCollected = perfumeDetail?.isCollected ??
+    myCollection.some(id => String(id) === String(selectedPerfumeId));
 
   useEffect(() => {
     if (selectedPerfumeId !== null) {
@@ -177,6 +182,19 @@ export function PerfumeDetail({ onBack }: PerfumeDetailProps) {
             </div>
             <NotePyramid notes={perfumeDetail.notes} />
           </motion.div>
+
+          {/* 향 이야기 */}
+          {perfumeDetail.description && (
+            <motion.div className="mt-6" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }}>
+              <div className="flex items-center gap-2 mb-3">
+                <p className="text-[#B8B4AE]" style={{ fontSize: '0.6875rem', letterSpacing: '0.08em' }}>향 이야기</p>
+                <div className="flex-1 h-px" style={{ background: 'linear-gradient(90deg, #E8E6E1 0%, transparent 100%)' }} />
+              </div>
+              <p className="text-[#4A4742]" style={{ fontSize: '0.875rem', lineHeight: 1.8 }}>
+                {perfumeDetail.description}
+              </p>
+            </motion.div>
+          )}
 
           {/* Reviews */}
           {perfumeDetail.reviews?.length > 0 && (

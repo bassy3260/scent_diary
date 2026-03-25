@@ -12,7 +12,7 @@ interface EmotionInputProps {
 export function EmotionInput({ onComplete, onBack }: EmotionInputProps) {
   const { profile, updateProfile } = useAppStore();
   const [text, setText] = useState(profile.emotionText);
-  const [moodKeywords, setMoodKeywords] = useState<string[]>(profile.moodKeywords || []);
+  const [moodKeywords, setMoodKeywords] = useState<string[]>([]);
   const [placeholderIdx, setPlaceholderIdx] = useState(0);
   const [isFocused, setIsFocused] = useState(false);
 
@@ -84,7 +84,7 @@ export function EmotionInput({ onComplete, onBack }: EmotionInputProps) {
               animate={{ opacity: 1, scale: 1 }}
               transition={{ type: 'spring', stiffness: 500, damping: 20, delay: 0.05 }}
             >
-              {profile.notePreference === 'top' ? '첫향' : profile.notePreference === 'middle' ? '미들노트' : '잔향'}
+              {profile.notePreference === 'TOP' ? '첫향' : profile.notePreference === 'MIDDLE' ? '미들노트' : '잔향'}
             </motion.span>
           )}
         </div>

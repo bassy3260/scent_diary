@@ -1,7 +1,5 @@
 import logging
 import os
-import time
-from concurrent.futures import ThreadPoolExecutor
 from contextlib import asynccontextmanager
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(name)s %(levelname)s %(message)s")
@@ -16,131 +14,58 @@ from app.services.recommender import load_perfume_rows
 
 logger = logging.getLogger(__name__)
 
-RUNPOD_API_KEY = os.getenv("RUNPOD_API_KEY")
-RUNPOD_ENDPOINT_ID = os.getenv("RUNPOD_ENDPOINT_ID")
-RUNPOD_IMAGE_ENDPOINT_ID = os.getenv("RUNPOD_IMAGE_ENDPOINT_ID")
+POD_EMBED_URL = os.getenv("POD_EMBED_URL")
+POD_MOOD_URL = os.getenv("POD_MOOD_URL")
 
 
-class RunPodEmbedder:
-    """RunPod serverless 임베딩 엔드포인트 호출 wrapper"""
+class PodEmbedder:
+    """RunPod Pod 임베딩 엔드포인트 호출 wrapper"""
 
-    def __init__(self, endpoint_id: str, api_key: str):
-        self.base_url = f"https://api.runpod.ai/v2/{endpoint_id}"
-        self.headers = {
-            "Authorization": f"Bearer {api_key}",
-            "Content-Type": "application/json",
-        }
-
-    def _submit_job(self, text: str) -> str:
-        """임베딩 job을 RunPod에 제출하고 job_id를 반환"""
-        try:
-            response = requests.post(
-                f"{self.base_url}/run",
-                headers=self.headers,
-                json={"input": {"text": text}},
-                timeout=10,
-            )
-            response.raise_for_status()
-            return response.json()["id"]
-        except requests.Timeout:
-            raise HTTPException(status_code=504, detail="RunPod job 제출 타임아웃")
-        except requests.HTTPError as e:
-            raise HTTPException(status_code=502, detail=f"RunPod job 제출 실패: {e}")
-
-    def _poll_job(self, job_id: str) -> np.ndarray:
-        """job이 완료될 때까지 폴링하고 임베딩 벡터를 반환 (최대 5분)"""
-        status_url = f"{self.base_url}/status/{job_id}"
-        for _ in range(300):
-            time.sleep(1)
-            try:
-                status_resp = requests.get(status_url, headers=self.headers, timeout=10)
-                status_resp.raise_for_status()
-            except requests.Timeout:
-                raise HTTPException(status_code=504, detail="RunPod 상태 조회 타임아웃")
-            except requests.HTTPError as e:
-                raise HTTPException(status_code=502, detail=f"RunPod 상태 조회 실패: {e}")
-
-            result = status_resp.json()
-            if result.get("status") == "COMPLETED":
-                return np.array(result["output"]["embedding"], dtype=np.float32)
-            if result.get("status") in ("FAILED", "CANCELLED"):
-                raise HTTPException(status_code=502, detail=f"RunPod job 실패: {result}")
-
-        raise HTTPException(status_code=504, detail="RunPod job 타임아웃 (5분 초과)")
+    def __init__(self, url: str):
+        self.url = url
 
     def encode(self, text: str) -> np.ndarray:
-        job_id = self._submit_job(text)
-        return self._poll_job(job_id)
-
-    def encode_many(self, texts: list[str]) -> np.ndarray:
-        """여러 텍스트를 병렬 제출 후 병렬 폴링. 반환 shape: (len(texts), 1024)"""
-        job_ids = [self._submit_job(t) for t in texts]
-        with ThreadPoolExecutor() as pool:
-            vectors = list(pool.map(self._poll_job, job_ids))
-        return np.array(vectors, dtype=np.float32)
-
-class RunPodMoodExtractor:
-    """RunPod serverless 무드 추출 엔드포인트 호출 wrapper"""
-
-    def __init__(self, endpoint_id: str, api_key: str):
-        self.base_url = f"https://api.runpod.ai/v2/{endpoint_id}"
-        self.headers = {
-            "Authorization": f"Bearer {api_key}",
-            "Content-Type": "application/json",
-        }
-
-    def _submit_job(self, image_base64: str, temperature: float = 15.0) -> str:
-        """무드 추출 job을 RunPod에 제출하고 job_id를 반환"""
         try:
-            response = requests.post(
-                f"{self.base_url}/run",
-                headers=self.headers,
-                json={"input": {"image_base64": image_base64, "temperature": temperature}},
-                timeout=10,
-            )
+            response = requests.post(self.url, json={"text": text}, timeout=60)
             response.raise_for_status()
-            return response.json()["id"]
+            return np.array(response.json()["embedding"], dtype=np.float32)
         except requests.Timeout:
-            raise HTTPException(status_code=504, detail="RunPod job 제출 타임아웃")
+            raise HTTPException(status_code=504, detail="Pod 임베딩 서버 응답 시간 초과")
         except requests.HTTPError as e:
-            raise HTTPException(status_code=502, detail=f"RunPod job 제출 실패: {e}")
+            raise HTTPException(status_code=502, detail=f"Pod 임베딩 서버 오류: {e}")
 
-    def _poll_job(self, job_id: str) -> dict[str, float]:
-        """job이 완료될 때까지 폴링하고 무드 점수를 반환 (최대 5분)"""
-        status_url = f"{self.base_url}/status/{job_id}"
-        for _ in range(300):
-            time.sleep(1)
-            try:
-                status_resp = requests.get(status_url, headers=self.headers, timeout=10)
-                status_resp.raise_for_status()
-            except requests.Timeout:
-                raise HTTPException(status_code=504, detail="RunPod 상태 조회 타임아웃")
-            except requests.HTTPError as e:
-                raise HTTPException(status_code=502, detail=f"RunPod 상태 조회 실패: {e}")
 
-            result = status_resp.json()
-            if result.get("status") == "COMPLETED":
-                return result["output"]["mood_scores"]
-            if result.get("status") in ("FAILED", "CANCELLED"):
-                raise HTTPException(status_code=502, detail=f"RunPod job 실패: {result}")
+class PodMoodExtractor:
+    """RunPod Pod 무드 추출 엔드포인트 호출 wrapper"""
 
-        raise HTTPException(status_code=504, detail="RunPod job 타임아웃 (5분 초과)")
+    def __init__(self, url: str):
+        self.url = url
 
     def extract_mood(self, image_base64: str, temperature: float = 15.0) -> dict[str, float]:
         """이미지 base64 → 무드 유사도 점수 추출"""
-        job_id = self._submit_job(image_base64, temperature)
-        return self._poll_job(job_id)
+        try:
+            response = requests.post(
+                self.url,
+                json={"image_base64": image_base64, "temperature": temperature},
+                timeout=60,
+            )
+            response.raise_for_status()
+            return response.json()["mood_scores"]
+        except requests.Timeout:
+            raise HTTPException(status_code=504, detail="Pod 무드 추출 서버 응답 시간 초과")
+        except requests.HTTPError as e:
+            raise HTTPException(status_code=502, detail=f"Pod 무드 추출 서버 오류: {e}")
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # 앱 시작 시 (startup)
-    if not RUNPOD_API_KEY or not RUNPOD_ENDPOINT_ID:
-        raise RuntimeError("RUNPOD_API_KEY, RUNPOD_ENDPOINT_ID 환경변수가 필요합니다.")
-    app.state.embedder = RunPodEmbedder(RUNPOD_ENDPOINT_ID, RUNPOD_API_KEY)
+    if not POD_EMBED_URL:
+        raise RuntimeError("POD_EMBED_URL 환경변수가 필요합니다.")
+    app.state.embedder = PodEmbedder(POD_EMBED_URL)
     app.state.perfume_rows = load_perfume_rows()
-    if RUNPOD_IMAGE_ENDPOINT_ID:
-        app.state.mood_extractor = RunPodMoodExtractor(RUNPOD_IMAGE_ENDPOINT_ID, RUNPOD_API_KEY)
+    if POD_MOOD_URL:
+        app.state.mood_extractor = PodMoodExtractor(POD_MOOD_URL)
         logger.info("이미지 무드 추출기 초기화 완료")
         ACCORD_EMB_PATH = "accord_embeddings.npy"
         if os.path.exists(ACCORD_EMB_PATH):

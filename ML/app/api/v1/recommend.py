@@ -64,7 +64,7 @@ def recommend(req: RecommendRequest, request: Request) -> RecommendListResponse:
 async def recommend_by_image(
     file: UploadFile = File(...),
     price: int = Form(...),
-    note: Literal["top", "middle", "base"] = Form("middle"),
+    note: Literal["TOP", "MIDDLE", "BASE"] = Form("MIDDLE"),
     request: Request = None,
 ) -> ImageRecommendListResponse:
     """이미지 업로드 → 무드 추출 → 어코드 벡터 → 텍스트 임베딩 → 향수 추천"""

@@ -10,7 +10,7 @@ interface BottomNavProps {
 
 const tabs: { id: TabId; icon: typeof Home; label: string }[] = [
   { id: 'home', icon: Home, label: '홈' },
-  { id: 'search', icon: Search, label: '검색' },
+  { id: 'search', icon: Search, label: '탐색' },
   { id: 'diary', icon: BookOpen, label: '다이어리' },
   { id: 'mypage', icon: User, label: '마이페이지' },
 ];

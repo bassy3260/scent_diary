@@ -6,6 +6,10 @@ export interface PerfumeState {
   selectedPerfumeId: number | null;
   perfumeDetail: PerfumeDetail | null;
   searchResults: PerfumeListItem[];
+  browseResults: PerfumeListItem[];
+  browsePage: number;
+  browseTotalPages: number;
+  browseTotalElements: number;
   savedPerfumes: number[];
   myCollection: number[];
   isLoading: boolean;
@@ -13,12 +17,15 @@ export interface PerfumeState {
 
   setSelectedPerfumeId: (id: number | null) => void;
   searchPerfumes: (query: string) => Promise<void>;
+  browsePerfumes: (page: number) => Promise<void>;
   fetchPerfumeDetail: (id: number) => Promise<void>;
   likePerfume: (id: number) => Promise<void>;
   collectPerfume: (id: number) => Promise<void>;
   submitReview: (perfumeId: number, rating: number, content: string) => Promise<void>;
   toggleSavedPerfume: (id: number) => Promise<void>;
   toggleMyCollection: (id: number) => Promise<void>;
+
+  initUserActivity: () => Promise<void>;
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -26,31 +33,46 @@ export const createPerfumeSlice: StateCreator<any, [], [], PerfumeState> = (set,
   selectedPerfumeId: null,
   perfumeDetail: null,
   searchResults: [],
+  browseResults: [],
+  browsePage: 0,
+  browseTotalPages: 1,
+  browseTotalElements: 0,
   savedPerfumes: [],
   myCollection: [],
   isLoading: false,
   error: null,
 
-  setSelectedPerfumeId: (id) => set({ selectedPerfumeId: id }),
+  setSelectedPerfumeId: (id) => set((state: any) => ({ ...state, selectedPerfumeId: id })),
 
   searchPerfumes: async (query) => {
-    set({ isLoading: true, error: null });
+    set((state: any) => ({ ...state, isLoading: true, error: null }));
     try {
       const res = await perfumeApi.search(query);
       const normalized = res.perfumes.map(p => ({ ...p, perfumeId: Number(p.perfumeId ?? p.id) }));
-      set({ searchResults: normalized, isLoading: false });
+      set((state: any) => ({ ...state, searchResults: normalized, isLoading: false }));
     } catch {
       set({ error: '검색에 실패했습니다.', isLoading: false });
     }
   },
 
+  browsePerfumes: async (page) => {
+    set({ isLoading: true, error: null });
+    try {
+      const res = await perfumeApi.search('', page, 20);
+      const normalized = res.perfumes.map(p => ({ ...p, perfumeId: Number(p.perfumeId ?? p.id) }));
+      set({ browseResults: normalized, browsePage: res.page, browseTotalPages: res.totalPages, browseTotalElements: res.totalElements, isLoading: false });
+    } catch {
+      set({ error: '향수 목록을 불러오지 못했습니다.', isLoading: false });
+    }
+  },
+
   fetchPerfumeDetail: async (id) => {
-    set({ isLoading: true, error: null, perfumeDetail: null });
+    set((state: any) => ({ ...state, error: null, perfumeDetail: null }));
     try {
       const res = await perfumeApi.getById(id);
-      set({ perfumeDetail: res, isLoading: false });
+      set((state: any) => ({ ...state, perfumeDetail: res }));
     } catch {
-      set({ error: '향수 정보를 불러오지 못했습니다.', isLoading: false });
+      set((state: any) => ({ ...state, error: '향수 정보를 불러오지 못했습니다.' }));
     }
   },
 
@@ -58,6 +80,7 @@ export const createPerfumeSlice: StateCreator<any, [], [], PerfumeState> = (set,
     try {
       await perfumeApi.like({ perfume_id: id });
       set((s: PerfumeState) => ({
+          ...s,
         savedPerfumes: s.savedPerfumes.includes(id)
           ? s.savedPerfumes.filter((p) => p !== id)
           : [...s.savedPerfumes, id],
@@ -71,6 +94,7 @@ export const createPerfumeSlice: StateCreator<any, [], [], PerfumeState> = (set,
     try {
       await perfumeApi.collect({ perfume_id: id });
       set((s: PerfumeState) => ({
+          ...s,
         myCollection: s.myCollection.includes(id)
           ? s.myCollection.filter((p) => p !== id)
           : [...s.myCollection, id],
@@ -91,5 +115,25 @@ export const createPerfumeSlice: StateCreator<any, [], [], PerfumeState> = (set,
 
   toggleMyCollection: async (id) => {
     await get().collectPerfume(id);
+  },
+
+  initUserActivity: async () => {
+    try {
+      const [saved, collected] = await Promise.all([
+        perfumeApi.getMyLikes(),
+        perfumeApi.getMyCollection()
+      ]);
+
+      const likedIds = saved?.perfumes?.map((p: any) => p.id || p.perfumeId || p.perfume_id) || [];
+      const collectedIds = collected?.perfumes?.map((p: any) => p.id || p.perfumeId || p.perfume_id) || [];
+
+      set((state: any) => ({
+        ...state,
+        savedPerfumes: likedIds,
+        myCollection: collectedIds,
+      }));
+    } catch (e) {
+      console.error("유저 활동 내역 로드 실패", e);
+    }
   },
 });

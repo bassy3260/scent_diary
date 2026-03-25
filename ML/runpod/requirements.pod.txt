@@ -1,0 +1,8 @@
+fastapi
+uvicorn
+sentence-transformers
+open_clip_torch
+transformers
+torch
+Pillow
+numpy

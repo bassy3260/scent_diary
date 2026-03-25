@@ -98,7 +98,7 @@
         p.perfume_name,
         pr.reasons,
         a.accord_name,
-        pn.note_level::TEXT AS note_level,
+        LOWER(pn.note_level::TEXT) AS note_level,
         n.note_name
         FROM perfume_recommend pr
         INNER JOIN perfume p       ON p.perfume_id  = pr.perfume_id

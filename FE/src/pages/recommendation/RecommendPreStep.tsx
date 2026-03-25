@@ -112,13 +112,13 @@ export function RecommendPreStep({ onComplete, onBack }: RecommendPreStepProps) 
         return (
           <div className="flex flex-col gap-3 mt-6">
             <motion.button
-              key="top"
+              key="TOP"
               className="w-full py-4 px-5 rounded-2xl border-2 flex items-center gap-4 text-left relative overflow-hidden"
               style={{
-                borderColor: notePreference === 'top' ? '#6B7B5E' : 'rgba(0,0,0,0.06)',
-                backgroundColor: notePreference === 'top' ? '#6B7B5E08' : '#FFFFFF',
+                borderColor: notePreference === 'TOP' ? '#6B7B5E' : 'rgba(0,0,0,0.06)',
+                backgroundColor: notePreference === 'TOP' ? '#6B7B5E08' : '#FFFFFF',
               }}
-              onClick={() => setNotePreference('top')}
+              onClick={() => setNotePreference('TOP')}
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0 * 0.08, type: 'spring', stiffness: 500, damping: 30 }}
@@ -127,12 +127,12 @@ export function RecommendPreStep({ onComplete, onBack }: RecommendPreStepProps) 
               <motion.div
                 className="w-12 h-12 rounded-full flex items-center justify-center shrink-0 overflow-hidden text-2xl"
                 style={{
-                  background: notePreference === 'top' ? '#6B7B5E15' : '#F5F3EF',
-                  boxShadow: notePreference === 'top'
+                  background: notePreference === 'TOP' ? '#6B7B5E15' : '#F5F3EF',
+                  boxShadow: notePreference === 'TOP'
                     ? '0 0 0 2.5px #6B7B5E44'
                     : '0 0 0 1.5px rgba(0,0,0,0.06)',
                 }}
-                animate={notePreference === 'top' ? { scale: 1.08 } : { scale: 1 }}
+                animate={notePreference === 'TOP' ? { scale: 1.08 } : { scale: 1 }}
                 transition={{ type: 'spring', stiffness: 600, damping: 15 }}
               >
                 ✨
@@ -143,7 +143,7 @@ export function RecommendPreStep({ onComplete, onBack }: RecommendPreStepProps) 
                   뿌린 직후 5~10분간 느껴지는 첫인상
                 </p>
               </div>
-              {notePreference === 'top' && (
+              {notePreference === 'TOP' && (
                 <motion.div
                   className="w-6 h-6 rounded-full bg-[#6B7B5E] flex items-center justify-center"
                   initial={{ scale: 0 }}
@@ -157,13 +157,13 @@ export function RecommendPreStep({ onComplete, onBack }: RecommendPreStepProps) 
               )}
             </motion.button>
             <motion.button
-              key="middle"
+              key="MIDDLE"
               className="w-full py-4 px-5 rounded-2xl border-2 flex items-center gap-4 text-left relative overflow-hidden"
               style={{
-                borderColor: notePreference === 'middle' ? '#6B7B5E' : 'rgba(0,0,0,0.06)',
-                backgroundColor: notePreference === 'middle' ? '#6B7B5E08' : '#FFFFFF',
+                borderColor: notePreference === 'MIDDLE' ? '#6B7B5E' : 'rgba(0,0,0,0.06)',
+                backgroundColor: notePreference === 'MIDDLE' ? '#6B7B5E08' : '#FFFFFF',
               }}
-              onClick={() => setNotePreference('middle')}
+              onClick={() => setNotePreference('MIDDLE')}
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 1 * 0.08, type: 'spring', stiffness: 500, damping: 30 }}
@@ -172,12 +172,12 @@ export function RecommendPreStep({ onComplete, onBack }: RecommendPreStepProps) 
               <motion.div
                 className="w-12 h-12 rounded-full flex items-center justify-center shrink-0 overflow-hidden text-2xl"
                 style={{
-                  background: notePreference === 'middle' ? '#6B7B5E15' : '#F5F3EF',
-                  boxShadow: notePreference === 'middle'
+                  background: notePreference === 'MIDDLE' ? '#6B7B5E15' : '#F5F3EF',
+                  boxShadow: notePreference === 'MIDDLE'
                     ? '0 0 0 2.5px #6B7B5E44'
                     : '0 0 0 1.5px rgba(0,0,0,0.06)',
                 }}
-                animate={notePreference === 'middle' ? { scale: 1.08 } : { scale: 1 }}
+                animate={notePreference === 'MIDDLE' ? { scale: 1.08 } : { scale: 1 }}
                 transition={{ type: 'spring', stiffness: 600, damping: 15 }}
               >
                 💫
@@ -188,7 +188,7 @@ export function RecommendPreStep({ onComplete, onBack }: RecommendPreStepProps) 
                   향수의 핵심, 30분~2시간 지속되는 향
                 </p>
               </div>
-              {notePreference === 'middle' && (
+              {notePreference === 'MIDDLE' && (
                 <motion.div
                   className="w-6 h-6 rounded-full bg-[#6B7B5E] flex items-center justify-center"
                   initial={{ scale: 0 }}
@@ -202,13 +202,13 @@ export function RecommendPreStep({ onComplete, onBack }: RecommendPreStepProps) 
               )}
             </motion.button>
             <motion.button
-              key="base"
+              key="BASE"
               className="w-full py-4 px-5 rounded-2xl border-2 flex items-center gap-4 text-left relative overflow-hidden"
               style={{
-                borderColor: notePreference === 'base' ? '#6B7B5E' : 'rgba(0,0,0,0.06)',
-                backgroundColor: notePreference === 'base' ? '#6B7B5E08' : '#FFFFFF',
+                borderColor: notePreference === 'BASE' ? '#6B7B5E' : 'rgba(0,0,0,0.06)',
+                backgroundColor: notePreference === 'BASE' ? '#6B7B5E08' : '#FFFFFF',
               }}
-              onClick={() => setNotePreference('base')}
+              onClick={() => setNotePreference('BASE')}
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 2 * 0.08, type: 'spring', stiffness: 500, damping: 30 }}
@@ -217,12 +217,12 @@ export function RecommendPreStep({ onComplete, onBack }: RecommendPreStepProps) 
               <motion.div
                 className="w-12 h-12 rounded-full flex items-center justify-center shrink-0 overflow-hidden text-2xl"
                 style={{
-                  background: notePreference === 'base' ? '#6B7B5E15' : '#F5F3EF',
-                  boxShadow: notePreference === 'base'
+                  background: notePreference === 'BASE' ? '#6B7B5E15' : '#F5F3EF',
+                  boxShadow: notePreference === 'BASE'
                     ? '0 0 0 2.5px #6B7B5E44'
                     : '0 0 0 1.5px rgba(0,0,0,0.06)',
                 }}
-                animate={notePreference === 'base' ? { scale: 1.08 } : { scale: 1 }}
+                animate={notePreference === 'BASE' ? { scale: 1.08 } : { scale: 1 }}
                 transition={{ type: 'spring', stiffness: 600, damping: 15 }}
               >
                 🌙
@@ -233,7 +233,7 @@ export function RecommendPreStep({ onComplete, onBack }: RecommendPreStepProps) 
                   오래 지속되는 깊고 묵직한 마지막 향
                 </p>
               </div>
-              {notePreference === 'base' && (
+              {notePreference === 'BASE' && (
                 <motion.div
                   className="w-6 h-6 rounded-full bg-[#6B7B5E] flex items-center justify-center"
                   initial={{ scale: 0 }}
