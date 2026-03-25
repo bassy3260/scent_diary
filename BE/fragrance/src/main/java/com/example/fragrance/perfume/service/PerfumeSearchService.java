@@ -3,6 +3,7 @@ package com.example.fragrance.perfume.service;
 import com.example.fragrance.perfume.dto.PerfumeSearchDto;
 import com.example.fragrance.perfume.dto.PerfumeSearchListResponse;
 import com.example.fragrance.perfume.mapper.PerfumeMapper;
+import com.example.fragrance.util.perfume.KoreanUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -35,7 +36,7 @@ public class PerfumeSearchService {
                         return q.matchAll(m -> m);
                     }
                     return q.multiMatch(m -> m
-                            .fields("name", "brand", "notes")
+                            .fields("name", "brand", "notes", "chosung")
                             .query(search)
                             .fuzziness("AUTO")
                     );
@@ -78,7 +79,13 @@ public class PerfumeSearchService {
             return "MIGRATION FAILED: No data found in MySQL";
         }
 
-        // 2. ES에 한 번에 저장 (Bulk)
+        // 2. 각 향수 데이터에 초성 심어주기 (초성 검색을 위함)
+        for (PerfumeSearchDto perfume : allPerfumes) {
+            // 이름(name)에서 초성을 뽑아 chosung 필드에 저장
+            perfume.setChosung(KoreanUtils.getChosung(perfume.getName()));
+        }
+
+        // 3. ES에 한 번에 저장 (Bulk)
         elasticsearchOperations.save(allPerfumes);
 
         return "SUCCESS: Migrated " + allPerfumes.size() + " perfumes to ES";
