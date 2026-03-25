@@ -22,4 +22,5 @@ public class PerfumeSearchDto {
 	private Integer price;
 	private List<String> accords;
 	private List<String> notes;
+	private String chosung;
 }
