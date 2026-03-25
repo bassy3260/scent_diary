@@ -59,7 +59,7 @@ export function SearchScreen() {
           <input
             className="w-full pl-10 pr-9 py-3 rounded-2xl border-2 bg-white/70 text-[#1A1A1A] outline-none transition-all"
             style={{ fontSize: '0.875rem', borderColor: isFocused ? '#6B7B5E' : 'rgba(0,0,0,0.06)' }}
-            placeholder="브랜드, 향수, 노트명..."
+            placeholder="브랜드, 향수명"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             onFocus={() => setIsFocused(true)}
