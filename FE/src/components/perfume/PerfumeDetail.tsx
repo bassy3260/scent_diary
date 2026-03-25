@@ -336,7 +336,7 @@ export function PerfumeDetail({ onBack }: PerfumeDetailProps) {
               onClick={() => {
                 if (perfumeDetail) {
                   setDiaryPrefill({
-                    perfumeId: perfumeDetail.id ?? selectedPerfumeId!,
+                    perfumeId: selectedPerfumeId!,
                     name: perfumeDetail.name,
                     brand: perfumeDetail.brand,
                     image: perfumeDetail.image,
