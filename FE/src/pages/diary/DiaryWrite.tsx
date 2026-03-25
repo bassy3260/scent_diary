@@ -9,12 +9,14 @@ import { diaryApi } from '../../api/diary.api';
 export function DiaryWrite() {
   const { navigateTo } = useAppStore();
   const { searchResults, searchPerfumes } = usePerfumeStore();
-  const { createDiary } = useDiaryStore();
+  const { createDiary, diaryPrefill, setDiaryPrefill } = useDiaryStore();
   const { likedPerfumes, myPerfumes, fetchLikes, fetchMyPerfumes } = useMyPageStore();
 
   const [title, setTitle] = useState('');
   const [note, setNote] = useState('');
-  const [selectedPerfumeId, setSelectedPerfumeId] = useState<number | null>(null);
+  const [selectedPerfumeId, setSelectedPerfumeId] = useState<number | null>(
+    () => diaryPrefill?.perfumeId ?? null
+  );
   const [photoUrls, setPhotoUrls] = useState<string[]>([]);
   const [imageNames, setImageNames] = useState<string[]>([]);
   const [showPerfumeSheet, setShowPerfumeSheet] = useState(false);
@@ -41,8 +43,11 @@ export function DiaryWrite() {
     if (perfumeFilter === 'collection' && myPerfumes.length === 0) fetchMyPerfumes(1, 200);
   }, [showPerfumeSheet, perfumeFilter]);
 
+  const isPrefilled = diaryPrefill != null && selectedPerfumeId === diaryPrefill.perfumeId;
+
   const selectedPerfume = selectedPerfumeId !== null
     ? (
+        (isPrefilled ? { ...diaryPrefill, accords: [] } : null) ??
         searchResults.find(p => p.perfumeId === selectedPerfumeId) ??
         likedPerfumes.find(p => p.perfumeId === selectedPerfumeId) ??
         myPerfumes.find(p => p.perfumeId === selectedPerfumeId) ??
@@ -129,6 +134,7 @@ export function DiaryWrite() {
         perfumeId: selectedPerfumeId ?? 0,
         images: imageNames,
       });
+      setDiaryPrefill(null);
       navigateTo('diary');
     } catch (e) {
       const msg = e instanceof Error ? e.message : '';
@@ -209,14 +215,16 @@ export function DiaryWrite() {
                 <p className="text-[#8A8680]" style={{ fontSize: '0.5625rem', letterSpacing: '0.06em' }}>{selectedPerfume.brand.toUpperCase()}</p>
                 <p className="text-[#1A1A1A] truncate" style={{ fontSize: '0.9375rem' }}>{selectedPerfume.name}</p>
               </div>
-              <motion.button
-                className="w-7 h-7 rounded-full flex items-center justify-center shrink-0"
-                style={{ backgroundColor: 'rgba(139,164,184,0.15)' }}
-                onClick={() => setSelectedPerfumeId(null)}
-                whileTap={{ scale: 0.9 }}
-              >
-                <X size={12} className="text-[#8A8680]" />
-              </motion.button>
+              {!isPrefilled && (
+                <motion.button
+                  className="w-7 h-7 rounded-full flex items-center justify-center shrink-0"
+                  style={{ backgroundColor: 'rgba(139,164,184,0.15)' }}
+                  onClick={() => setSelectedPerfumeId(null)}
+                  whileTap={{ scale: 0.9 }}
+                >
+                  <X size={12} className="text-[#8A8680]" />
+                </motion.button>
+              )}
             </div>
           ) : (
             <motion.button

@@ -14,19 +14,25 @@ export function SearchScreen() {
   const browseTotalPages = useAppStore((s) => s.browseTotalPages);
   const browseTotalElements = useAppStore((s) => s.browseTotalElements);
   const isLoading = useAppStore((s) => s.isLoading);
+  const query = useAppStore((s) => s.searchQuery);
+  const setQuery = useAppStore((s) => s.setSearchQuery);
 
-  const [query, setQuery] = useState('');
   const [isFocused, setIsFocused] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const isMountRef = useRef(true);
 
-  // Load first page on mount
+  // Load first page on mount (skip if search results already exist from back navigation)
   useEffect(() => {
-    void browsePerfumes(0);
+    if (!query) void browsePerfumes(0);
   }, [browsePerfumes]);
 
-  // Debounced search
+  // Debounced search — skip re-fetch on initial mount if results already exist
   useEffect(() => {
     if (!query) return;
+    if (isMountRef.current) {
+      isMountRef.current = false;
+      if (searchResults.length > 0) return;
+    }
     if (debounceRef.current) clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(() => {
       void searchPerfumes(query);
@@ -59,7 +65,7 @@ export function SearchScreen() {
           <input
             className="w-full pl-10 pr-9 py-3 rounded-2xl border-2 bg-white/70 text-[#1A1A1A] outline-none transition-all"
             style={{ fontSize: '0.875rem', borderColor: isFocused ? '#6B7B5E' : 'rgba(0,0,0,0.06)' }}
-            placeholder="브랜드, 향수, 노트명..."
+            placeholder="브랜드, 향수명"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             onFocus={() => setIsFocused(true)}

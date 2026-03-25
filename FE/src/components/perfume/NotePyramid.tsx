@@ -67,9 +67,97 @@ const LBL2 = [
 // Right-side indicator dot Y positions
 const DOT_Y2 = [41, 100, 162];
 
+// 싱글 노트 색상 — 연한 파랑 계열
+const SINGLE_COLOR = {
+  front:  '#8BA4B8',
+  bg:     'rgba(138,164,184,0.09)',
+  border: 'rgba(138,164,184,0.30)',
+  pill:   'rgba(138,164,184,0.15)',
+  label:  '#2E507A',
+};
+
+function SingleNote({ notes }: { notes: string[] }) {
+  return (
+    <div>
+      {/* 단일 원형 심볼 */}
+      <div style={{ userSelect: 'none' }}>
+        <svg viewBox="0 0 280 200" width="100%" style={{ display: 'block', maxHeight: 200 }}>
+          <defs>
+            <radialGradient id="sg-fill" cx="42%" cy="35%" r="60%">
+              <stop offset="0%"   stopColor="white" stopOpacity="0.30" />
+              <stop offset="100%" stopColor="white" stopOpacity="0" />
+            </radialGradient>
+            <filter id="sgglow" x="-15%" y="-15%" width="130%" height="130%">
+              <feDropShadow dx="0" dy="0" stdDeviation="4" floodColor="white" floodOpacity="0.6" />
+            </filter>
+          </defs>
+
+          {/* 외곽 장식 링 */}
+          <circle cx="140" cy="100" r="88" fill="none" stroke={SINGLE_COLOR.front} strokeWidth="1" strokeOpacity="0.25" strokeDasharray="4 4" />
+          <circle cx="140" cy="100" r="70" fill="none" stroke={SINGLE_COLOR.front} strokeWidth="0.8" strokeOpacity="0.15" />
+
+          {/* 메인 원 */}
+          <circle cx="140" cy="100" r="60" fill={SINGLE_COLOR.front} />
+          <circle cx="140" cy="100" r="60" fill="url(#sg-fill)" />
+
+          {/* 활성 테두리 */}
+          <circle cx="140" cy="100" r="60" fill="none" stroke="white" strokeWidth="1.8" filter="url(#sgglow)" />
+
+          {/* 라벨 */}
+          <text x="140" y="95" textAnchor="middle" fill="white"
+            style={{ fontSize: 13, fontWeight: 700, letterSpacing: '0.13em', fontFamily: 'system-ui, -apple-system, sans-serif' }}>
+            SINGLE
+          </text>
+          <text x="140" y="112" textAnchor="middle" fill="rgba(255,255,255,0.85)"
+            style={{ fontSize: 9, letterSpacing: '0.06em', fontFamily: 'system-ui, -apple-system, sans-serif' }}>
+            싱글 노트
+          </text>
+        </svg>
+      </div>
+
+      {/* 노트 카드 */}
+      <motion.div
+        className="mt-3 rounded-2xl overflow-hidden"
+        style={{ backgroundColor: SINGLE_COLOR.bg, border: `1px solid ${SINGLE_COLOR.border}` }}
+        initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.2 }}
+      >
+        <div className="px-4 pt-3.5 pb-3 flex items-center gap-2"
+          style={{ borderBottom: `1px solid ${SINGLE_COLOR.border}` }}>
+          <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: SINGLE_COLOR.front }} />
+          <span className="text-[#1A1A1A]" style={{ fontSize: '0.75rem', fontWeight: 700, letterSpacing: '0.06em' }}>
+            싱글 노트
+          </span>
+          <span className="ml-auto shrink-0 px-2 py-0.5 rounded-full"
+            style={{ fontSize: '0.625rem', color: SINGLE_COLOR.label, backgroundColor: SINGLE_COLOR.pill, letterSpacing: '0.02em' }}>
+            전 발향 단계
+          </span>
+        </div>
+        <div className="px-4 pb-4 pt-3 flex flex-wrap gap-2">
+          {notes.map((note, idx) => (
+            <motion.div key={note} className="flex items-center gap-2"
+              initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: idx * 0.05, duration: 0.18 }}>
+              <div className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: SINGLE_COLOR.front }} />
+              <span className="px-2.5 py-1 rounded-full"
+                style={{ backgroundColor: SINGLE_COLOR.pill, border: `1px solid ${SINGLE_COLOR.border}`, fontSize: '0.75rem', color: '#1A1A1A', fontWeight: 600 }}>
+                {note}
+              </span>
+            </motion.div>
+          ))}
+        </div>
+      </motion.div>
+    </div>
+  );
+}
+
 export function NotePyramid({ notes }: NotePyramidProps) {
   const [selectedLayer, setSelectedLayer] = useState<number>(0);
   const allNotes = [notes.top, notes.middle, notes.base];
+
+  // 싱글 노트 여부 판별: single 배열에 항목이 있으면 싱글 노트
+  const isSingle = notes.single && notes.single.length > 0;
+  if (isSingle) return <SingleNote notes={notes.single} />;
 
   const op = (idx: number) => selectedLayer === idx ? 1 : 0.42;
   const tr = 'opacity 0.25s ease';

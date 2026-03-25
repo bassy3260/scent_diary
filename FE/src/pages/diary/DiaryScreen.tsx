@@ -98,11 +98,68 @@ function TastingCard({ entry, onClick }: { entry: TryDiaryListItem; onClick: () 
 }
 
 // ─── 향수 일기 상세 ────────────────────────────────────
+
+// 텍스트를 공백 기준으로 절반 나누기
+function splitText(text: string): [string, string] {
+  if (!text) return ['', ''];
+  const mid = Math.floor(text.length / 2);
+  let l = mid, r = mid;
+  while (l > 0 && text[l] !== ' ' && text[l] !== '\n') l--;
+  while (r < text.length && text[r] !== ' ' && text[r] !== '\n') r++;
+  const cut = (mid - l) <= (r - mid) ? l : r;
+  return [text.slice(0, cut).trim(), text.slice(cut).trim()];
+}
+
+// 폴라로이드 사진 컴포넌트
+function Polaroid({ src, rotation, tapeRot, imgH, delay }: {
+  src: string; rotation: number; tapeRot: number; imgH: number; delay: number;
+}) {
+  return (
+    <motion.div
+      className="relative bg-white shrink-0"
+      style={{
+        padding: '6px 6px 22px 6px',
+        transform: `rotate(${rotation}deg)`,
+        boxShadow: '0 6px 20px rgba(0,0,0,0.14), 0 2px 6px rgba(0,0,0,0.08)',
+      }}
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay, type: 'spring', stiffness: 200, damping: 22 }}
+    >
+      <div
+        className="absolute left-1/2"
+        style={{
+          top: -10, width: 40, height: 16, borderRadius: 2,
+          backgroundColor: 'rgba(210,195,165,0.6)',
+          transform: `translateX(-50%) rotate(${tapeRot}deg)`,
+        }}
+      />
+      <div style={{ overflow: 'hidden', width: '100%', height: imgH }}>
+        <img src={src} alt="" className="w-full h-full object-cover" />
+      </div>
+    </motion.div>
+  );
+}
+
 function DiaryDetail({ detail, onClose }: { detail: DiaryDetailData; onClose: () => void }) {
+  const imgs = detail.diaryImage ?? [];
+  const text = detail.detail ?? '';
+  const [textA, textB] = splitText(text);
+  const photoCount = imgs.length;
+
+  const textStyle: React.CSSProperties = {
+    fontSize: '0.8125rem', lineHeight: 1.9,
+    fontFamily: "'Playfair Display', serif", color: '#3A3530',
+  };
+
   return (
     <div className="flex flex-col h-full" style={{ background: '#FAFAF8' }}>
+      {/* 헤더 */}
       <div className="pt-5 px-5 pb-3 flex items-center justify-between shrink-0">
-        <motion.button className="w-9 h-9 rounded-full bg-[#F5F3EF] flex items-center justify-center" onClick={onClose} whileTap={{ scale: 0.9 }}>
+        <motion.button
+          className="w-9 h-9 rounded-full bg-[#F5F3EF] flex items-center justify-center"
+          onClick={onClose} whileTap={{ scale: 0.9 }}
+        >
           <X size={16} className="text-[#8A8680]" />
         </motion.button>
         <span className="px-2.5 py-1 rounded-full text-[#6B7B5E]" style={{ fontSize: '0.6875rem', backgroundColor: TYPE_CONFIG.diary.bg }}>
@@ -111,45 +168,121 @@ function DiaryDetail({ detail, onClose }: { detail: DiaryDetailData; onClose: ()
         <div className="w-9" />
       </div>
 
-      <div className="flex-1 overflow-y-auto px-5 pb-10">
-        <p className="text-[#B8B4AE] text-center mb-2" style={{ fontSize: '0.75rem' }}>
-          {new Date(detail.createTime).toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric' })}
-        </p>
-        <h2 className="text-[#1A1A1A] text-center mb-5" style={{ fontSize: '1.25rem', fontFamily: "'Playfair Display', serif" }}>{detail.title}</h2>
+      {/* 일기 페이퍼 */}
+      <div className="flex-1 overflow-y-auto px-4 pb-10">
+        <div
+          className="rounded-3xl overflow-hidden"
+          style={{
+            background: 'linear-gradient(180deg, #FFFEF9 0%, #FDF8F1 100%)',
+            boxShadow: '0 4px 24px rgba(0,0,0,0.08), 0 1px 4px rgba(0,0,0,0.04)',
+          }}
+        >
+          <div style={{ height: 4, background: 'linear-gradient(90deg, #6B7B5E, #A3B18A, #6B7B5E)' }} />
 
-        {/* 이미지 */}
-        {detail.diaryImage?.length > 0 && (
-          <div className="flex gap-2 mb-5 overflow-x-auto">
-            {detail.diaryImage.map((img, i) => (
-              <div key={i} className="rounded-2xl overflow-hidden shrink-0" style={{ width: detail.diaryImage.length === 1 ? '100%' : 180, height: 160 }}>
-                <img src={img.diaryImageUrl} alt="" className="w-full h-full object-cover" />
+          <div className="px-5 pt-5 pb-2">
+            {/* 날짜 */}
+            <p className="text-center" style={{ fontSize: '0.6875rem', letterSpacing: '0.1em', color: '#B8A88A', fontFamily: "'Playfair Display', serif" }}>
+              {new Date(detail.createTime).toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' })}
+            </p>
+
+            {/* 제목 */}
+            <h2 className="text-center mt-2 mb-5" style={{ fontSize: '1.125rem', fontFamily: "'Playfair Display', serif", fontWeight: 600, color: '#2D3A2A' }}>
+              {detail.title}
+            </h2>
+
+            {/* ── 사진 0개: 본문만 ── */}
+            {photoCount === 0 && (
+              <div className="relative mb-5">
+                <span className="absolute -top-3 -left-1" style={{ fontSize: '3.5rem', lineHeight: 1, color: '#6B7B5E', opacity: 0.10, fontFamily: "'Playfair Display', serif", pointerEvents: 'none' }}>"</span>
+                <p className="pl-3" style={textStyle}>{text}</p>
               </div>
+            )}
+
+            {/* ── 사진 1개: 사진 왼쪽 + 본문 오른쪽 ── */}
+            {photoCount === 1 && (
+              <div className="flex gap-3 items-start mb-5" style={{ paddingTop: 10 }}>
+                <div style={{ flexShrink: 0, width: 130 }}>
+                  <Polaroid src={imgs[0].diaryImageUrl} rotation={-2.5} tapeRot={-2} imgH={110} delay={0.05} />
+                </div>
+                <p className="flex-1 min-w-0" style={textStyle}>{text}</p>
+              </div>
+            )}
+
+            {/* ── 사진 2개: 지그재그 ── */}
+            {photoCount === 2 && (
+              <>
+                <div className="flex gap-3 items-start mb-6" style={{ paddingTop: 10 }}>
+                  <div style={{ flexShrink: 0, width: 130 }}>
+                    <Polaroid src={imgs[0].diaryImageUrl} rotation={-2.5} tapeRot={-2} imgH={110} delay={0.05} />
+                  </div>
+                  <p className="flex-1 min-w-0" style={textStyle}>{textA}</p>
+                </div>
+                <div className="flex gap-3 items-start mb-5">
+                  <p className="flex-1 min-w-0" style={textStyle}>{textB}</p>
+                  <div style={{ flexShrink: 0, width: 130 }}>
+                    <Polaroid src={imgs[1].diaryImageUrl} rotation={2.2} tapeRot={2} imgH={110} delay={0.1} />
+                  </div>
+                </div>
+              </>
+            )}
+
+            {/* ── 사진 3개: 지그재그 2행 + 3번째 사진 중앙 ── */}
+            {photoCount >= 3 && (
+              <>
+                <div className="flex gap-3 items-start mb-6" style={{ paddingTop: 10 }}>
+                  <div style={{ flexShrink: 0, width: 120 }}>
+                    <Polaroid src={imgs[0].diaryImageUrl} rotation={-2.5} tapeRot={-2} imgH={100} delay={0.05} />
+                  </div>
+                  <p className="flex-1 min-w-0" style={textStyle}>{textA}</p>
+                </div>
+                <div className="flex gap-3 items-start mb-6">
+                  <p className="flex-1 min-w-0" style={textStyle}>{textB}</p>
+                  <div style={{ flexShrink: 0, width: 120 }}>
+                    <Polaroid src={imgs[1].diaryImageUrl} rotation={2.2} tapeRot={2} imgH={100} delay={0.1} />
+                  </div>
+                </div>
+                <div className="flex justify-center mb-5" style={{ paddingTop: 4 }}>
+                  <div style={{ width: 150 }}>
+                    <Polaroid src={imgs[2].diaryImageUrl} rotation={-1.5} tapeRot={3} imgH={120} delay={0.15} />
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
+
+          {/* 향수 정보 — 하단 */}
+          {detail.perfume && <PerfumeChip perfume={detail.perfume} />}
+
+          {/* 하단 줄 장식 */}
+          <div className="px-5 pt-2 pb-7">
+            {[0, 1, 2].map(i => (
+              <div key={i} className="mb-4" style={{ height: 1, backgroundColor: `rgba(210,200,185,${0.55 - i * 0.15})` }} />
             ))}
           </div>
-        )}
-
-        {/* 향수 */}
-        {detail.perfume && (
-          <div className="flex items-center gap-3 p-4 rounded-2xl mb-5" style={{ background: 'linear-gradient(135deg,#F5F3EF,#EFF3F7)' }}>
-            <div className="w-14 h-14 rounded-2xl overflow-hidden shrink-0">
-              <ImageWithFallback src={detail.perfume.perfumeImageUrl} alt={detail.perfume.perfumeName} className="w-full h-full object-cover" />
-            </div>
-            <div>
-              <p className="text-[#8A8680]" style={{ fontSize: '0.75rem' }}>{detail.perfume.brand}</p>
-              <p className="text-[#1A1A1A]" style={{ fontSize: '1rem', fontFamily: "'Playfair Display', serif" }}>{detail.perfume.perfumeName}</p>
-            </div>
-          </div>
-        )}
-
-        {/* 본문 */}
-        <div className="p-5 rounded-2xl" style={{ background: 'linear-gradient(145deg,#FFFFFF,#F8F7F4)', boxShadow: '0 2px 16px rgba(0,0,0,0.04)' }}>
-          <span className="block mb-2" style={{ fontSize: '2rem', lineHeight: 1, color: '#6B7B5E', opacity: 0.18, fontFamily: "'Playfair Display', serif" }}>"</span>
-          <p className="text-[#2A2A2A]" style={{ fontSize: '0.9rem', lineHeight: 1.85, fontFamily: "'Playfair Display', serif" }}>
-            {detail.detail}
-          </p>
         </div>
       </div>
     </div>
+  );
+}
+
+function PerfumeChip({ perfume }: { perfume: DiaryDetailData['perfume'] | null | undefined }) {
+  if (!perfume) return null;
+  return (
+    <motion.div
+      className="flex items-center gap-3 px-5 py-4"
+      style={{ borderBottom: '1px solid rgba(210,200,185,0.5)' }}
+      initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.05 }}
+    >
+      <div className="w-14 h-14 rounded-2xl overflow-hidden shrink-0"
+        style={{ boxShadow: '0 3px 10px rgba(0,0,0,0.12)' }}>
+        <ImageWithFallback src={perfume.perfumeImageUrl} alt={perfume.perfumeName} className="w-full h-full object-cover" />
+      </div>
+      <div className="flex-1 min-w-0">
+        <p style={{ fontSize: '0.5625rem', letterSpacing: '0.1em', color: '#A3B18A' }}>{perfume.brand.toUpperCase()}</p>
+        <p style={{ fontSize: '1rem', fontFamily: "'Playfair Display', serif", color: '#2D3A2A', fontWeight: 600, wordBreak: 'break-word' }}>{perfume.perfumeName}</p>
+      </div>
+      <span className="shrink-0 px-2 py-1 rounded-full" style={{ fontSize: '0.5rem', letterSpacing: '0.08em', color: '#6B7B5E', backgroundColor: 'rgba(107,123,94,0.1)' }}>오늘의 향</span>
+    </motion.div>
   );
 }
 
@@ -316,6 +449,14 @@ export function DiaryScreen() {
             <p className="text-[#B8B4AE]" style={{ fontSize: '0.6rem', letterSpacing: '0.12em' }}>SCENT DIARY</p>
             <h2 className="text-[#1A1A1A]" style={{ fontSize: '1.375rem', fontFamily: "'Playfair Display', serif" }}>향수 다이어리</h2>
           </div>
+          <motion.button
+            className="w-10 h-10 rounded-full flex items-center justify-center"
+            style={{ backgroundColor: '#2D4A35' }}
+            onClick={() => setShowTypeSheet(true)}
+            whileTap={{ scale: 0.9 }}
+          >
+            <Plus size={18} className="text-white" />
+          </motion.button>
         </div>
 
         <div className="flex gap-1 p-1 rounded-xl mb-3" style={{ backgroundColor: '#F5F3EF' }}>
@@ -338,10 +479,10 @@ export function DiaryScreen() {
             { id: 'tasting' as TypeFilter, label: '시향 일지' },
           ] as const).map(f => {
             const active = typeFilter === f.id;
-            const color = f.id === 'diary' ? '#6B7B5E' : f.id === 'tasting' ? '#8BA4B8' : '#1A1A1A';
+            const color = f.id === 'diary' ? '#6B7B5E' : f.id === 'tasting' ? '#8BA4B8' : '#2D4A35';
             return (
               <button key={f.id} className="px-3 py-1.5 rounded-full transition-all"
-                style={{ fontSize: '0.75rem', backgroundColor: active ? (f.id === 'all' ? '#1A1A1A' : f.id === 'diary' ? TYPE_CONFIG.diary.bg : TYPE_CONFIG.tasting.bg) : '#F5F3EF', color: active ? (f.id === 'all' ? '#FFFFFF' : color) : '#8A8680', border: active ? `1.5px solid ${f.id === 'all' ? '#1A1A1A' : color}20` : '1.5px solid transparent' }}
+                style={{ fontSize: '0.75rem', backgroundColor: active ? (f.id === 'all' ? '#2D4A35' : f.id === 'diary' ? TYPE_CONFIG.diary.bg : TYPE_CONFIG.tasting.bg) : '#F5F3EF', color: active ? (f.id === 'all' ? '#FFFFFF' : color) : '#8A8680', border: active ? `1.5px solid ${f.id === 'all' ? '#2D4A35' : color}20` : '1.5px solid transparent' }}
                 onClick={() => { setTypeFilter(f.id); setSelectedDate(null); }}>
                 {f.label}
               </button>
@@ -448,15 +589,6 @@ export function DiaryScreen() {
           </AnimatePresence>
         )}
 
-        <motion.button
-          className="w-full mt-3 py-4 rounded-2xl flex items-center justify-center gap-2"
-          style={{ backgroundColor: '#1A1A1A', color: '#FFFFFF', fontSize: '0.9375rem' }}
-          onClick={() => setShowTypeSheet(true)}
-          whileTap={{ scale: 0.98 }}
-          initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }}
-        >
-          <Plus size={16} />오늘의 향 기록하기
-        </motion.button>
       </div>
 
       {/* ── 타입 선택 바텀시트 ─────────────────────────── */}
