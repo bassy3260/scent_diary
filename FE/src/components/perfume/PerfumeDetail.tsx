@@ -23,8 +23,13 @@ export function PerfumeDetail({ onBack }: PerfumeDetailProps) {
   const [reviewContent, setReviewContent] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const isSaved = selectedPerfumeId !== null && savedPerfumes.includes(selectedPerfumeId);
-  const isCollected = selectedPerfumeId !== null && myCollection.includes(selectedPerfumeId);
+//   const isSaved = selectedPerfumeId !== null && savedPerfumes.includes(selectedPerfumeId);
+//   const isCollected = selectedPerfumeId !== null && myCollection.includes(selectedPerfumeId);
+
+  const isSaved = perfumeDetail?.isLiked ??
+    savedPerfumes.some(id => String(id) === String(selectedPerfumeId));
+  const isCollected = perfumeDetail?.isCollected ??
+    myCollection.some(id => String(id) === String(selectedPerfumeId));
 
   useEffect(() => {
     if (selectedPerfumeId !== null) {

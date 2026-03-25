@@ -64,6 +64,7 @@ export default function App() {
     setAuthenticated,
     clearAuthState,
     fetchMe,
+    initUserActivity,
   } = useAppStore();
 
   const [hasCompletedLaunch, setHasCompletedLaunch] = useState(false);
@@ -130,9 +131,10 @@ export default function App() {
     setScreen("auth-entry");
   }, [setHasOnboarded, setScreen]);
 
-  const onLoginComplete = useCallback(() => {
+  const onLoginComplete = useCallback(async () => {
     setScreen("home");
-  }, [setScreen]);
+    await initUserActivity();
+  }, [setScreen, initUserActivity]);
 
   const onSignupComplete = useCallback(() => {
     setScreen("login");
@@ -207,6 +209,13 @@ export default function App() {
       goBack,
     ],
   );
+
+  // 로그인 상태가 감지되면 즉시 활동 데이터를 가져옴
+  useEffect(() => {
+    if (isAuthenticated && isAuthReady) {
+      initUserActivity();
+    }
+  }, [isAuthenticated, isAuthReady, initUserActivity]);
 
   const handleTabChange = useCallback(
     (tab: TabId) => {

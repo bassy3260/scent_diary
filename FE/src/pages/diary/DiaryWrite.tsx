@@ -4,13 +4,7 @@ import { ChevronLeft, Check, Camera, X, Search, Sparkles, Wand2, Plus } from 'lu
 import { useAppStore } from '../../store';
 import { usePerfumeStore, useDiaryStore, useMyPageStore } from '../../store';
 import { ImageWithFallback } from '../../components/common/ImageWithFallback';
-
-const AI_SAMPLES = [
-  '향이 피부에 스며들듯, 오늘도 조용히 흘러갔다. 기억에 남을 향기와 함께한 하루.',
-  '빛이 조금씩 기울어가는 오후, 향 한 번 뿌리고 세상과 잠시 거리를 두었다.',
-  '어떤 향은 감정보다 오래 머문다. 오늘 뿌린 향수처럼, 이 하루도 천천히 잔향으로 남길.',
-  '오늘의 공기와 향수가 완벽하게 어울렸다. 이런 순간이 다시 오길 바라며.',
-];
+import { diaryApi } from '../../api/diary.api';
 
 export function DiaryWrite() {
   const { navigateTo } = useAppStore();
@@ -109,13 +103,20 @@ export function DiaryWrite() {
   const handleAiEnhance = useCallback(async () => {
     if (aiLoading) return;
     setAiLoading(true);
-    await new Promise(r => setTimeout(r, 1500));
-    const sample = AI_SAMPLES[Math.floor(Math.random() * AI_SAMPLES.length)];
-    const enhanced = note.trim() ? `${note.trim()}\n\n${sample}` : sample;
-    setNote(enhanced);
-    setAiUsed(true);
-    setAiLoading(false);
-  }, [aiLoading, note]);
+    try {
+      const result = await diaryApi.refineContent({
+        content: note.trim(),
+        perfumeName: selectedPerfume?.name ?? '',
+        perfumeBrand: selectedPerfume?.brand ?? '',
+      });
+      setNote(result.content);
+      setAiUsed(true);
+    } catch {
+      // 실패 시 원본 유지
+    } finally {
+      setAiLoading(false);
+    }
+  }, [aiLoading, note, selectedPerfume]);
 
   const handleSave = async () => {
     if (saving) return;

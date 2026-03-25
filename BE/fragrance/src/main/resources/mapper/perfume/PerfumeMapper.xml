@@ -118,6 +118,9 @@
         <collection property="accords" ofType="java.lang.String">
             <result column="accord_name"/>
         </collection>
+        <collection property="notes" ofType="java.lang.String">
+            <result column="note_name"/>
+        </collection>
     </resultMap>
 
     <select id="findAllForElasticsearch" resultMap="PerfumeESMap">
@@ -127,10 +130,13 @@
         p.brand,
         p.perfume_name,
         p.price,
-        a.accord_name
+        a.accord_name,
+        n.note_name
         FROM perfume p
-        LEFT JOIN perfume_accord pa ON p.perfume_id = pa.perfume_id AND pa.is_delete = FALSE
-        LEFT JOIN accord a ON pa.accord_id = a.accord_id AND a.is_delete = FALSE
+        LEFT JOIN perfume_accord pa ON p.perfume_id = pa.perfume_id
+        LEFT JOIN accord a ON pa.accord_id = a.accord_id
+        LEFT JOIN perfume_note pn ON p.perfume_id = pn.perfume_id
+        LEFT JOIN note n ON pn.note_id = n.note_id
         WHERE p.is_delete = FALSE
     </select>
 </mapper>

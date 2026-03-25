@@ -35,7 +35,7 @@ public class PerfumeSearchService {
                         return q.matchAll(m -> m);
                     }
                     return q.multiMatch(m -> m
-                            .fields("name", "brand")
+                            .fields("name", "brand", "notes")
                             .query(search)
                             .fuzziness("AUTO")
                     );
