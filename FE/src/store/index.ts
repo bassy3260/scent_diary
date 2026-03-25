@@ -150,6 +150,7 @@ export const useDiaryStore = () =>
     selectedTryDiaryId: s.selectedTryDiaryId,
     isDiaryLoading: s.isDiaryLoading,
     diaryError: s.diaryError,
+    diaryPrefill: s.diaryPrefill,
     fetchDiaries: s.fetchDiaries,
     fetchDiaryDetail: s.fetchDiaryDetail,
     createDiary: s.createDiary,
@@ -158,6 +159,7 @@ export const useDiaryStore = () =>
     createTryDiary: s.createTryDiary,
     setSelectedDiaryId: s.setSelectedDiaryId,
     setSelectedTryDiaryId: s.setSelectedTryDiaryId,
+    setDiaryPrefill: s.setDiaryPrefill,
   })));
 
 export const useMyPageStore = () =>

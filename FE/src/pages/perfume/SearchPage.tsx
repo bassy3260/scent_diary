@@ -14,19 +14,25 @@ export function SearchScreen() {
   const browseTotalPages = useAppStore((s) => s.browseTotalPages);
   const browseTotalElements = useAppStore((s) => s.browseTotalElements);
   const isLoading = useAppStore((s) => s.isLoading);
+  const query = useAppStore((s) => s.searchQuery);
+  const setQuery = useAppStore((s) => s.setSearchQuery);
 
-  const [query, setQuery] = useState('');
   const [isFocused, setIsFocused] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const isMountRef = useRef(true);
 
-  // Load first page on mount
+  // Load first page on mount (skip if search results already exist from back navigation)
   useEffect(() => {
-    void browsePerfumes(0);
+    if (!query) void browsePerfumes(0);
   }, [browsePerfumes]);
 
-  // Debounced search
+  // Debounced search — skip re-fetch on initial mount if results already exist
   useEffect(() => {
     if (!query) return;
+    if (isMountRef.current) {
+      isMountRef.current = false;
+      if (searchResults.length > 0) return;
+    }
     if (debounceRef.current) clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(() => {
       void searchPerfumes(query);

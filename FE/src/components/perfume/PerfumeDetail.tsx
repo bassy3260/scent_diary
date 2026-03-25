@@ -14,7 +14,7 @@ export function PerfumeDetail({ onBack }: PerfumeDetailProps) {
     selectedPerfumeId, perfumeDetail, isLoading, error,
     savedPerfumes, myCollection,
     fetchPerfumeDetail, likePerfume, collectPerfume, submitReview,
-    navigateTo,
+    navigateTo, setDiaryPrefill,
   } = useAppStore();
 
   const [showAllReviews, setShowAllReviews] = useState(false);
@@ -333,7 +333,17 @@ export function PerfumeDetail({ onBack }: PerfumeDetailProps) {
             <motion.button
               className="flex-1 py-3.5 rounded-2xl border border-[#6B7B5E]/20 text-[#6B7B5E] flex items-center justify-center gap-2"
               style={{ fontSize: '0.875rem' }}
-              onClick={() => navigateTo('diary-write')}
+              onClick={() => {
+                if (perfumeDetail) {
+                  setDiaryPrefill({
+                    perfumeId: perfumeDetail.id ?? selectedPerfumeId!,
+                    name: perfumeDetail.name,
+                    brand: perfumeDetail.brand,
+                    image: perfumeDetail.image,
+                  });
+                }
+                navigateTo('diary-write');
+              }}
               whileTap={{ scale: 0.97 }}
             >
               <BookOpen size={14} />

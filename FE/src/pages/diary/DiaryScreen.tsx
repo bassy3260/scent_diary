@@ -316,6 +316,14 @@ export function DiaryScreen() {
             <p className="text-[#B8B4AE]" style={{ fontSize: '0.6rem', letterSpacing: '0.12em' }}>SCENT DIARY</p>
             <h2 className="text-[#1A1A1A]" style={{ fontSize: '1.375rem', fontFamily: "'Playfair Display', serif" }}>향수 다이어리</h2>
           </div>
+          <motion.button
+            className="w-10 h-10 rounded-full flex items-center justify-center"
+            style={{ backgroundColor: '#2D4A35' }}
+            onClick={() => setShowTypeSheet(true)}
+            whileTap={{ scale: 0.9 }}
+          >
+            <Plus size={18} className="text-white" />
+          </motion.button>
         </div>
 
         <div className="flex gap-1 p-1 rounded-xl mb-3" style={{ backgroundColor: '#F5F3EF' }}>
@@ -338,10 +346,10 @@ export function DiaryScreen() {
             { id: 'tasting' as TypeFilter, label: '시향 일지' },
           ] as const).map(f => {
             const active = typeFilter === f.id;
-            const color = f.id === 'diary' ? '#6B7B5E' : f.id === 'tasting' ? '#8BA4B8' : '#1A1A1A';
+            const color = f.id === 'diary' ? '#6B7B5E' : f.id === 'tasting' ? '#8BA4B8' : '#2D4A35';
             return (
               <button key={f.id} className="px-3 py-1.5 rounded-full transition-all"
-                style={{ fontSize: '0.75rem', backgroundColor: active ? (f.id === 'all' ? '#1A1A1A' : f.id === 'diary' ? TYPE_CONFIG.diary.bg : TYPE_CONFIG.tasting.bg) : '#F5F3EF', color: active ? (f.id === 'all' ? '#FFFFFF' : color) : '#8A8680', border: active ? `1.5px solid ${f.id === 'all' ? '#1A1A1A' : color}20` : '1.5px solid transparent' }}
+                style={{ fontSize: '0.75rem', backgroundColor: active ? (f.id === 'all' ? '#2D4A35' : f.id === 'diary' ? TYPE_CONFIG.diary.bg : TYPE_CONFIG.tasting.bg) : '#F5F3EF', color: active ? (f.id === 'all' ? '#FFFFFF' : color) : '#8A8680', border: active ? `1.5px solid ${f.id === 'all' ? '#2D4A35' : color}20` : '1.5px solid transparent' }}
                 onClick={() => { setTypeFilter(f.id); setSelectedDate(null); }}>
                 {f.label}
               </button>
@@ -448,15 +456,6 @@ export function DiaryScreen() {
           </AnimatePresence>
         )}
 
-        <motion.button
-          className="w-full mt-3 py-4 rounded-2xl flex items-center justify-center gap-2"
-          style={{ backgroundColor: '#1A1A1A', color: '#FFFFFF', fontSize: '0.9375rem' }}
-          onClick={() => setShowTypeSheet(true)}
-          whileTap={{ scale: 0.98 }}
-          initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }}
-        >
-          <Plus size={16} />오늘의 향 기록하기
-        </motion.button>
       </div>
 
       {/* ── 타입 선택 바텀시트 ─────────────────────────── */}
