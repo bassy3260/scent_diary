@@ -5,6 +5,7 @@ import { perfumeApi } from '../api/perfume.api';
 export interface PerfumeState {
   selectedPerfumeId: number | null;
   perfumeDetail: PerfumeDetail | null;
+  searchQuery: string;
   searchResults: PerfumeListItem[];
   browseResults: PerfumeListItem[];
   browsePage: number;
@@ -16,6 +17,7 @@ export interface PerfumeState {
   error: string | null;
 
   setSelectedPerfumeId: (id: number | null) => void;
+  setSearchQuery: (query: string) => void;
   searchPerfumes: (query: string) => Promise<void>;
   browsePerfumes: (page: number) => Promise<void>;
   fetchPerfumeDetail: (id: number) => Promise<void>;
@@ -32,6 +34,7 @@ export interface PerfumeState {
 export const createPerfumeSlice: StateCreator<any, [], [], PerfumeState> = (set, get) => ({
   selectedPerfumeId: null,
   perfumeDetail: null,
+  searchQuery: '',
   searchResults: [],
   browseResults: [],
   browsePage: 0,
@@ -43,6 +46,7 @@ export const createPerfumeSlice: StateCreator<any, [], [], PerfumeState> = (set,
   error: null,
 
   setSelectedPerfumeId: (id) => set((state: any) => ({ ...state, selectedPerfumeId: id })),
+  setSearchQuery: (query) => set((state: any) => ({ ...state, searchQuery: query })),
 
   searchPerfumes: async (query) => {
     set((state: any) => ({ ...state, isLoading: true, error: null }));

@@ -6,6 +6,13 @@ import type {
 } from '../types/diary.types';
 import { diaryApi } from '../api/diary.api';
 
+export interface DiaryPrefillPerfume {
+  perfumeId: number;
+  name: string;
+  brand: string;
+  image: string;
+}
+
 export interface DiaryState {
   diaryEntries: DiaryListItem[];
   tryDiaryEntries: TryDiaryListItem[];
@@ -15,15 +22,17 @@ export interface DiaryState {
   selectedTryDiaryId: number | null;
   isDiaryLoading: boolean;
   diaryError: string | null;
+  diaryPrefill: DiaryPrefillPerfume | null;
 
   fetchDiaries: (params: PageParams) => Promise<void>;
   fetchDiaryDetail: (id: number) => Promise<void>;
-  createDiary: (body: DiaryCreateBody, images?: File[]) => Promise<void>;
+  createDiary: (body: DiaryCreateBody) => Promise<void>;
   fetchTryDiaries: (params: PageParams) => Promise<void>;
   fetchTryDiaryDetail: (id: number) => Promise<void>;
   createTryDiary: (body: TryDiaryCreateBody) => Promise<void>;
   setSelectedDiaryId: (id: number | null) => void;
   setSelectedTryDiaryId: (id: number | null) => void;
+  setDiaryPrefill: (prefill: DiaryPrefillPerfume | null) => void;
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -36,9 +45,11 @@ export const createDiarySlice: StateCreator<any, [], [], DiaryState> = (set) => 
   selectedTryDiaryId: null,
   isDiaryLoading: false,
   diaryError: null,
+  diaryPrefill: null,
 
   setSelectedDiaryId: (id) => set({ selectedDiaryId: id }),
   setSelectedTryDiaryId: (id) => set({ selectedTryDiaryId: id }),
+  setDiaryPrefill: (prefill) => set({ diaryPrefill: prefill }),
 
   fetchDiaries: async (params) => {
     set({ isDiaryLoading: true, diaryError: null });
@@ -60,8 +71,8 @@ export const createDiarySlice: StateCreator<any, [], [], DiaryState> = (set) => 
     }
   },
 
-  createDiary: async (body, images) => {
-    await diaryApi.createEntry(body, images);
+  createDiary: async (body) => {
+    await diaryApi.createEntry(body);
     try {
       const res = await diaryApi.getEntries({ page: 1, size: 50 });
       set({ diaryEntries: res.content });
