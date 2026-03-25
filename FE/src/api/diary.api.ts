@@ -31,7 +31,7 @@ export const diaryApi = {
     apiClient.get<GetDiaryDetailResponse>(`/api/v1/diaries/${diaryId}`),
 
   /** 일기 작성 - 이미지는 S3에 업로드 후 파일명만 전달 */
-  createEntry: (body: DiaryCreateBody, _images?: File[]) =>
+  createEntry: (body: DiaryCreateBody) =>
     apiClient.post<CreateDiaryResponse>('/api/v1/diaries', body),
 
   // ── 시향 일기 ────────────────────────────────────────────
