@@ -29,6 +29,7 @@ export function PhotoRecommend() {
 
   // 이미지 업로드 단계
   const [uploadedImage, setUploadedImage] = useState<string | null>(null);
+  const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const currentSurveyKey = SURVEY_STEPS[surveyStep];
@@ -58,6 +59,7 @@ export function PhotoRecommend() {
   };
 
   const handleFileSelect = (file: File) => {
+    setUploadedFile(file);
     const reader = new FileReader();
     reader.onloadend = () => setUploadedImage(reader.result as string);
     reader.readAsDataURL(file);
@@ -65,8 +67,11 @@ export function PhotoRecommend() {
 
   const handleUploadClick = () => fileInputRef.current?.click();
 
-  const handleRecommend = () => {
-    updateProfile({ emotionText: '모던한 향' });
+  const handleRecommend = async () => {
+    if (!uploadedFile) return;
+    const { uploadImageToS3 } = await import('../../api/s3');
+    const fileName = await uploadImageToS3(uploadedFile);
+    updateProfile({ imageRoute: fileName });
     navigateTo('analyzing');
   };
 

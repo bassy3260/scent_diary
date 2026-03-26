@@ -17,7 +17,7 @@ function priceRangeToInt(priceRange: string): number {
 export function AnalyzingScene({ onComplete }: AnalyzingSceneProps) {
   const [messageIdx, setMessageIdx] = useState(0);
   const [progress, setProgress] = useState(0);
-  const { recommendByText, setSelectedHistoryId } = useAppStore();
+  const { recommendByText, recommendByImage, setSelectedHistoryId } = useAppStore();
   const called = useRef(false);
 
   useEffect(() => {
@@ -31,18 +31,27 @@ export function AnalyzingScene({ onComplete }: AnalyzingSceneProps) {
     if (!called.current) {
       called.current = true;
       const { profile } = useAppStore.getState();
-      const keyword = profile.emotionText || '';
       const price = priceRangeToInt(profile.priceRange);
       const note = profile.notePreference || 'TOP';
-
       const minDelay = new Promise<void>(resolve => setTimeout(resolve, 4000));
-      const apiCall = recommendByText({ keyword, price, note });
 
-      Promise.all([apiCall, minDelay]).then(() => {
-        const id = useAppStore.getState().textResult?.recommendResultId;
-        if (id != null) setSelectedHistoryId(String(id));
-        onComplete();
-      }).catch(onComplete);
+      let apiCall: Promise<void>;
+      if (profile.imageRoute) {
+        apiCall = recommendByImage({ image_route: profile.imageRoute, price, note });
+        Promise.all([apiCall, minDelay]).then(() => {
+          const id = useAppStore.getState().imageResult?.recommendResultId;
+          if (id != null) setSelectedHistoryId(String(id));
+          onComplete();
+        }).catch(onComplete);
+      } else {
+        const keyword = profile.emotionText || '';
+        apiCall = recommendByText({ keyword, price, note });
+        Promise.all([apiCall, minDelay]).then(() => {
+          const id = useAppStore.getState().textResult?.recommendResultId;
+          if (id != null) setSelectedHistoryId(String(id));
+          onComplete();
+        }).catch(onComplete);
+      }
     }
 
     return () => { clearInterval(msgInterval); clearInterval(progInterval); };

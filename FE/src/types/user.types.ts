@@ -30,4 +30,5 @@ export interface UserProfile {
   priceRange: string;
   intensity: string;
   notePreference: string;
+  imageRoute?: string;
 }
