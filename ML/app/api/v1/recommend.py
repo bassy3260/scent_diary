@@ -4,11 +4,13 @@ from typing import Callable, Literal
 
 import numpy as np
 
-from fastapi import APIRouter, File, Form, Request, UploadFile
+from fastapi import APIRouter, Request
+
+import httpx
 
 from app.api.v1.schemas import (
     NOTE_RATIO, RecommendRequest, RecommendListResponse, RecommendResponse,
-    ImageRecommendListResponse,
+    ImageRecommendListResponse, ImageRecommendRequest,
 )
 from app.services.llm_reasoner import generate_recommendation_reason, generate_recommendation_reason_by_mood
 from app.services.mood_to_accord import convert_mood_to_accord, get_top_accords
@@ -61,21 +63,19 @@ def recommend(req: RecommendRequest, request: Request) -> RecommendListResponse:
 
 
 @router.post("/recommend/image")
-async def recommend_by_image(
-    file: UploadFile = File(...),
-    price: int = Form(...),
-    note: Literal["TOP", "MIDDLE", "BASE"] = Form("MIDDLE"),
-    request: Request = None,
-) -> ImageRecommendListResponse:
-    """이미지 업로드 → 무드 추출 → 어코드 벡터 → 텍스트 임베딩 → 향수 추천"""
+async def recommend_by_image(req: ImageRecommendRequest,request: Request) -> ImageRecommendListResponse:
+    """S3 이미지 URL → 무드 추출 → 어코드 벡터 → 텍스트 임베딩 → 향수 추천"""
     import time
     t_total = time.time()
 
-    # 1. 이미지 읽기 + base64 인코딩
+    # 1. S3 URL에서 이미지 다운로드 + base64 인코딩
     t0 = time.time()
-    image_bytes = await file.read()
+    async with httpx.AsyncClient() as client:
+        resp = await client.get(req.image_url, timeout=30.0)
+        resp.raise_for_status()
+        image_bytes = resp.content
     image_base64 = base64.b64encode(image_bytes).decode("utf-8")
-    logger.info("[타이밍] 이미지 인코딩: %.2fs", time.time() - t0)
+    logger.info("[타이밍] 이미지 다운로드 + 인코딩: %.2fs", time.time() - t0)
 
     # 2. RunPod → 무드 유사도 추출
     t0 = time.time()
@@ -97,8 +97,8 @@ async def recommend_by_image(
 
     # 5. 코사인 유사도 기반 향수 추천 (텍스트와 동일 로직)
     t0 = time.time()
-    weights = _build_weights(note)
-    results = rank_perfumes(query_vec, weights, rows=request.app.state.perfume_rows, max_price=price, top_k=3)
+    weights = _build_weights(req.note)
+    results = rank_perfumes(query_vec, weights, rows=request.app.state.perfume_rows, max_price=req.price, top_k=3)
     logger.info("[타이밍] 유사도 계산: %.2fs", time.time() - t0)
 
     # 6. LLM 추천 이유 생성 + 응답 포맷

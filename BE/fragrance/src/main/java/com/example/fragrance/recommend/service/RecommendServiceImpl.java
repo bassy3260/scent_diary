@@ -1,5 +1,6 @@
 package com.example.fragrance.recommend.service;
 
+import com.example.fragrance.recommend.dto.FastApiImageRecommendResponse;
 import com.example.fragrance.recommend.dto.FastApiRecommendResponse;
 import com.example.fragrance.recommend.dto.RecommendHistoryDetailResponse;
 import com.example.fragrance.recommend.dto.RecommendImageRequest;
@@ -27,6 +28,9 @@ public class RecommendServiceImpl implements RecommendService{
     @Value("${fastapi.url}")
     private String fastapiUrl;
 
+    @Value("${s3.url}")
+    private String s3Url;
+
     @Override
     public RecommendHistoryDetailResponse getTextRecommendResponse(Long memberId, RecommendTextRequest request){
         // 파라미터를 fastAPI에게 보낸다, 데이터를 받는다.
@@ -50,7 +54,41 @@ public class RecommendServiceImpl implements RecommendService{
 
     @Override
     public RecommendHistoryDetailResponse getImageRecommedResponse(Long memberId, RecommendImageRequest request) {
-        return null;
+        Map<String, Object> body = new HashMap<>();
+        body.put("image_url", s3Url + request.getImageRoute());
+        body.put("price", request.getPrice());
+        body.put("note", request.getNote() != null ? request.getNote().toUpperCase() : "MIDDLE");
+
+        FastApiImageRecommendResponse fastApiResponse = restTemplate.postForObject(
+                fastapiUrl + "/api/v1/recommend/image",
+                body,
+                FastApiImageRecommendResponse.class
+        );
+
+        return saveAndReturn(memberId, fastApiResponse, request.getImageRoute());
+    }
+
+    private RecommendHistoryDetailResponse saveAndReturn(
+            Long memberId,
+            FastApiImageRecommendResponse fastapiResponse,
+            String imageRoute){
+
+        RecommendResult recommendResult = RecommendResult.builder()
+                .memberId(memberId)
+                .keyword(fastapiResponse.getKeyword())
+                .imageRoute(imageRoute)
+                .build();
+        perfumeRecommendMapper.insertRecommendResult(recommendResult);
+
+        List<PerfumeRecommend> perfumeRecommends = fastapiResponse.getRecommendations().stream()
+                .map(item -> PerfumeRecommend.builder()
+                        .recommendResultId(recommendResult.getRecommendResultId())
+                        .perfumeId(item.getPerfumeId())
+                        .reasons(item.getReason())
+                        .build()).collect(Collectors.toList());
+        perfumeRecommendMapper.insertPerfumeRecommend(perfumeRecommends);
+
+        return recommendHistoryService.getHistoryDetail(memberId, recommendResult.getRecommendResultId());
     }
 
     // 받아서 저장하는 로직 따로.

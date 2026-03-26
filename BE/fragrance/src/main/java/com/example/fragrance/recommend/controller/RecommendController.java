@@ -1,7 +1,7 @@
 package com.example.fragrance.recommend.controller;
 
 import com.example.fragrance.recommend.dto.RecommendHistoryDetailResponse;
-
+import com.example.fragrance.recommend.dto.RecommendImageRequest;
 import com.example.fragrance.recommend.dto.RecommendTextRequest;
 import com.example.fragrance.recommend.service.RecommendService;
 import com.example.fragrance.util.common.ApiResponse;
@@ -20,10 +20,20 @@ public class RecommendController {
     // ResponseEntity: Http응답 전체(상태코드+ 헤더 +바디)를 제어, ResponseEntity.ok()는 200 응답
     @PostMapping("/text")
     public ResponseEntity<ApiResponse<RecommendHistoryDetailResponse>> getTextRecommendList(
-        @AuthenticationPrincipal String loginId,
-        @RequestBody RecommendTextRequest request) {
+            @AuthenticationPrincipal String loginId,
+            @RequestBody RecommendTextRequest request) {
         Long memberId = Long.parseLong(loginId);
         RecommendHistoryDetailResponse data = recommendService.getTextRecommendResponse(memberId, request);
-        return ResponseEntity.ok(ApiResponse.ok("텍스트 추천 성공",data));
+        return ResponseEntity.ok(ApiResponse.ok("텍스트 추천 성공", data));
     }
+
+    @PostMapping("/image")
+    public ResponseEntity<ApiResponse<RecommendHistoryDetailResponse>> getRecommendByImage(
+            @AuthenticationPrincipal String loginId,
+            @RequestBody RecommendImageRequest request) {
+        Long memberId = Long.parseLong(loginId);
+        RecommendHistoryDetailResponse data = recommendService.getImageRecommedResponse(memberId, request);
+        return ResponseEntity.ok(ApiResponse.ok("이미지 추천 성공", data));
+    }
+
 }
