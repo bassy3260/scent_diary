@@ -70,8 +70,8 @@ function TastingCard({ entry, onClick }: { entry: TryDiaryListItem; onClick: () 
     >
       <div className="absolute left-0 top-0 bottom-0 w-1 rounded-l-2xl" style={{ backgroundColor: '#8BA4B8' }} />
       <div className="pl-5 pr-4 py-4">
-        <div className="flex items-start justify-between mb-2.5">
-          <div className="flex items-center gap-2">
+        <div className="flex items-start justify-between gap-3 mb-2.5">
+          <div className="flex items-center gap-2 flex-1 min-w-0">
             {entry.thumbnail && (
               <div className="w-7 h-7 rounded-lg overflow-hidden shrink-0">
                 <ImageWithFallback src={entry.thumbnail} alt={entry.perfumeName} className="w-full h-full object-cover" />
@@ -144,7 +144,6 @@ function Polaroid({ src, rotation, tapeRot, imgH, delay }: {
 function DiaryDetail({ detail, onClose }: { detail: DiaryDetailData; onClose: () => void }) {
   const imgs = detail.diaryImage ?? [];
   const text = detail.detail ?? '';
-  const [textA, textB] = splitText(text);
   const photoCount = imgs.length;
 
   const textStyle: React.CSSProperties = {
@@ -190,75 +189,68 @@ function DiaryDetail({ detail, onClose }: { detail: DiaryDetailData; onClose: ()
               {detail.title}
             </h2>
 
-            {/* ── 사진 0개: 본문만 ── */}
-            {photoCount === 0 && (
-              <div className="relative mb-5">
-                <span className="absolute -top-3 -left-1" style={{ fontSize: '3.5rem', lineHeight: 1, color: '#6B7B5E', opacity: 0.10, fontFamily: "'Playfair Display', serif", pointerEvents: 'none' }}>"</span>
-                <p className="pl-3" style={textStyle}>{text}</p>
-              </div>
-            )}
-
-            {/* ── 사진 1개: 사진 왼쪽 + 본문 오른쪽 ── */}
+            {/* ── 사진 1개 ── */}
             {photoCount === 1 && (
-              <div className="flex gap-3 items-start mb-5" style={{ paddingTop: 10 }}>
-                <div style={{ flexShrink: 0, width: 130 }}>
-                  <Polaroid src={imgs[0].diaryImageUrl} rotation={-2.5} tapeRot={-2} imgH={110} delay={0.05} />
+              <div className="flex justify-center mb-6" style={{ paddingTop: 10 }}>
+                <div style={{ width: 160 }}>
+                  <Polaroid src={imgs[0].diaryImageUrl} rotation={-2} tapeRot={-2} imgH={130} delay={0.05} />
                 </div>
-                <p className="flex-1 min-w-0" style={textStyle}>{text}</p>
               </div>
             )}
 
-            {/* ── 사진 2개: 지그재그 ── */}
+            {/* ── 사진 2개: 나란히 비스듬히 ── */}
             {photoCount === 2 && (
-              <>
-                <div className="flex gap-3 items-start mb-6" style={{ paddingTop: 10 }}>
-                  <div style={{ flexShrink: 0, width: 130 }}>
-                    <Polaroid src={imgs[0].diaryImageUrl} rotation={-2.5} tapeRot={-2} imgH={110} delay={0.05} />
-                  </div>
-                  <p className="flex-1 min-w-0" style={textStyle}>{textA}</p>
-                </div>
-                <div className="flex gap-3 items-start mb-5">
-                  <p className="flex-1 min-w-0" style={textStyle}>{textB}</p>
-                  <div style={{ flexShrink: 0, width: 130 }}>
-                    <Polaroid src={imgs[1].diaryImageUrl} rotation={2.2} tapeRot={2} imgH={110} delay={0.1} />
+              <div className="relative mb-3" style={{ height: 185 }}>
+                <div style={{ position: 'absolute', left: 0, top: 30 }}>
+                  <div style={{ width: 138 }}>
+                    <Polaroid src={imgs[0].diaryImageUrl} rotation={-16} tapeRot={-8} imgH={112} delay={0.05} />
                   </div>
                 </div>
-              </>
+                <div style={{ position: 'absolute', right: 0, top: 0 }}>
+                  <div style={{ width: 138 }}>
+                    <Polaroid src={imgs[1].diaryImageUrl} rotation={13} tapeRot={7} imgH={112} delay={0.1} />
+                  </div>
+                </div>
+              </div>
             )}
 
-            {/* ── 사진 3개: 지그재그 2행 + 3번째 사진 중앙 ── */}
+            {/* ── 사진 3개: 겹치는 클러스터 ── */}
             {photoCount >= 3 && (
-              <>
-                <div className="flex gap-3 items-start mb-6" style={{ paddingTop: 10 }}>
-                  <div style={{ flexShrink: 0, width: 120 }}>
-                    <Polaroid src={imgs[0].diaryImageUrl} rotation={-2.5} tapeRot={-2} imgH={100} delay={0.05} />
-                  </div>
-                  <p className="flex-1 min-w-0" style={textStyle}>{textA}</p>
-                </div>
-                <div className="flex gap-3 items-start mb-6">
-                  <p className="flex-1 min-w-0" style={textStyle}>{textB}</p>
-                  <div style={{ flexShrink: 0, width: 120 }}>
-                    <Polaroid src={imgs[1].diaryImageUrl} rotation={2.2} tapeRot={2} imgH={100} delay={0.1} />
+              <div className="relative mb-1" style={{ height: 200, paddingTop: 16 }}>
+                <div style={{ position: 'absolute', left: -4, top: 30 }}>
+                  <div style={{ width: 118 }}>
+                    <Polaroid src={imgs[0].diaryImageUrl} rotation={-14} tapeRot={-7} imgH={98} delay={0.05} />
                   </div>
                 </div>
-                <div className="flex justify-center mb-5" style={{ paddingTop: 4 }}>
-                  <div style={{ width: 150 }}>
-                    <Polaroid src={imgs[2].diaryImageUrl} rotation={-1.5} tapeRot={3} imgH={120} delay={0.15} />
+                <div style={{ position: 'absolute', left: '50%', transform: 'translateX(-50%)', top: 0 }}>
+                  <div style={{ width: 118 }}>
+                    <Polaroid src={imgs[1].diaryImageUrl} rotation={5} tapeRot={3} imgH={98} delay={0.1} />
                   </div>
                 </div>
-              </>
+                <div style={{ position: 'absolute', right: -4, top: 22 }}>
+                  <div style={{ width: 118 }}>
+                    <Polaroid src={imgs[2].diaryImageUrl} rotation={12} tapeRot={6} imgH={98} delay={0.15} />
+                  </div>
+                </div>
+              </div>
             )}
           </div>
 
-          {/* 향수 정보 — 하단 */}
+          {/* 향수 정보 */}
           {detail.perfume && <PerfumeChip perfume={detail.perfume} />}
 
-          {/* 하단 줄 장식 */}
-          <div className="px-5 pt-2 pb-7">
-            {[0, 1, 2].map(i => (
-              <div key={i} className="mb-4" style={{ height: 1, backgroundColor: `rgba(210,200,185,${0.55 - i * 0.15})` }} />
-            ))}
-          </div>
+          {/* 멘트 */}
+          {text && (
+            <div className="px-5 pt-4 pb-2">
+              <div className="relative">
+                <span className="absolute -top-3 -left-1" style={{ fontSize: '3.5rem', lineHeight: 1, color: '#6B7B5E', opacity: 0.10, fontFamily: "'Playfair Display', serif", pointerEvents: 'none' }}>"</span>
+                <p className="pl-3 pr-3" style={textStyle}>{text}</p>
+                <span className="absolute -bottom-4 -right-1" style={{ fontSize: '3.5rem', lineHeight: 1, color: '#6B7B5E', opacity: 0.10, fontFamily: "'Playfair Display', serif", pointerEvents: 'none' }}>"</span>
+              </div>
+            </div>
+          )}
+
+          <div className="pb-7" />
         </div>
       </div>
     </div>
