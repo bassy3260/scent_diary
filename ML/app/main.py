@@ -11,6 +11,7 @@ from fastapi import FastAPI, HTTPException
 from app.constants import ACCORD_LIST
 from app.db.database import engine
 from app.services.recommender import load_perfume_rows
+from app.services.cf_recommender import CfRecommender
 
 logger = logging.getLogger(__name__)
 
@@ -64,6 +65,8 @@ async def lifespan(app: FastAPI):
         raise RuntimeError("POD_EMBED_URL 환경변수가 필요합니다.")
     app.state.embedder = PodEmbedder(POD_EMBED_URL)
     app.state.perfume_rows = load_perfume_rows()
+    app.state.cf_recommender = CfRecommender()
+    app.state.cf_recommender.load()
     if POD_MOOD_URL:
         app.state.mood_extractor = PodMoodExtractor(POD_MOOD_URL)
         logger.info("이미지 무드 추출기 초기화 완료")

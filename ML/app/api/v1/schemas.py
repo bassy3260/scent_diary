@@ -55,3 +55,18 @@ class ImageRecommendResponse(BaseModel):
     mood_scores: list[MoodScore]
     accord_vector: list[float]
     top_accords: list[AccordWeight]
+
+
+class MemberRecommendRequest(BaseModel):
+    member_id: int
+
+
+class MemberRecommendItem(BaseModel):
+    perfume_id:   int
+    perfume_name: str
+    image_route: str | None
+    accords:      list[str]
+
+
+class MemberRecommendResponse(BaseModel):
+    recommendations: list[MemberRecommendItem]
