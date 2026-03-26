@@ -116,3 +116,12 @@ export interface RecommendDetailData {
 }
 
 export type GetRecommendDetailResponse = RecommendDetailData;
+
+export interface PreferenceRecommendItem {
+  perfume_id: number;
+  perfume_name: string;
+  image_route: string;
+  accords: string[];
+}
+
+export type GetPreferenceRecommendResponse = PreferenceRecommendItem[];
