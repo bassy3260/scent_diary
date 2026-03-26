@@ -49,15 +49,11 @@ export function ResultsScreen() {
       ? `"${profile.emotionText.slice(0, 50)}${profile.emotionText.length > 50 ? '...' : ''}"`
       : '오늘의 분위기에 어울리는 향을 골라봤어요.';
 
-  const displayKeywords = historyDetail
-    ? (historyDetail.input.keywords?.length
-        ? historyDetail.input.keywords
-        : historyDetail.input.keyword
-          ? [historyDetail.input.keyword]
-          : [])
+  const displayKeyword = historyDetail
+    ? (historyDetail.input.keyword ?? null)
     : imageResult
-      ? (imageResult.input.keyword ? [imageResult.input.keyword] : [])
-      : profile.moodKeywords.slice(0, 3);
+      ? (imageResult.input.keyword ?? null)
+      : null;
 
   const heroHistoricalResult = historyDetail?.results[0] ?? null;
   const restHistoricalResults = heroHistoricalResult ? historyDetail?.results.slice(1, 3) ?? [] : [];
@@ -112,7 +108,7 @@ export function ResultsScreen() {
                 className="mt-1 text-[#1A1A1A]"
                 style={{ fontSize: '1.375rem', lineHeight: 1.35, fontFamily: "'Playfair Display', serif" }}
               >
-                {displayKeywords[0] ?? ''}
+                {displayKeyword ?? ''}
               </h2>
             </>
           ) : (
