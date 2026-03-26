@@ -100,15 +100,15 @@ function TastingCard({ entry, onClick }: { entry: TryDiaryListItem; onClick: () 
 // ─── 향수 일기 상세 ────────────────────────────────────
 
 // 텍스트를 공백 기준으로 절반 나누기
-function splitText(text: string): [string, string] {
-  if (!text) return ['', ''];
-  const mid = Math.floor(text.length / 2);
-  let l = mid, r = mid;
-  while (l > 0 && text[l] !== ' ' && text[l] !== '\n') l--;
-  while (r < text.length && text[r] !== ' ' && text[r] !== '\n') r++;
-  const cut = (mid - l) <= (r - mid) ? l : r;
-  return [text.slice(0, cut).trim(), text.slice(cut).trim()];
-}
+// function splitText(text: string): [string, string] {
+//   if (!text) return ['', ''];
+//   const mid = Math.floor(text.length / 2);
+//   let l = mid, r = mid;
+//   while (l > 0 && text[l] !== ' ' && text[l] !== '\n') l--;
+//   while (r < text.length && text[r] !== ' ' && text[r] !== '\n') r++;
+//   const cut = (mid - l) <= (r - mid) ? l : r;
+//   return [text.slice(0, cut).trim(), text.slice(cut).trim()];
+// }
 
 // 폴라로이드 사진 컴포넌트
 function Polaroid({ src, rotation, tapeRot, imgH, delay }: {
