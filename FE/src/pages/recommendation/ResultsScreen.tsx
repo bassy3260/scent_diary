@@ -41,6 +41,8 @@ export function ResultsScreen() {
   const fallbackHeroResult = currentResults[0] ?? null;
   const fallbackRestResults = currentResults.slice(1);
 
+  const uploadedImage = historyDetail?.input.image ?? imageResult?.input.image ?? null;
+
   const summaryLine = historyDetail
     ? getRecommendationSummaryText(historyDetail.input)
     : profile.emotionText
@@ -48,8 +50,14 @@ export function ResultsScreen() {
       : '오늘의 분위기에 어울리는 향을 골라봤어요.';
 
   const displayKeywords = historyDetail
-    ? historyDetail.input.keywords ?? []
-    : profile.moodKeywords.slice(0, 3);
+    ? (historyDetail.input.keywords?.length
+        ? historyDetail.input.keywords
+        : historyDetail.input.keyword
+          ? [historyDetail.input.keyword]
+          : [])
+    : imageResult
+      ? (imageResult.input.keyword ? [imageResult.input.keyword] : [])
+      : profile.moodKeywords.slice(0, 3);
 
   const heroHistoricalResult = historyDetail?.results[0] ?? null;
   const restHistoricalResults = heroHistoricalResult ? historyDetail?.results.slice(1, 3) ?? [] : [];
@@ -97,27 +105,38 @@ export function ResultsScreen() {
               ? `${formatMyPageDate(historyDetail.createTime, { year: 'numeric', month: 'long', day: 'numeric' })} · PAST CURATION`
               : 'YOUR SCENT CURATION'}
           </p>
-          <h2
-            className="mt-2 text-[#1A1A1A]"
-            style={{ fontSize: '1.375rem', lineHeight: 1.35, fontFamily: "'Playfair Display', serif" }}
-          >
-            {summaryLine}
-          </h2>
+          {uploadedImage ? (
+            <>
+              <p className="mt-2 text-[#B8B4AE]" style={{ fontSize: '0.6875rem', letterSpacing: '0.08em' }}>당신의 무드</p>
+              <h2
+                className="mt-1 text-[#1A1A1A]"
+                style={{ fontSize: '1.375rem', lineHeight: 1.35, fontFamily: "'Playfair Display', serif" }}
+              >
+                {displayKeywords[0] ?? ''}
+              </h2>
+            </>
+          ) : (
+            <>
+              <h2
+                className="mt-2 text-[#1A1A1A]"
+                style={{ fontSize: '1.375rem', lineHeight: 1.35, fontFamily: "'Playfair Display', serif" }}
+              >
+                {summaryLine}
+              </h2>
+            </>
+          )}
         </motion.div>
-
-        {displayKeywords.length > 0 && (
-          <motion.div className="flex flex-wrap gap-1.5 mt-3" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }}>
-            {displayKeywords.map((keyword) => (
-              <span key={keyword} className="px-2.5 py-1 rounded-full border border-[#E8E6E1] text-[#8A8680]" style={{ fontSize: '0.6875rem' }}>
-                {keyword}
-              </span>
-            ))}
-          </motion.div>
-        )}
       </div>
 
       {/* Content */}
       <div className="flex-1 overflow-y-auto px-4 pb-28">
+        {uploadedImage && (
+          <motion.div className="mb-5" initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
+            <div className="w-full rounded-2xl overflow-hidden flex items-center justify-center" style={{ background: '#F0EEE9', maxHeight: '320px' }}>
+              <img src={uploadedImage} alt="업로드한 사진" className="w-full object-contain" style={{ maxHeight: '320px' }} />
+            </div>
+          </motion.div>
+        )}
         {error && isHistoryMode && !historyDetail && (
           <div className="mb-4 px-4 py-3 rounded-2xl text-[#C45050]" style={{ backgroundColor: 'rgba(196, 80, 80, 0.08)', fontSize: '0.8125rem' }}>
             {error}

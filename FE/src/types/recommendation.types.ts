@@ -52,6 +52,7 @@ export type RecommendTextResponse = RecommendTextData;
 
 export interface RecommendImageInput {
   image: string;
+  keyword?: string;
 }
 
 export interface RecommendImageData {
