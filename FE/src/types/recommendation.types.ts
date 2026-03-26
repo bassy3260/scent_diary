@@ -55,6 +55,7 @@ export interface RecommendImageInput {
 }
 
 export interface RecommendImageData {
+  recommendResultId: number;
   createTime: string;
   input: RecommendImageInput;
   results: RecommendResult[];
