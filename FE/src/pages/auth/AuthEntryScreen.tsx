@@ -12,7 +12,7 @@ export function AuthEntryScreen({ onLogin, onSignup }: AuthEntryScreenProps) {
       <div className="flex-1 flex flex-col items-center justify-center px-8">
         {/* 로고 오브 */}
         <motion.div
-          className="relative w-24 h-24 rounded-full mb-8"
+          className="relative w-20 h-20 sm:w-24 sm:h-24 rounded-full mb-5 sm:mb-8"
           style={{
             background: 'linear-gradient(135deg, rgba(107,123,94,0.18) 0%, rgba(184,168,138,0.12) 100%)',
             boxShadow: '0 16px 60px rgba(107,123,94,0.10), inset 0 0 30px rgba(255,255,255,0.25)',
@@ -72,7 +72,7 @@ export function AuthEntryScreen({ onLogin, onSignup }: AuthEntryScreenProps) {
 
       {/* 하단 버튼 */}
       <motion.div
-        className="px-6 pb-10 flex flex-col gap-3"
+        className="px-6 pb-6 sm:pb-10 flex flex-col gap-3"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.4, duration: 0.5 }}

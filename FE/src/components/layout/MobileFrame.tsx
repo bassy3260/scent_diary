@@ -9,7 +9,7 @@ export function MobileFrame({ children }: MobileFrameProps) {
     <div className="w-full h-dvh flex items-center justify-center bg-[#E8E6E1]">
       <div className="relative w-full max-w-[390px] h-full max-h-[915px] bg-[#FAFAF8] overflow-hidden shadow-2xl md:rounded-[2rem] md:border md:border-black/5">
         {/* Content area */}
-        <div className="w-full h-full overflow-hidden">
+        <div className="w-full h-full overflow-y-auto" style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
           {children}
         </div>
 
