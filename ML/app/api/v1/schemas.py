@@ -30,6 +30,12 @@ class RecommendListResponse(BaseModel):
     recommendations: list[RecommendResponse]
 
 
+class ImageRecommendRequest(BaseModel):
+    image_url: str
+    note: Literal["TOP", "MIDDLE", "BASE"] = "MIDDLE"
+    price: int | None = None
+
+
 class ImageRecommendListResponse(BaseModel):
     keyword: str
     recommendations: list[RecommendResponse]

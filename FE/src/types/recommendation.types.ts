@@ -29,6 +29,8 @@ export interface RecommendTextRequest {
 /** 이미지 기반 향수 추천 Request */
 export interface RecommendImageRequest {
   image_route: string;
+  price: number;
+  note: string;   // "TOP" | "MIDDLE" | "BASE"
 }
 
 // ── Response 타입 ─────────────────────────────────────────
