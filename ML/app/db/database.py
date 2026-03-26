@@ -21,6 +21,18 @@ engine = create_engine(
 def get_connection():
     return engine.connect()
 
+def fetch_user_likes() -> list[dict]:
+    """모든 유저의 소장 향수 (member_id, perfume_id) 목록 반환"""
+    query = text("""
+        SELECT member_id, perfume_id
+        FROM likes
+        WHERE is_delete = false
+    """)
+    with get_connection() as conn:
+        rows = conn.execute(query).mappings().all()
+    return [{"member_id": r["member_id"], "perfume_id": r["perfume_id"]} for r in rows]
+
+
 def fetch_perfumes():
     with get_connection() as conn:
 
