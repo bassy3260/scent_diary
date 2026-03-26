@@ -33,7 +33,11 @@ export function EmotionInput({ onComplete, onBack }: EmotionInputProps) {
       const isCurrentlySelected = prev.includes(keyword);
 
       if (isCurrentlySelected) {
-        // 선택 해제 시 배열에서만 제거 (텍스트는 그대로 유지)
+        // 선택 해제 시 배열 및 텍스트에서도 제거
+        setText((currentText: string) => {
+          const parts = currentText.split(',').map(s => s.trim()).filter(s => s !== keyword && s !== '');
+          return parts.join(', ');
+        });
         return prev.filter(k => k !== keyword);
       } else {
         // 선택 시 텍스트 필드에도 추가
