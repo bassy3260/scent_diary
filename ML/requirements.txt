@@ -3,6 +3,7 @@ uvicorn
 scikit-learn
 psycopg2-binary
 numpy
+pandas
 requests
 sqlalchemy
 python-dotenv
