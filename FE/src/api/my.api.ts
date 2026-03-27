@@ -38,4 +38,16 @@ export const myApi = {
 
   getPreferenceRecommend: () =>
     apiClient.get<GetPreferenceRecommendResponse>('/api/v1/my/preference-recommend'),
+
+  getPopularLikes: () =>
+    apiClient.get<PopularPerfume[]>('/api/v1/my/likes/popular'),
 };
+
+export interface PopularPerfume {
+  perfumeId: number;
+  image: string;
+  brand: string;
+  name: string;
+  price: number;
+  accords: string[];
+}
