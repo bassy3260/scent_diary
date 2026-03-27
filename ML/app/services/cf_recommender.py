@@ -113,6 +113,7 @@ class CfRecommender:
             raise RuntimeError("load()를 먼저 호출하세요.")
 
         if member_id not in self.tfidf_matrix.index:
+            logger.warning("[CF] member_id=%s 가 tfidf_matrix에 없음 (소장 향수 없는 유저)", member_id)
             return []
 
         # 소장 수에 따라 CF ↔ 콘텐츠 비중 결정
@@ -138,6 +139,7 @@ class CfRecommender:
         cf_series = cf_series[~cf_series.index.isin(owned)]
 
         if cf_series.empty:
+            logger.warning("[CF] member_id=%s CF 점수 계산 후 추천 후보 없음 (유사 유저들이 소장한 향수가 이미 본인 소장 목록과 동일)", member_id)
             return []
 
         candidate_ids   = cf_series.index.tolist()

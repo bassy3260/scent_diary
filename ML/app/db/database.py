@@ -25,7 +25,7 @@ def fetch_user_likes() -> list[dict]:
     """모든 유저의 소장 향수 (member_id, perfume_id) 목록 반환"""
     query = text("""
         SELECT member_id, perfume_id
-        FROM likes
+        FROM member_perfume
         WHERE is_delete = false
     """)
     with get_connection() as conn:
@@ -39,7 +39,7 @@ def fetch_user_accord_tf(bm25_k: float = 4.0) -> list[dict]:
         SELECT l.member_id,
                pa.accord_id,
                CAST(COUNT(*) AS FLOAT) / (COUNT(*) + {bm25_k}) AS tf
-        FROM   likes l
+        FROM   member_perfume l
         JOIN   perfume_accord pa ON l.perfume_id = pa.perfume_id
         WHERE  l.is_delete = false
         GROUP  BY l.member_id, pa.accord_id

@@ -117,10 +117,17 @@ async def recommend_by_image(req: ImageRecommendRequest, request: Request) -> Im
 @router.post("/recommend/member")
 def recommend_by_member(req: MemberRecommendRequest, request: Request) -> MemberRecommendResponse:
     """소장 향수 기반 협업 필터링 추천"""
+    logger.info("[member추천] member_id=%s 요청 수신", req.member_id)
     cf = request.app.state.cf_recommender
+
+    in_matrix = req.member_id in cf.tfidf_matrix.index if cf.tfidf_matrix is not None else False
+    logger.info("[member추천] tfidf_matrix 존재=%s, member_id 포함=%s", cf.tfidf_matrix is not None, in_matrix)
+
     top_ids = cf.recommend(req.member_id)
+    logger.info("[member추천] 추천 결과 top_ids=%s", top_ids)
 
     if not top_ids:
+        logger.warning("[member추천] 추천 결과 없음 → 404 반환 (member_id=%s, matrix포함=%s)", req.member_id, in_matrix)
         raise HTTPException(status_code=404, detail="소장 향수가 없거나 추천할 향수가 없습니다.")
 
     cards = fetch_perfume_cards(top_ids)
