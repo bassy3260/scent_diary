@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 
 interface LaunchScreenProps {
@@ -8,19 +8,27 @@ interface LaunchScreenProps {
 export function LaunchScreen({ onComplete }: LaunchScreenProps) {
   const [phase, setPhase] = useState(0);
   const [tapped, setTapped] = useState(false);
+  const doneRef = useRef(false);
 
-  useEffect(() => {
-    const t1 = setTimeout(() => setPhase(1), 500);
-    const t2 = setTimeout(() => setPhase(2), 1400);
-    const t3 = setTimeout(() => setPhase(3), 2600);
-    return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); };
-  }, []);
-
-  const handleTap = () => {
-    if (phase < 2 || tapped) return; // wait until at least tagline is visible
+  const trigger = () => {
+    if (doneRef.current) return;
+    doneRef.current = true;
     setTapped(true);
     setPhase(4);
     setTimeout(() => onComplete(), 500);
+  };
+
+  useEffect(() => {
+    const t1 = setTimeout(() => setPhase(1), 200);
+    const t2 = setTimeout(() => setPhase(2), 600);
+    const t3 = setTimeout(() => setPhase(3), 1000);
+    const t4 = setTimeout(() => trigger(), 1500);
+    return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); clearTimeout(t4); };
+  }, []);
+
+  const handleTap = () => {
+    if (phase < 2) return;
+    trigger();
   };
 
   return (
