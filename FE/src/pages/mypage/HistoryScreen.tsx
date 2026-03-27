@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'motion/react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useAppStore } from '../../store';
 import { formatMyPageDate, getRecommendationSummaryText } from '../../utils/mypage';
 import type { RecommendItem } from '../../types/mypage.types';
@@ -7,6 +8,7 @@ import type { RecommendItem } from '../../types/mypage.types';
 export function HistoryScreen() {
   const navigateTo = useAppStore((state) => state.navigateTo);
   const recommendationHistory = useAppStore((state) => state.recommendationHistory);
+  const recommendationHistoryPageInfo = useAppStore((state) => state.recommendationHistoryPageInfo);
   const fetchRecommendationHistory = useAppStore((state) => state.fetchRecommendationHistory);
   const fetchRecommendationDetail = useAppStore((state) => state.fetchRecommendationDetail);
   const setSelectedHistoryId = useAppStore((state) => state.setSelectedHistoryId);
@@ -14,10 +16,18 @@ export function HistoryScreen() {
   const loading = useAppStore((state) => state.loading);
   const error = useAppStore((state) => state.error);
   const [openingId, setOpeningId] = useState<number | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
 
   useEffect(() => {
-    void fetchRecommendationHistory();
-  }, [fetchRecommendationHistory]);
+    void fetchRecommendationHistory(currentPage);
+  }, [fetchRecommendationHistory, currentPage]);
+
+  const totalPages = recommendationHistoryPageInfo?.totalPages ?? 1;
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+    window.scrollTo({ top: 0 });
+  };
 
   const handleViewResult = async (item: RecommendItem) => {
     if (openingId !== null) {
@@ -199,6 +209,53 @@ export function HistoryScreen() {
               </motion.button>
             );
           })
+        )}
+        {/* 페이지네이션 */}
+        {totalPages > 1 && (
+          <motion.div
+            className="flex items-center justify-center gap-2 pt-2 pb-4"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+          >
+            <motion.button
+              onClick={() => handlePageChange(currentPage - 1)}
+              disabled={currentPage === 1 || loading}
+              className="w-8 h-8 rounded-full flex items-center justify-center"
+              style={{ backgroundColor: currentPage === 1 ? '#F0EEE9' : '#E8E6E1' }}
+              whileTap={{ scale: 0.9 }}
+            >
+              <ChevronLeft size={16} className={currentPage === 1 ? 'text-[#C8C4BE]' : 'text-[#8A8680]'} />
+            </motion.button>
+
+            <div className="flex gap-1.5">
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                <motion.button
+                  key={page}
+                  onClick={() => handlePageChange(page)}
+                  disabled={loading}
+                  className="w-8 h-8 rounded-full flex items-center justify-center"
+                  style={{
+                    backgroundColor: page === currentPage ? '#6B7B5E' : 'transparent',
+                    color: page === currentPage ? '#FAFAF8' : '#8A8680',
+                    fontSize: '0.8125rem',
+                  }}
+                  whileTap={{ scale: 0.9 }}
+                >
+                  {page}
+                </motion.button>
+              ))}
+            </div>
+
+            <motion.button
+              onClick={() => handlePageChange(currentPage + 1)}
+              disabled={currentPage === totalPages || loading}
+              className="w-8 h-8 rounded-full flex items-center justify-center"
+              style={{ backgroundColor: currentPage === totalPages ? '#F0EEE9' : '#E8E6E1' }}
+              whileTap={{ scale: 0.9 }}
+            >
+              <ChevronRight size={16} className={currentPage === totalPages ? 'text-[#C8C4BE]' : 'text-[#8A8680]'} />
+            </motion.button>
+          </motion.div>
         )}
       </div>
     </div>
