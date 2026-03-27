@@ -4,6 +4,9 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
+
+import com.example.fragrance.preference.dto.TopLikedPerfumeDto;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -69,6 +72,17 @@ public class PreferenceServiceImpl implements PreferenceService {
 
 	@Override
 	public List<FastApiMemberRecommendResponse.RecommendationItem> getMemberRecommend(Long memberId) {
+		long totalPerfumes = preferenceMapper.countOwnedPerfumes(memberId);
+
+		if (totalPerfumes == 0) {
+			List<TopLikedPerfumeDto> topLiked = preferenceMapper.findTopLikedPerfumes();
+			return topLiked.stream()
+				.map(p -> new FastApiMemberRecommendResponse.RecommendationItem(
+					p.getPerfumeId(), p.getPerfumeName(), p.getImageRoute(), p.getAccordList()
+				))
+				.collect(Collectors.toList());
+		}
+
 		Map<String, Object> body = new HashMap<>();
 		body.put("member_id", memberId);
 

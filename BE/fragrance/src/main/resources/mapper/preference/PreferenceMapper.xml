@@ -58,4 +58,24 @@
         LIMIT 10
     </select>
 
+
+    <select id="findTopLikedPerfumes" resultType="com.example.fragrance.preference.dto.TopLikedPerfumeDto">
+        SELECT
+            p.perfume_id AS perfumeId,
+            p.perfume_name AS perfumeName,
+            p.image_route AS imageRoute,
+            (
+                SELECT STRING_AGG(a2.accord_name, ',' ORDER BY pa2.perfume_accord_id)
+                FROM perfume_accord pa2
+                JOIN accord a2 ON pa2.accord_id = a2.accord_id AND a2.is_delete = FALSE
+                WHERE pa2.perfume_id = p.perfume_id AND pa2.is_delete = FALSE
+            ) AS accordNames
+        FROM perfume p
+        JOIN likes l ON p.perfume_id = l.perfume_id AND l.is_delete = FALSE
+        WHERE p.is_delete = FALSE
+        GROUP BY p.perfume_id, p.perfume_name, p.image_route
+        ORDER BY COUNT(l.likes_id) DESC
+        LIMIT 5
+    </select>
+
 </mapper>

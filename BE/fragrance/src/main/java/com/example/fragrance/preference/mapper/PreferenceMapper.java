@@ -7,11 +7,14 @@ import org.apache.ibatis.annotations.Param;
 
 import com.example.fragrance.preference.dto.PreferenceAccordDto;
 import com.example.fragrance.preference.dto.PreferenceNoteDto;
+import com.example.fragrance.preference.dto.TopLikedPerfumeDto;
 
 @Mapper
 public interface PreferenceMapper {
 
 	long countOwnedPerfumes(@Param("memberId") Long memberId);
+
+	List<TopLikedPerfumeDto> findTopLikedPerfumes();
 
 	List<PreferenceAccordDto> findTopAccords(@Param("memberId") Long memberId);
 
