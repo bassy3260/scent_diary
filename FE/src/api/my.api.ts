@@ -6,6 +6,7 @@ import type {
   GetMyRecommendResponse,
   GetMyReviewResponse,
   GetRecommendDetailResponse,
+  GetPreferenceRecommendResponse,
 } from '../types/mypage.types';
 import { apiClient } from './client';
 
@@ -35,5 +36,6 @@ export const myApi = {
   getMyRecommendationDetail: (id: number) =>
     apiClient.get<GetRecommendDetailResponse>(`/api/v1/my/recommend/${id}`),
 
-  // TODO: Implement /api/v1/my/preference after the backend response schema is finalized.
+  getPreferenceRecommend: () =>
+    apiClient.get<GetPreferenceRecommendResponse>('/api/v1/my/preference-recommend'),
 };

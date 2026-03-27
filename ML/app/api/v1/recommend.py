@@ -4,14 +4,16 @@ from typing import Callable, Literal
 
 import numpy as np
 
-from fastapi import APIRouter, Request
+from fastapi import APIRouter, HTTPException, Request
 
 import httpx
 
 from app.api.v1.schemas import (
     NOTE_RATIO, RecommendRequest, RecommendListResponse, RecommendResponse,
     ImageRecommendListResponse, ImageRecommendRequest,
+    MemberRecommendRequest, MemberRecommendResponse, MemberRecommendItem,
 )
+from app.db.database import fetch_perfume_cards
 from app.services.llm_reasoner import generate_recommendation_reason, generate_recommendation_reason_by_mood
 from app.services.mood_to_accord import convert_mood_to_accord, get_top_accords
 from app.services.recommender import recommend_perfumes, rank_perfumes
@@ -108,3 +110,26 @@ async def recommend_by_image(req: ImageRecommendRequest,request: Request) -> Ima
 
     logger.info("[타이밍] 전체: %.2fs", time.time() - t_total)
     return ImageRecommendListResponse(keyword=top_mood, recommendations=recommend_list.recommendations)
+
+
+@router.post("/recommend/member")
+def recommend_by_member(req: MemberRecommendRequest, request: Request) -> MemberRecommendResponse:
+    """소장 향수 기반 협업 필터링 추천"""
+    cf = request.app.state.cf_recommender
+    top_ids = cf.recommend(req.member_id)
+
+    if not top_ids:
+        raise HTTPException(status_code=404, detail="소장 향수가 없거나 추천할 향수가 없습니다.")
+
+    cards = fetch_perfume_cards(top_ids)
+    return MemberRecommendResponse(
+        recommendations=[
+            MemberRecommendItem(
+                perfume_id=c["perfume_id"],
+                perfume_name=c["perfume_name"],
+                image_route=c.get("image_route"),
+                accords=c["accords"].split(",") if c.get("accords") else [],
+            )
+            for c in cards
+        ]
+    )

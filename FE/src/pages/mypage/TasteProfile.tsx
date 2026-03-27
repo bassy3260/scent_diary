@@ -1,8 +1,10 @@
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { motion } from 'motion/react';
-import { ChevronLeft } from 'lucide-react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useAppStore } from '../../store';
 import { buildAccordStats } from '../../utils/mypage';
+import { myApi } from '../../api/my.api';
+import type { PreferenceRecommendItem } from '../../types/mypage.types';
 
 export function TasteProfile() {
   const navigateTo = useAppStore((state) => state.navigateTo);
@@ -13,13 +15,43 @@ export function TasteProfile() {
   const loading = useAppStore((state) => state.loading);
   const error = useAppStore((state) => state.error);
 
+  const [recs, setRecs] = useState<PreferenceRecommendItem[]>([]);
+  const [recsLoading, setRecsLoading] = useState(true);
+  const [recsError, setRecsError] = useState<string | null>(null);
+  const [currentIndex, setCurrentIndex] = useState(0);
+
   useEffect(() => {
     void Promise.all([fetchLikes(), fetchMyPerfumes()]);
   }, [fetchLikes, fetchMyPerfumes]);
 
+  useEffect(() => {
+    const fetchRecs = async () => {
+      try {
+        setRecsLoading(true);
+        const response = await myApi.getPreferenceRecommend();
+        setRecs(response);
+      } catch (e) {
+        setRecsError((e as Error).message);
+      } finally {
+        setRecsLoading(false);
+      }
+    };
+    void fetchRecs();
+  }, []);
+
   const tasteSource = likedPerfumes.length > 0 ? likedPerfumes : myPerfumes;
   const accordStats = useMemo(() => buildAccordStats(tasteSource), [tasteSource]);
   const topAccords = accordStats.slice(0, 8);
+
+  const handlePrev = () => {
+    setCurrentIndex((prev) => (prev === 0 ? recs.length - 1 : prev - 1));
+  };
+
+  const handleNext = () => {
+    setCurrentIndex((prev) => (prev === recs.length - 1 ? 0 : prev + 1));
+  };
+
+  const currentPerfume = recs[currentIndex];
 
   return (
     <div className="w-full h-full flex flex-col" style={{ background: '#FAFAF8' }}>
@@ -144,6 +176,82 @@ export function TasteProfile() {
                   </motion.span>
                 ))}
               </div>
+            </motion.div>
+
+            {/* Preference Recommendations */}
+            <motion.div className="mt-8" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.8 }}>
+              <p className="text-[#B8B4AE] mb-4" style={{ fontSize: '0.6875rem', letterSpacing: '0.08em' }}>
+                이런 향수는 어때요?
+              </p>
+              {recsLoading ? (
+                <div className="text-center py-10">
+                  <p className="text-[#8A8680]" style={{ fontSize: '0.9375rem' }}>
+                    추천 향수를 불러오는 중...
+                  </p>
+                </div>
+              ) : recsError ? (
+                <div
+                  className="px-4 py-3 rounded-2xl text-[#C45050]"
+                  style={{ backgroundColor: 'rgba(196, 80, 80, 0.08)', fontSize: '0.8125rem' }}
+                >
+                  {recsError}
+                </div>
+              ) : recs.length > 0 && currentPerfume ? (
+                <div className="relative">
+                  <motion.div
+                    key={currentIndex}
+                    className="bg-white p-4 rounded-2xl shadow-sm flex flex-col items-center"
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.95 }}
+                  >
+                    <img
+                      src={currentPerfume.image_route}
+                      alt={currentPerfume.perfume_name}
+                      className="w-24 h-24 object-cover rounded-lg mb-3"
+                    />
+                    <p className="text-[#1A1A1A] font-medium text-center" style={{ fontSize: '0.9375rem' }}>
+                      {currentPerfume.perfume_name}
+                    </p>
+                    <div className="flex flex-wrap justify-center gap-1 mt-2">
+                      {currentPerfume.accords.map((accord) => (
+                        <span
+                          key={accord}
+                          className="px-2 py-0.5 rounded-full text-xs text-[#8A8680]"
+                          style={{ backgroundColor: '#F0F0F0' }}
+                        >
+                          {accord}
+                        </span>
+                      ))}
+                    </div>
+                  </motion.div>
+
+                  {recs.length > 1 && (
+                    <>
+                      <motion.button
+                        onClick={handlePrev}
+                        className="absolute top-1/2 left-[-8px] -translate-y-1/2 bg-white/80 backdrop-blur-sm rounded-full p-1 shadow-md"
+                        whileTap={{ scale: 0.9 }}
+                      >
+                        <ChevronLeft size={20} className="text-[#1A1A1A]" />
+                      </motion.button>
+                      <motion.button
+                        onClick={handleNext}
+                        className="absolute top-1/2 right-[-8px] -translate-y-1/2 bg-white/80 backdrop-blur-sm rounded-full p-1 shadow-md"
+                        whileTap={{ scale: 0.9 }}
+                      >
+                        <ChevronRight size={20} className="text-[#1A1A1A]" />
+                      </motion.button>
+                    </>
+                  )}
+                </div>
+              ) : (
+                <div className="text-center py-10">
+                  <p className="text-[#8A8680]" style={{ fontSize: '0.9375rem' }}>
+                    추천할 향수가 없어요.
+                  </p>
+                </div>
+              )}
             </motion.div>
           </>
         )}
