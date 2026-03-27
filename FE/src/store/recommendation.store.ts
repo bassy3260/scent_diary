@@ -34,7 +34,7 @@ export const createRecommendationSlice: StateCreator<any, [], [], Recommendation
   setIsGiftMode: (v) => set({ isGiftMode: v }),
 
   recommendByText: async (body) => {
-    set({ isLoading: true, error: null });
+    set({ isLoading: true, error: null, imageResult: null });
     try {
       const res = await recommendationApi.recommendByText(body);
       set({ textResult: res, isLoading: false });
@@ -44,7 +44,7 @@ export const createRecommendationSlice: StateCreator<any, [], [], Recommendation
   },
 
   recommendByImage: async (body) => {
-    set({ isLoading: true, error: null });
+    set({ isLoading: true, error: null, textResult: null });
     try {
       const res = await recommendationApi.recommendByImage(body);
       set({ imageResult: res, isLoading: false });

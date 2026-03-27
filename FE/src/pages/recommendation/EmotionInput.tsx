@@ -11,19 +11,24 @@ interface EmotionInputProps {
 
 export function EmotionInput({ onComplete, onBack }: EmotionInputProps) {
   const { profile, updateProfile } = useAppStore();
-  const [text, setText] = useState(profile.emotionText);
+  const [text, setText] = useState('');
   const [moodKeywords, setMoodKeywords] = useState<string[]>([]);
   const [placeholderIdx, setPlaceholderIdx] = useState(0);
   const [isFocused, setIsFocused] = useState(false);
 
   useEffect(() => {
+    updateProfile({ emotionText: '', moodKeywords: [], imageRoute: '' });
     const interval = setInterval(() => {
       setPlaceholderIdx(prev => (prev + 1) % SAMPLE_PROMPTS.length);
     }, 3500);
     return () => clearInterval(interval);
   }, []);
 
+  const [submitted, setSubmitted] = useState(false);
+
   const handleSubmit = () => {
+    if (submitted) return;
+    setSubmitted(true);
     updateProfile({ emotionText: text, moodKeywords });
     onComplete();
   };
@@ -195,8 +200,8 @@ export function EmotionInput({ onComplete, onBack }: EmotionInputProps) {
             color: text.length > 5 ? '#FAFAF8' : '#B8B4AE',
           }}
           onClick={handleSubmit}
-          disabled={text.length <= 5}
-          whileTap={text.length > 5 ? { scale: 0.98 } : {}}
+          disabled={text.length <= 5 || submitted}
+          whileTap={text.length > 5 && !submitted ? { scale: 0.98 } : {}}
         >
           내 향을 분석하기
           <ArrowRight size={16} />

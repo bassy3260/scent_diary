@@ -21,6 +21,10 @@ export function AnalyzingScene({ onComplete }: AnalyzingSceneProps) {
   const called = useRef(false);
 
   useEffect(() => {
+    useAppStore.setState({ textResult: null, imageResult: null });
+  }, []);
+
+  useEffect(() => {
     const msgInterval = setInterval(() => {
       setMessageIdx(prev => (prev + 1) % ANALYZING_MESSAGES.length);
     }, 1400);

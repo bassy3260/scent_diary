@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { ChevronLeft, Upload, Camera, X, Sparkles } from 'lucide-react';
 import { useAppStore } from '../../store';
@@ -65,10 +65,17 @@ export function PhotoRecommend() {
     reader.readAsDataURL(file);
   };
 
+  useEffect(() => {
+    updateProfile({ imageRoute: '', priceRange: '', notePreference: '' });
+  }, []);
+
   const handleUploadClick = () => fileInputRef.current?.click();
 
+  const [isUploading, setIsUploading] = useState(false);
+
   const handleRecommend = async () => {
-    if (!uploadedFile) return;
+    if (!uploadedFile || isUploading) return;
+    setIsUploading(true);
     const { uploadImageToS3 } = await import('../../api/s3');
     const fileName = await uploadImageToS3(uploadedFile);
     updateProfile({ imageRoute: fileName });
@@ -421,12 +428,26 @@ export function PhotoRecommend() {
                     color: '#FAFAF8',
                   }}
                   onClick={handleRecommend}
-                  whileTap={{ scale: 0.96 }}
-                  animate={{ boxShadow: '0 6px 24px rgba(107,123,94,0.25)' }}
+                  disabled={isUploading}
+                  whileTap={!isUploading ? { scale: 0.96 } : {}}
+                  animate={{ boxShadow: isUploading ? 'none' : '0 6px 24px rgba(107,123,94,0.25)', opacity: isUploading ? 0.6 : 1 }}
                   transition={{ type: 'spring', stiffness: 400, damping: 25 }}
                 >
-                  <Sparkles size={16} />
-                  추천받기
+                  {isUploading ? (
+                    <>
+                      <motion.div
+                        className="w-4 h-4 rounded-full border-2 border-white/40 border-t-white"
+                        animate={{ rotate: 360 }}
+                        transition={{ duration: 0.8, repeat: Infinity, ease: 'linear' }}
+                      />
+                      분석 준비 중...
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles size={16} />
+                      추천받기
+                    </>
+                  )}
                 </motion.button>
               </div>
             </>

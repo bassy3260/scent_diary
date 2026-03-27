@@ -64,8 +64,8 @@ def load_perfume_rows() -> list[dict[str, Any]]:
 
 
 def _filter_by_price(rows: list, max_price: int) -> list:
-    """가격 이하인 향수만 필터링"""
-    return [r for r in rows if r["price"] <= max_price]
+    """가격 이하인 향수만 필터링 (price가 None이거나 0인 행은 제외)"""
+    return [r for r in rows if r["price"] and r["price"] <= max_price]
 
 
 def _build_weighted_vec(row: dict, weights: dict[str, float]) -> np.ndarray:

@@ -41,7 +41,9 @@ export function ResultsScreen() {
   const fallbackHeroResult = currentResults[0] ?? null;
   const fallbackRestResults = currentResults.slice(1);
 
-  const uploadedImage = historyDetail?.input.image ?? imageResult?.input.image ?? null;
+  const uploadedImage = isHistoryMode
+    ? (historyDetail?.input.image ?? null)
+    : (imageResult?.input.image ?? null);
 
   const summaryLine = historyDetail
     ? getRecommendationSummaryText(historyDetail.input)

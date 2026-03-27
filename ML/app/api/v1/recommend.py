@@ -1,6 +1,6 @@
 import base64
 import logging
-from typing import Callable, Literal
+from typing import Literal
 
 import numpy as np
 
@@ -14,7 +14,7 @@ from app.api.v1.schemas import (
     MemberRecommendRequest, MemberRecommendResponse, MemberRecommendItem,
 )
 from app.db.database import fetch_perfume_cards
-from app.services.llm_reasoner import generate_recommendation_reason, generate_recommendation_reason_by_mood
+from app.services.llm_reasoner import generate_reasons_batch
 from app.services.mood_to_accord import convert_mood_to_accord, get_top_accords
 from app.services.recommender import recommend_perfumes, rank_perfumes
 
@@ -34,8 +34,8 @@ def _build_weights(note: str) -> dict[str, float]:
     }
 
 
-def _build_recommend_list(perfumes: list, reason_fn: Callable[[dict], str]) -> RecommendListResponse:
-    """공통 응답 포맷 생성. reason_fn은 향수 dict를 받아 추천 이유 문자열을 반환하는 함수."""
+def _build_recommend_list(perfumes: list, reasons: list[str]) -> RecommendListResponse:
+    """공통 응답 포맷 생성."""
     return RecommendListResponse(
         recommendations=[
             RecommendResponse(
@@ -45,9 +45,9 @@ def _build_recommend_list(perfumes: list, reason_fn: Callable[[dict], str]) -> R
                 score=p["score"],
                 accords=p["accords"],
                 description=p["description"],
-                reason=reason_fn(p),
+                reason=reason,
             )
-            for p in perfumes
+            for p, reason in zip(perfumes, reasons)
         ]
     )
 
@@ -61,12 +61,13 @@ def recommend(req: RecommendRequest, request: Request) -> RecommendListResponse:
     results = recommend_perfumes(req.keyword, embedder, weights, rows=perfume_rows, max_price=req.price, top_k=3)
 
     logger.debug("추천 결과 %d건 반환", len(results))
-    return _build_recommend_list(results, lambda p: generate_recommendation_reason(req.keyword, p))
+    reasons = generate_reasons_batch(req.keyword, results, mode="text")
+    return _build_recommend_list(results, reasons)
 
 
 @router.post("/recommend/image")
-async def recommend_by_image(req: ImageRecommendRequest,request: Request) -> ImageRecommendListResponse:
-    """S3 이미지 URL → 무드 추출 → 어코드 벡터 → 텍스트 임베딩 → 향수 추천"""
+async def recommend_by_image(req: ImageRecommendRequest, request: Request) -> ImageRecommendListResponse:
+    """S3 이미지 URL → 무드 추출 → 어코드 벡터 → 향수 추천"""
     import time
     t_total = time.time()
 
@@ -97,15 +98,16 @@ async def recommend_by_image(req: ImageRecommendRequest,request: Request) -> Ima
     query_vec = query_vec / np.linalg.norm(query_vec)
     logger.info("[타이밍] 어코드 변환 + 가중 합산: %.2fs", time.time() - t0)
 
-    # 5. 코사인 유사도 기반 향수 추천 (텍스트와 동일 로직)
+    # 5. 코사인 유사도 기반 향수 추천
     t0 = time.time()
     weights = _build_weights(req.note)
     results = rank_perfumes(query_vec, weights, rows=request.app.state.perfume_rows, max_price=req.price, top_k=3)
     logger.info("[타이밍] 유사도 계산: %.2fs", time.time() - t0)
 
-    # 6. LLM 추천 이유 생성 + 응답 포맷
+    # 6. LLM 추천 이유 생성 (1회 배치 호출) + 응답 포맷
     t0 = time.time()
-    recommend_list = _build_recommend_list(results, lambda p: generate_recommendation_reason_by_mood(top_mood, p))
+    reasons = generate_reasons_batch(top_mood, results, mode="mood")
+    recommend_list = _build_recommend_list(results, reasons)
     logger.info("[타이밍] LLM 추천 이유 생성: %.2fs", time.time() - t0)
 
     logger.info("[타이밍] 전체: %.2fs", time.time() - t_total)
