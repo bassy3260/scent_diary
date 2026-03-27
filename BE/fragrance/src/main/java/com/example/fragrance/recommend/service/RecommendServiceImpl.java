@@ -63,7 +63,7 @@ public class RecommendServiceImpl implements RecommendService {
                                 body,
                                 FastApiImageRecommendResponse.class);
 
-                return saveAndReturn(memberId, fastApiResponse, request.getImageRoute());
+                return saveAndReturn(memberId, fastApiResponse, s3Url + request.getImageRoute());
         }
 
         private RecommendHistoryDetailResponse saveAndReturn(

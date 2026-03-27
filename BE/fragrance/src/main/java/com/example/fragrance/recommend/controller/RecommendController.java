@@ -6,10 +6,12 @@ import com.example.fragrance.recommend.dto.RecommendTextRequest;
 import com.example.fragrance.recommend.service.RecommendService;
 import com.example.fragrance.util.common.ApiResponse;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+@Slf4j
 @RequiredArgsConstructor
 @RestController // @Controller + @RequestBody.
 @RequestMapping("/api/v1/recommend")
@@ -32,6 +34,7 @@ public class RecommendController {
             @AuthenticationPrincipal String loginId,
             @RequestBody RecommendImageRequest request) {
         Long memberId = Long.parseLong(loginId);
+        log.info("컨트롤러 - url 확인: {}", request.getImageRoute());
         RecommendHistoryDetailResponse data = recommendService.getImageRecommedResponse(memberId, request);
         return ResponseEntity.ok(ApiResponse.ok("이미지 추천 성공", data));
     }

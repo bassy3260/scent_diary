@@ -107,6 +107,9 @@ def rank_perfumes(
     if max_price is not None:
         rows = _filter_by_price(rows, max_price)
 
+    if not rows:
+        return []
+
     t0 = time.time()
     corpus_vectors = _build_corpus_vectors(rows, weights)
     scores = cosine_similarity(query_vec.reshape(1, -1), corpus_vectors)[0]
