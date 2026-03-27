@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { motion } from 'motion/react';
+import { AnimatePresence, motion } from 'motion/react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useAppStore } from '../../store';
 import { buildAccordStats } from '../../utils/mypage';
@@ -19,6 +19,7 @@ export function TasteProfile() {
   const [recsLoading, setRecsLoading] = useState(true);
   const [recsError, setRecsError] = useState<string | null>(null);
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [slideDirection, setSlideDirection] = useState(1);
 
   useEffect(() => {
     void Promise.all([fetchLikes(), fetchMyPerfumes()]);
@@ -44,10 +45,12 @@ export function TasteProfile() {
   const topAccords = accordStats.slice(0, 8);
 
   const handlePrev = () => {
+    setSlideDirection(-1);
     setCurrentIndex((prev) => (prev === 0 ? recs.length - 1 : prev - 1));
   };
 
   const handleNext = () => {
+    setSlideDirection(1);
     setCurrentIndex((prev) => (prev === recs.length - 1 ? 0 : prev + 1));
   };
 
@@ -122,7 +125,10 @@ export function TasteProfile() {
                 선호 어코드 비율
               </p>
               <div className="space-y-3">
-                {accordStats.slice(0, 6).map((accord, index) => (
+                {(() => {
+                  const top6 = accordStats.slice(0, 6);
+                  const maxPct = top6[0]?.percentage ?? 1;
+                  return top6.map((accord, index) => (
                   <motion.div
                     key={accord.name}
                     className="flex items-center gap-3"
@@ -130,15 +136,23 @@ export function TasteProfile() {
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: 0.3 + index * 0.08 }}
                   >
-                    <span className="w-14 text-right text-[#8A8680]" style={{ fontSize: '0.8125rem' }}>
-                      {accord.name}
+                    <span className="w-20 text-left text-[#8A8680] leading-tight" style={{ fontSize: '0.8125rem' }}>
+                      {accord.name.length > 7 ? (
+                        <>
+                          {accord.name.slice(0, 7)}/
+                          <br />
+                          {accord.name.slice(7)}
+                        </>
+                      ) : (
+                        accord.name
+                      )}
                     </span>
                     <div className="flex-1 h-5 rounded-full overflow-hidden" style={{ backgroundColor: `${accord.color}0D` }}>
                       <motion.div
                         className="h-full rounded-full"
                         style={{ background: `linear-gradient(90deg, ${accord.color}25, ${accord.color}55)` }}
                         initial={{ width: 0 }}
-                        animate={{ width: `${Math.max(accord.percentage, 8)}%` }}
+                        animate={{ width: `${Math.max((accord.percentage / maxPct) * 100, 8)}%` }}
                         transition={{ delay: 0.4 + index * 0.08, duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
                       >
                         <span className="flex items-center h-full px-2 text-[#1A1A1A]" style={{ fontSize: '0.6875rem' }}>
@@ -147,7 +161,8 @@ export function TasteProfile() {
                       </motion.div>
                     </div>
                   </motion.div>
-                ))}
+                  ));
+                })()}
               </div>
             </motion.div>
 
@@ -197,52 +212,80 @@ export function TasteProfile() {
                   {recsError}
                 </div>
               ) : recs.length > 0 && currentPerfume ? (
-                <div className="relative">
-                  <motion.div
-                    key={currentIndex}
-                    className="bg-white p-4 rounded-2xl shadow-sm flex flex-col items-center"
-                    initial={{ opacity: 0, scale: 0.95 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0, scale: 0.95 }}
-                  >
-                    <img
-                      src={currentPerfume.image_route}
-                      alt={currentPerfume.perfume_name}
-                      className="w-24 h-24 object-cover rounded-lg mb-3"
-                    />
-                    <p className="text-[#1A1A1A] font-medium text-center" style={{ fontSize: '0.9375rem' }}>
-                      {currentPerfume.perfume_name}
-                    </p>
-                    <div className="flex flex-wrap justify-center gap-1 mt-2">
-                      {currentPerfume.accords.map((accord) => (
-                        <span
-                          key={accord}
-                          className="px-2 py-0.5 rounded-full text-xs text-[#8A8680]"
-                          style={{ backgroundColor: '#F0F0F0' }}
+                <div>
+                  <div className="relative overflow-hidden">
+                    <AnimatePresence mode="popLayout" initial={false} custom={slideDirection}>
+                      <motion.div
+                        key={currentIndex}
+                        custom={slideDirection}
+                        variants={{
+                          enter: (d: number) => ({ x: d * 60, opacity: 0 }),
+                          center: { x: 0, opacity: 1 },
+                          exit: (d: number) => ({ x: d * -60, opacity: 0 }),
+                        }}
+                        initial="enter"
+                        animate="center"
+                        exit="exit"
+                        transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+                        className="bg-white p-4 rounded-2xl shadow-sm flex flex-col items-center"
+                      >
+                        <img
+                          src={currentPerfume.image_route}
+                          alt={currentPerfume.perfume_name}
+                          className="w-24 h-24 object-cover rounded-lg mb-3"
+                        />
+                        <p className="text-[#1A1A1A] font-medium text-center" style={{ fontSize: '0.9375rem' }}>
+                          {currentPerfume.perfume_name}
+                        </p>
+                        <div className="flex flex-wrap justify-center gap-1 mt-2">
+                          {currentPerfume.accords.map((accord) => (
+                            <span
+                              key={accord}
+                              className="px-2 py-0.5 rounded-full text-xs text-[#8A8680]"
+                              style={{ backgroundColor: '#F0F0F0' }}
+                            >
+                              {accord}
+                            </span>
+                          ))}
+                        </div>
+                      </motion.div>
+                    </AnimatePresence>
+
+                    {recs.length > 1 && (
+                      <>
+                        <motion.button
+                          onClick={handlePrev}
+                          className="absolute top-1/2 left-[-8px] -translate-y-1/2 bg-white/80 backdrop-blur-sm rounded-full p-1 shadow-md"
+                          whileTap={{ scale: 0.9 }}
                         >
-                          {accord}
-                        </span>
-                      ))}
-                    </div>
-                  </motion.div>
+                          <ChevronLeft size={20} className="text-[#1A1A1A]" />
+                        </motion.button>
+                        <motion.button
+                          onClick={handleNext}
+                          className="absolute top-1/2 right-[-8px] -translate-y-1/2 bg-white/80 backdrop-blur-sm rounded-full p-1 shadow-md"
+                          whileTap={{ scale: 0.9 }}
+                        >
+                          <ChevronRight size={20} className="text-[#1A1A1A]" />
+                        </motion.button>
+                      </>
+                    )}
+                  </div>
 
                   {recs.length > 1 && (
-                    <>
-                      <motion.button
-                        onClick={handlePrev}
-                        className="absolute top-1/2 left-[-8px] -translate-y-1/2 bg-white/80 backdrop-blur-sm rounded-full p-1 shadow-md"
-                        whileTap={{ scale: 0.9 }}
-                      >
-                        <ChevronLeft size={20} className="text-[#1A1A1A]" />
-                      </motion.button>
-                      <motion.button
-                        onClick={handleNext}
-                        className="absolute top-1/2 right-[-8px] -translate-y-1/2 bg-white/80 backdrop-blur-sm rounded-full p-1 shadow-md"
-                        whileTap={{ scale: 0.9 }}
-                      >
-                        <ChevronRight size={20} className="text-[#1A1A1A]" />
-                      </motion.button>
-                    </>
+                    <div className="flex justify-center gap-1.5 mt-3">
+                      {recs.map((_, i) => (
+                        <button
+                          key={i}
+                          onClick={() => { setSlideDirection(i > currentIndex ? 1 : -1); setCurrentIndex(i); }}
+                          className="rounded-full transition-all duration-300"
+                          style={{
+                            width: i === currentIndex ? '16px' : '6px',
+                            height: '6px',
+                            backgroundColor: i === currentIndex ? '#8A8680' : '#D4D0CB',
+                          }}
+                        />
+                      ))}
+                    </div>
                   )}
                 </div>
               ) : (
