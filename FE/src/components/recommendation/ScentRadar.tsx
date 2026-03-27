@@ -4,8 +4,14 @@ interface ScentRadarProps {
   stats: { name: string; color: string; percentage: number }[];
 }
 
+function splitLabel(name: string): [string, string | null] {
+  if (name.length <= 5) return [name, null];
+  const mid = Math.ceil(name.length / 2);
+  return [name.slice(0, mid), name.slice(mid)];
+}
+
 export function ScentRadar({ stats }: ScentRadarProps) {
-  const cx = 80, cy = 80, maxRadius = 60;
+  const cx = 110, cy = 110, maxRadius = 70;
   const levels = [0.25, 0.5, 0.75, 1];
   const angleStep = (2 * Math.PI) / stats.length;
   const maxPct = Math.max(...stats.map(s => s.percentage), 1);
@@ -28,7 +34,7 @@ export function ScentRadar({ stats }: ScentRadarProps) {
     .join(' ');
 
   return (
-    <svg width="160" height="160" viewBox="0 0 160 160">
+    <svg width="220" height="220" viewBox="0 0 220 220">
       {levels.map((level) => (
         <polygon
           key={level}
@@ -64,11 +70,19 @@ export function ScentRadar({ stats }: ScentRadarProps) {
       })}
 
       {stats.map((s, i) => {
-        const p = toXY(i, maxRadius + 16);
+        const p = toXY(i, maxRadius + 22);
+        const [line1, line2] = splitLabel(s.name);
         return (
           <text key={i} x={p.x} y={p.y} textAnchor="middle" dominantBaseline="central"
-            fill={s.color} fontWeight="500" style={{ fontSize: '0.5rem' }}>
-            {s.name}
+            fill={s.color} fontWeight="500" style={{ fontSize: '7px' }}>
+            {line2 ? (
+              <>
+                <tspan x={p.x} dy="-0.6em">{line1}</tspan>
+                <tspan x={p.x} dy="1.2em">{line2}</tspan>
+              </>
+            ) : (
+              line1
+            )}
           </text>
         );
       })}

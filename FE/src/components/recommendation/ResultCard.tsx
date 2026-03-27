@@ -52,11 +52,11 @@ export function ResultCard({ result, rank, isHero = false, onTap }: ResultCardPr
             >
               {result.name}
             </h3>
+            <p className="text-[#8A8680] mt-2" style={{ fontSize: '0.8125rem', lineHeight: 1.7 }}>
+              {result.reason}
+            </p>
           </div>
         </motion.div>
-        <p className="text-[#8A8680] px-1 mt-2.5" style={{ fontSize: '0.8125rem', lineHeight: 1.7 }}>
-          {result.reason}
-        </p>
       </>
     );
   }

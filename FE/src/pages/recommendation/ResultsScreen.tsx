@@ -2,7 +2,7 @@ import { useEffect, useMemo } from 'react';
 import { motion } from 'motion/react';
 import { RefreshCw, BookOpen } from 'lucide-react';
 import { useAppStore } from '../../store';
-import { useRecommendationStore } from '../../store';
+import { useRecommendationStore, useDiaryStore } from '../../store';
 import { hasPerfumeId, formatMyPageDate, getRecommendationSummaryText } from '../../utils/mypage';
 import type { RecommendDetailResult } from '../../types/mypage.types';
 import { ResultCard } from '../../components/recommendation/ResultCard';
@@ -20,6 +20,7 @@ export function ResultsScreen() {
   const clearSelectedRecommendationDetail = useAppStore((state) => state.clearSelectedRecommendationDetail);
   const loading = useAppStore((state) => state.loading);
   const error = useAppStore((state) => state.error);
+  const { setDiaryPrefill } = useDiaryStore();
 
   const selectedHistoryNumericId = selectedHistoryId ? Number(selectedHistoryId) : null;
   const isHistoryMode = selectedHistoryNumericId !== null && !Number.isNaN(selectedHistoryNumericId);
@@ -223,7 +224,18 @@ export function ResultsScreen() {
           <button
             className="flex-1 py-3 rounded-xl border border-[#E8E6E1] text-[#8A8680] flex items-center justify-center gap-1.5"
             style={{ fontSize: '0.75rem' }}
-            onClick={() => navigateTo('diary-write')}
+            onClick={() => {
+              const hero = historyDetail?.results[0] ?? currentResults[0] ?? null;
+              if (hero) {
+                setDiaryPrefill({
+                  perfumeId: hero.perfumeId,
+                  name: hero.name,
+                  brand: hero.brand,
+                  image: hero.image,
+                });
+              }
+              navigateTo('diary-write');
+            }}
           >
             <BookOpen size={14} /> 다이어리에 기록
           </button>

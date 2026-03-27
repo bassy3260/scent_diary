@@ -5,10 +5,10 @@ import {
   BookOpen,
   Clock,
   Heart,
-  Settings,
   Package,
   Edit2,
   X,
+  LogOut,
 } from "lucide-react";
 import { useAppStore } from "../../store";
 import { AGE_RANGES, PROFILE_GENDERS } from "../../constants/ui.constants";
@@ -17,6 +17,7 @@ import { ageRangeToBirthYear, toApiGender } from "../../utils/userProfile";
 
 export function MyPage() {
   const navigateTo = useAppStore((state) => state.navigateTo);
+  const logout = useAppStore((state) => state.logout);
   const profile = useAppStore((state) => state.profile);
   const updateMe = useAppStore((state) => state.updateMe);
   const diaryEntries = useAppStore((state) => state.diaryEntries);
@@ -114,31 +115,22 @@ export function MyPage() {
       className="w-full h-full flex flex-col"
       style={{ background: "#FAFAF8" }}
     >
-      <div className="pt-6 px-6 pb-3 flex items-center justify-between">
-        <div>
-          <p
-            className="text-[#B8B4AE]"
-            style={{ fontSize: "0.6875rem", letterSpacing: "0.1em" }}
-          >
-            MY SCENT LOUNGE
-          </p>
-          <h2
-            className="mt-1 text-[#1A1A1A]"
-            style={{
-              fontSize: "1.5rem",
-              fontFamily: "'Playfair Display', serif",
-            }}
-          >
-            나의 향 라운지
-          </h2>
-        </div>
-        <motion.button
-          className="w-10 h-10 rounded-full bg-[#F5F3EF] flex items-center justify-center"
-          onClick={() => navigateTo("settings")}
-          whileTap={{ scale: 0.9 }}
+      <div className="pt-6 px-6 pb-3">
+        <p
+          className="text-[#B8B4AE]"
+          style={{ fontSize: "0.6875rem", letterSpacing: "0.1em" }}
         >
-          <Settings size={18} className="text-[#8A8680]" />
-        </motion.button>
+          MY SCENT LOUNGE
+        </p>
+        <h2
+          className="mt-1 text-[#1A1A1A]"
+          style={{
+            fontSize: "1.5rem",
+            fontFamily: "'Playfair Display', serif",
+          }}
+        >
+          나의 향 라운지
+        </h2>
       </div>
 
       <div className="flex-1 overflow-y-auto px-5 pb-28">
@@ -352,6 +344,19 @@ export function MyPage() {
             </motion.button>
           ))}
         </div>
+
+        <motion.button
+          className="w-full mt-6 py-3.5 rounded-2xl flex items-center justify-center gap-2 text-[#C45050]"
+          style={{ backgroundColor: 'rgba(196,80,80,0.07)', fontSize: '0.875rem' }}
+          onClick={() => void logout()}
+          whileTap={{ scale: 0.97 }}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.4 }}
+        >
+          <LogOut size={15} />
+          로그아웃
+        </motion.button>
       </div>
 
       {showEditModal && (
