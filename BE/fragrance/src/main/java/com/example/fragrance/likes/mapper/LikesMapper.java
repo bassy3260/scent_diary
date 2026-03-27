@@ -28,4 +28,6 @@ public interface LikesMapper {
 	void insertLike(@Param("userId") Long userId, @Param("perfumeId") Long perfumeId);
 
 	void deleteLike(@Param("userId") Long userId, @Param("perfumeId") Long perfumeId);
+
+	List<LikedPerfume> findTopLikedPerfumes();
 }

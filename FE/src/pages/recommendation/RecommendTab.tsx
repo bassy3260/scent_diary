@@ -1,20 +1,10 @@
 import { motion } from 'motion/react';
-import { Sparkles, Camera, TrendingUp } from 'lucide-react';
+import { Sparkles, Camera } from 'lucide-react';
 import { useAppStore } from '../../store';
 
 export function RecommendTab() {
-  const { navigateTo, setIsGiftMode } = useAppStore();
+  const { navigateTo } = useAppStore();
 
-  const trendingKeywords = [
-    '비 온 뒤 숲', '클린한 아침', '따뜻한 우드',
-    '해변의 바람', '밤의 꽃', '포근한 캐시미어',
-  ];
-
-  const handleTrendingKeyword = (kw: string) => {
-    useAppStore.getState().updateProfile({ emotionText: kw });
-    setIsGiftMode(false);
-    navigateTo('recommend-prestep');
-  };
 
   return (
     <div className="w-full h-full flex flex-col" style={{ background: '#FAFAF8' }}>
@@ -102,37 +92,6 @@ export function RecommendTab() {
         </motion.div>
 
         {/* Trending keywords */}
-        <motion.div
-          className="mt-7"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.35 }}
-        >
-          <div className="flex items-center gap-2 mb-3">
-            <TrendingUp size={12} className="text-[#6B7B5E]" />
-            <p className="text-[#8A8680]" style={{ fontSize: '0.6875rem', letterSpacing: '0.08em' }}>
-              지금 인기 있는 분위기
-            </p>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            {trendingKeywords.map((kw, i) => (
-              <motion.button
-                key={kw}
-                className="px-4 py-2.5 rounded-full bg-[#F5F3EF] text-[#1A1A1A]"
-                style={{ fontSize: '0.8125rem' }}
-                initial={{ opacity: 0, scale: 0.8 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ delay: 0.4 + i * 0.05, type: 'spring', stiffness: 500, damping: 25 }}
-                whileTap={{ scale: 0.9 }}
-                whileHover={{ y: -2 }}
-                onClick={() => handleTrendingKeyword(kw)}
-              >
-                {kw}
-              </motion.button>
-            ))}
-          </div>
-        </motion.div>
-
         {/* New Recommendation CTA */}
         <motion.button
           className="w-full mt-7 py-4 rounded-2xl flex items-center justify-center gap-2"

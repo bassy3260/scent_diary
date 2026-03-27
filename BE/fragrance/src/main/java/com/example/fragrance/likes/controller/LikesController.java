@@ -1,18 +1,20 @@
 package com.example.fragrance.likes.controller;
 
-import com.example.fragrance.likes.dto.LikesRequest;
+import java.util.List;
+import java.util.Map;
+
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import com.example.fragrance.likes.dto.LikedPerfume;
 import com.example.fragrance.likes.dto.LikedPerfumeListResponse;
+import com.example.fragrance.likes.dto.LikesRequest;
 import com.example.fragrance.likes.service.LikesService;
 import com.example.fragrance.util.common.ApiResponse;
 
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
-
-import java.util.Map;
 
 @RestController
 @RequestMapping("/api/v1/my")
@@ -30,6 +32,13 @@ public class LikesController {
 	) {
 		Long memberId = Long.parseLong(loginId);
 		LikedPerfumeListResponse data = likesService.getLikedPerfumes(memberId, page - 1, size);
+		return ResponseEntity.ok(ApiResponse.ok("SUCCESS", data));
+	}
+
+	// GET /api/v1/my/likes/popular
+	@GetMapping("/likes/popular")
+	public ResponseEntity<ApiResponse<List<LikedPerfume>>> getTopLikedPerfumes() {
+		List<LikedPerfume> data = likesService.getTopLikedPerfumes();
 		return ResponseEntity.ok(ApiResponse.ok("SUCCESS", data));
 	}
 

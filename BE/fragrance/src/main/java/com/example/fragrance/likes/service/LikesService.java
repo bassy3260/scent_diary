@@ -1,10 +1,13 @@
 package com.example.fragrance.likes.service;
 
+import java.util.List;
+
+import com.example.fragrance.likes.dto.LikedPerfume;
 import com.example.fragrance.likes.dto.LikedPerfumeListResponse;
 
 public interface LikesService {
-	public LikedPerfumeListResponse getLikedPerfumes(Long memberId, int page, int size);
-	public void deleteLikes(Long likesId, Long memberId);
-
-	public String toggleLike(Long userId, Long perfumeId);
+	LikedPerfumeListResponse getLikedPerfumes(Long memberId, int page, int size);
+	void deleteLikes(Long likesId, Long memberId);
+	String toggleLike(Long userId, Long perfumeId);
+	List<LikedPerfume> getTopLikedPerfumes();
 }

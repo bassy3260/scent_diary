@@ -32,6 +32,11 @@ public class LikesServiceImpl implements LikesService{
 	}
 
 	@Override
+	public List<LikedPerfume> getTopLikedPerfumes() {
+		return likesMapper.findTopLikedPerfumes();
+	}
+
+	@Override
 	@Transactional
 	public String toggleLike(Long userId, Long perfumeId) {
 		// 이미 찜했는지 확인
