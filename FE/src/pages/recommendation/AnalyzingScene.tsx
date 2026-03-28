@@ -17,7 +17,7 @@ function priceRangeToInt(priceRange: string): number {
 export function AnalyzingScene({ onComplete }: AnalyzingSceneProps) {
   const [messageIdx, setMessageIdx] = useState(0);
   const [progress, setProgress] = useState(0);
-  const { recommendByText, recommendByImage, setSelectedHistoryId } = useAppStore();
+  const { recommendByText, recommendByImage } = useAppStore();
   const called = useRef(false);
 
   useEffect(() => {
@@ -40,21 +40,19 @@ export function AnalyzingScene({ onComplete }: AnalyzingSceneProps) {
       const minDelay = new Promise<void>(resolve => setTimeout(resolve, 4000));
 
       let apiCall: Promise<void>;
+      const markFreshAndComplete = () => {
+        useAppStore.setState({ resultsMode: 'fresh' });
+        onComplete();
+      };
+
       if (profile.imageRoute) {
         apiCall = recommendByImage({ image_route: profile.imageRoute, price, note });
-        Promise.all([apiCall, minDelay]).then(() => {
-          const id = useAppStore.getState().imageResult?.recommendResultId;
-          if (id != null) setSelectedHistoryId(String(id));
-          onComplete();
-        }).catch(onComplete);
+        Promise.all([apiCall, minDelay]).then(markFreshAndComplete).catch(markFreshAndComplete);
       } else {
-        const keyword = profile.emotionText || '';
+        const parts = [profile.emotionText, ...(profile.moodKeywords || [])].filter(s => s && s.trim() !== '');
+        const keyword = parts.join(', ');
         apiCall = recommendByText({ keyword, price, note });
-        Promise.all([apiCall, minDelay]).then(() => {
-          const id = useAppStore.getState().textResult?.recommendResultId;
-          if (id != null) setSelectedHistoryId(String(id));
-          onComplete();
-        }).catch(onComplete);
+        Promise.all([apiCall, minDelay]).then(markFreshAndComplete).catch(markFreshAndComplete);
       }
     }
 

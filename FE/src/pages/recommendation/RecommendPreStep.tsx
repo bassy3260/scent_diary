@@ -1,5 +1,5 @@
 import { ChevronLeft, Sparkles } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useAppStore } from '../../store';
 import { PRICE_RANGES } from '../../constants/ui.constants';
@@ -13,17 +13,29 @@ interface RecommendPreStepProps {
 const STEPS = ['price', 'notePreference'] as const;
 type StepKey = typeof STEPS[number];
 
-export function RecommendPreStep({ onComplete, onBack }: RecommendPreStepProps) {
-  const { updateProfile } = useAppStore();
+export function RecommendPreStep({ onComplete }: RecommendPreStepProps) {
+  const { updateProfile, navigateTo } = useAppStore();
   const [step, setStep] = useState(0);
   const [priceRange, setPriceRange] = useState('');
   const [notePreference, setNotePreference] = useState('');
 
   const currentStepKey: StepKey = STEPS[step];
 
+  useEffect(() => {
+    updateProfile({ imageRoute: '' });
+    useAppStore.setState({ imageResult: null, textResult: null, resultsMode: null });
+    useAppStore.getState().setSelectedHistoryId(null);
+    useAppStore.getState().clearSelectedRecommendationDetail();
+  }, []);
+
   const handleBack = () => {
     if (step > 0) setStep(step - 1);
-    else onBack?.();
+    else navigateTo('home');
+  };
+
+  const handleSkip = () => {
+    updateProfile({ priceRange: '가격 상관없음', notePreference: 'MIDDLE' });
+    onComplete();
   };
 
   const handleNext = () => {
@@ -286,9 +298,14 @@ export function RecommendPreStep({ onComplete, onBack }: RecommendPreStepProps) 
             ))}
           </div>
 
-          <span className="text-[#B8B4AE] min-w-[2rem] text-right" style={{ fontSize: '0.6875rem' }}>
-            {step + 1}/{STEPS.length}
-          </span>
+          <motion.button
+            onClick={handleSkip}
+            className="text-[#B8B4AE] shrink-0"
+            style={{ fontSize: '0.75rem' }}
+            whileTap={{ scale: 0.9 }}
+          >
+            건너뛰기
+          </motion.button>
         </div>
       </div>
 

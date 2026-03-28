@@ -13,10 +13,11 @@ export function HistoryScreen() {
   const fetchRecommendationDetail = useAppStore((state) => state.fetchRecommendationDetail);
   const setSelectedHistoryId = useAppStore((state) => state.setSelectedHistoryId);
   const clearSelectedRecommendationDetail = useAppStore((state) => state.clearSelectedRecommendationDetail);
+  const currentPage = useAppStore((state) => state.recommendationHistoryCurrentPage);
+  const setCurrentPage = useAppStore((state) => state.setRecommendationHistoryCurrentPage);
   const loading = useAppStore((state) => state.loading);
   const error = useAppStore((state) => state.error);
   const [openingId, setOpeningId] = useState<number | null>(null);
-  const [currentPage, setCurrentPage] = useState(1);
 
   useEffect(() => {
     void fetchRecommendationHistory(currentPage);
@@ -38,6 +39,7 @@ export function HistoryScreen() {
 
     try {
       clearSelectedRecommendationDetail();
+      useAppStore.setState({ textResult: null, imageResult: null, resultsMode: 'history' });
       await fetchRecommendationDetail(item.recommendResultId);
       setSelectedHistoryId(String(item.recommendResultId));
       navigateTo('results');
@@ -213,7 +215,7 @@ export function HistoryScreen() {
         {/* 페이지네이션 */}
         {totalPages > 1 && (
           <motion.div
-            className="flex items-center justify-center gap-2 pt-2 pb-4"
+            className="flex items-center justify-center gap-3 pt-2 pb-4"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
           >
@@ -221,39 +223,38 @@ export function HistoryScreen() {
               onClick={() => handlePageChange(currentPage - 1)}
               disabled={currentPage === 1 || loading}
               className="w-8 h-8 rounded-full flex items-center justify-center"
-              style={{ backgroundColor: currentPage === 1 ? '#F0EEE9' : '#E8E6E1' }}
-              whileTap={{ scale: 0.9 }}
+              style={{ background: currentPage === 1 ? '#F0EEE9' : '#1A1A1A', color: currentPage === 1 ? '#B8B4AE' : '#FFFFFF' }}
+              whileTap={currentPage > 1 ? { scale: 0.88 } : {}}
             >
-              <ChevronLeft size={16} className={currentPage === 1 ? 'text-[#C8C4BE]' : 'text-[#8A8680]'} />
+              <ChevronLeft size={15} />
             </motion.button>
 
-            <div className="flex gap-1.5">
-              {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-                <motion.button
-                  key={page}
-                  onClick={() => handlePageChange(page)}
-                  disabled={loading}
-                  className="w-8 h-8 rounded-full flex items-center justify-center"
-                  style={{
-                    backgroundColor: page === currentPage ? '#6B7B5E' : 'transparent',
-                    color: page === currentPage ? '#FAFAF8' : '#8A8680',
-                    fontSize: '0.8125rem',
-                  }}
-                  whileTap={{ scale: 0.9 }}
-                >
-                  {page}
-                </motion.button>
-              ))}
+            <div className="flex items-center gap-1.5">
+              {Array.from({ length: totalPages }).map((_, i) => {
+                const page = i + 1;
+                const isActive = page === currentPage;
+                return (
+                  <motion.button
+                    key={page}
+                    onClick={() => handlePageChange(page)}
+                    disabled={loading}
+                    className="rounded-full"
+                    style={{ height: 6, backgroundColor: isActive ? '#6B7B5E' : '#D8D5CF' }}
+                    animate={{ width: isActive ? 18 : 6 }}
+                    transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+                  />
+                );
+              })}
             </div>
 
             <motion.button
               onClick={() => handlePageChange(currentPage + 1)}
               disabled={currentPage === totalPages || loading}
               className="w-8 h-8 rounded-full flex items-center justify-center"
-              style={{ backgroundColor: currentPage === totalPages ? '#F0EEE9' : '#E8E6E1' }}
-              whileTap={{ scale: 0.9 }}
+              style={{ background: currentPage === totalPages ? '#F0EEE9' : '#1A1A1A', color: currentPage === totalPages ? '#B8B4AE' : '#FFFFFF' }}
+              whileTap={currentPage < totalPages ? { scale: 0.88 } : {}}
             >
-              <ChevronRight size={16} className={currentPage === totalPages ? 'text-[#C8C4BE]' : 'text-[#8A8680]'} />
+              <ChevronRight size={15} />
             </motion.button>
           </motion.div>
         )}

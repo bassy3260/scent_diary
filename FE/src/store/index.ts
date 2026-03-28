@@ -134,8 +134,10 @@ export const useRecommendationStore = () =>
     error: s.error,
     selectedHistoryId: s.selectedHistoryId,
     isGiftMode: s.isGiftMode,
+    resultsMode: s.resultsMode,
     setSelectedHistoryId: s.setSelectedHistoryId,
     setIsGiftMode: s.setIsGiftMode,
+    setResultsMode: s.setResultsMode,
     recommendByText: s.recommendByText,
     recommendByImage: s.recommendByImage,
   })));

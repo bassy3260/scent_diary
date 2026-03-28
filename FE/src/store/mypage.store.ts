@@ -57,9 +57,11 @@ export interface MyPageState {
   recommendationHistoryPageInfo: PageInfo | null;
   selectedRecommendationDetail: RecommendDetailData | null;
   selectedRecommendationDetailId: number | null;
+  recommendationHistoryCurrentPage: number;
   loading: boolean;
   error: string | null;
 
+  setRecommendationHistoryCurrentPage: (page: number) => void;
   fetchLikes: (page?: number, size?: number) => Promise<void>;
   removeLike: (likesId: number) => Promise<void>;
   fetchMyPerfumes: (page?: number, size?: number) => Promise<void>;
@@ -109,8 +111,11 @@ export const createMyPageSlice: StateCreator<any, [], [], MyPageState> = (
     recommendationHistoryPageInfo: null,
     selectedRecommendationDetail: null,
     selectedRecommendationDetailId: null,
+    recommendationHistoryCurrentPage: 1,
     loading: false,
     error: null,
+
+    setRecommendationHistoryCurrentPage: (page) => set({ recommendationHistoryCurrentPage: page }),
 
     fetchLikes: async (page = 1, size = 10) => {
       await runRequest(async () => {
@@ -229,6 +234,7 @@ export const createMyPageSlice: StateCreator<any, [], [], MyPageState> = (
         recommendationHistoryPageInfo: null,
         selectedRecommendationDetail: null,
         selectedRecommendationDetailId: null,
+        recommendationHistoryCurrentPage: 1,
         loading: false,
         error: null,
         savedPerfumes: [],

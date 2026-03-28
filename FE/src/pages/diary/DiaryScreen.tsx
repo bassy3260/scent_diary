@@ -366,6 +366,8 @@ export function DiaryScreen() {
   const [typeFilter, setTypeFilter] = useState<TypeFilter>('all');
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [showTypeSheet, setShowTypeSheet] = useState(false);
+  const [diaryPage, setDiaryPage] = useState(0);
+  const DIARY_PAGE_SIZE = 5;
   const [selectedEntry, setSelectedEntry] = useState<{ type: 'diary'; id: number } | { type: 'try'; id: number } | null>(null);
 
   const today = new Date();
@@ -399,6 +401,9 @@ export function DiaryScreen() {
   const filteredEntries = typeFilter === 'all' ? allEntries
     : typeFilter === 'diary' ? allEntries.filter(e => e._type === 'diary')
     : allEntries.filter(e => e._type === 'try');
+
+  const diaryTotalPages = Math.ceil(filteredEntries.length / DIARY_PAGE_SIZE);
+  const pagedEntries = filteredEntries.slice(diaryPage * DIARY_PAGE_SIZE, (diaryPage + 1) * DIARY_PAGE_SIZE);
 
   // 달력 날짜별 타입 맵
   const dateTypeMap = new Map<string, { hasDiary: boolean; hasTasting: boolean }>();
@@ -475,7 +480,7 @@ export function DiaryScreen() {
             return (
               <button key={f.id} className="px-3 py-1.5 rounded-full transition-all"
                 style={{ fontSize: '0.75rem', backgroundColor: active ? (f.id === 'all' ? '#2D4A35' : f.id === 'diary' ? TYPE_CONFIG.diary.bg : TYPE_CONFIG.tasting.bg) : '#F5F3EF', color: active ? (f.id === 'all' ? '#FFFFFF' : color) : '#8A8680', border: active ? `1.5px solid ${f.id === 'all' ? '#2D4A35' : color}20` : '1.5px solid transparent' }}
-                onClick={() => { setTypeFilter(f.id); setSelectedDate(null); }}>
+                onClick={() => { setTypeFilter(f.id); setSelectedDate(null); setDiaryPage(0); }}>
                 {f.label}
               </button>
             );
@@ -567,14 +572,67 @@ export function DiaryScreen() {
                     <p className="text-[#D4D0CA] mt-1" style={{ fontSize: '0.8125rem' }}>오늘의 향을 기록해보세요</p>
                   </div>
                 ) : (
-                  filteredEntries.map((entry, i) => (
-                    <motion.div key={i} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05, type: 'tween' }}>
-                      {entry._type === 'diary'
-                        ? <DiaryCard entry={entry.data} onClick={() => handleCardClick(entry)} />
-                        : <TastingCard entry={entry.data as TryDiaryListItem} onClick={() => handleCardClick(entry)} />
-                      }
-                    </motion.div>
-                  ))
+                  <>
+                    {pagedEntries.map((entry, i) => (
+                      <motion.div key={i} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05, type: 'tween' }}>
+                        {entry._type === 'diary'
+                          ? <DiaryCard entry={entry.data} onClick={() => handleCardClick(entry)} />
+                          : <TastingCard entry={entry.data as TryDiaryListItem} onClick={() => handleCardClick(entry)} />
+                        }
+                      </motion.div>
+                    ))}
+
+                    {diaryTotalPages > 1 && (
+                      <motion.div
+                        className="flex items-center justify-center gap-3 py-5"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                      >
+                        <motion.button
+                          className="w-8 h-8 rounded-full flex items-center justify-center"
+                          style={{
+                            background: diaryPage === 0 ? '#F0EEE9' : '#1A1A1A',
+                            color: diaryPage === 0 ? '#B8B4AE' : '#FFFFFF',
+                          }}
+                          onClick={() => setDiaryPage(p => Math.max(0, p - 1))}
+                          disabled={diaryPage === 0}
+                          whileTap={diaryPage > 0 ? { scale: 0.88 } : {}}
+                        >
+                          <ChevronLeft size={15} />
+                        </motion.button>
+
+                        <div className="flex items-center gap-1.5">
+                          {Array.from({ length: diaryTotalPages }).map((_, i) => (
+                            <motion.button
+                              key={i}
+                              onClick={() => setDiaryPage(i)}
+                              className="rounded-full"
+                              style={{
+                                width: i === diaryPage ? 18 : 6,
+                                height: 6,
+                                backgroundColor: i === diaryPage ? '#2D4A35' : '#D8D5CF',
+                              }}
+                              animate={{ width: i === diaryPage ? 18 : 6 }}
+                              transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+                            />
+                          ))}
+                        </div>
+
+                        <motion.button
+                          className="w-8 h-8 rounded-full flex items-center justify-center"
+                          style={{
+                            background: diaryPage === diaryTotalPages - 1 ? '#F0EEE9' : '#1A1A1A',
+                            color: diaryPage === diaryTotalPages - 1 ? '#B8B4AE' : '#FFFFFF',
+                          }}
+                          onClick={() => setDiaryPage(p => Math.min(diaryTotalPages - 1, p + 1))}
+                          disabled={diaryPage === diaryTotalPages - 1}
+                          whileTap={diaryPage < diaryTotalPages - 1 ? { scale: 0.88 } : {}}
+                        >
+                          <ChevronLeft size={15} className="rotate-180" />
+                        </motion.button>
+                      </motion.div>
+                    )}
+                  </>
                 )}
               </motion.div>
             )}

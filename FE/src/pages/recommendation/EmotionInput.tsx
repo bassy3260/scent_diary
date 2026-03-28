@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
 import { useAppStore } from '../../store';
 import { SAMPLE_PROMPTS, MOOD_KEYWORDS } from '../../constants/ui.constants';
-import { Sparkles, ArrowRight, ChevronLeft } from 'lucide-react';
+import { ArrowRight, ChevronLeft } from 'lucide-react';
 
 interface EmotionInputProps {
   onComplete: () => void;
@@ -35,25 +35,10 @@ export function EmotionInput({ onComplete, onBack }: EmotionInputProps) {
 
   const toggleMood = (keyword: string) => {
     setMoodKeywords(prev => {
-      const isCurrentlySelected = prev.includes(keyword);
-
-      if (isCurrentlySelected) {
-        // 선택 해제 시 배열 및 텍스트에서도 제거
-        setText((currentText: string) => {
-          const parts = currentText.split(',').map(s => s.trim()).filter(s => s !== keyword && s !== '');
-          return parts.join(', ');
-        });
+      if (prev.includes(keyword)) {
         return prev.filter(k => k !== keyword);
       } else {
-        // 선택 시 텍스트 필드에도 추가
-        if (prev.length < 3) {
-          setText((currentText: string) => {
-            const sep = currentText.length > 0 ? ', ' : '';
-            return currentText + sep + keyword;
-          });
-          return [...prev, keyword];
-        }
-        return prev;
+        return [...prev, keyword];
       }
     });
   };
@@ -128,12 +113,6 @@ export function EmotionInput({ onComplete, onBack }: EmotionInputProps) {
             onBlur={() => setIsFocused(false)}
             placeholder={SAMPLE_PROMPTS[placeholderIdx]}
           />
-          {text.length > 0 && (
-            <div className="flex items-center justify-between mt-2 pt-2 border-t border-[#E8E6E1]/50">
-              <span className="text-[#B8B4AE]" style={{ fontSize: '0.6875rem' }}>{text.length}자</span>
-              <Sparkles size={13} className="text-[#6B7B5E]/60" />
-            </div>
-          )}
         </motion.div>
 
         {/* Mood keywords (빠른 추가 대체) */}
@@ -184,7 +163,7 @@ export function EmotionInput({ onComplete, onBack }: EmotionInputProps) {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
             >
-              {moodKeywords.length}/3 선택됨
+              {moodKeywords.length}개 선택됨
             </motion.p>
           )}
         </div>
@@ -196,12 +175,12 @@ export function EmotionInput({ onComplete, onBack }: EmotionInputProps) {
           className="w-full py-4 rounded-2xl flex items-center justify-center gap-2 tracking-wide transition-all"
           style={{
             fontSize: '0.9375rem',
-            backgroundColor: text.length > 5 ? '#1A1A1A' : '#E8E6E1',
-            color: text.length > 5 ? '#FAFAF8' : '#B8B4AE',
+            backgroundColor: (text.length > 0 || moodKeywords.length > 0) ? '#1A1A1A' : '#E8E6E1',
+            color: (text.length > 0 || moodKeywords.length > 0) ? '#FAFAF8' : '#B8B4AE',
           }}
           onClick={handleSubmit}
-          disabled={text.length <= 5 || submitted}
-          whileTap={text.length > 5 && !submitted ? { scale: 0.98 } : {}}
+          disabled={(text.length === 0 && moodKeywords.length === 0) || submitted}
+          whileTap={(text.length > 0 || moodKeywords.length > 0) && !submitted ? { scale: 0.98 } : {}}
         >
           내 향을 분석하기
           <ArrowRight size={16} />

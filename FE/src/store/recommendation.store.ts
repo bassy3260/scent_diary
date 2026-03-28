@@ -14,9 +14,11 @@ export interface RecommendationState {
   error: string | null;
   selectedHistoryId: string | null;
   isGiftMode: boolean;
+  resultsMode: 'fresh' | 'history' | null;
 
   setSelectedHistoryId: (id: string | null) => void;
   setIsGiftMode: (v: boolean) => void;
+  setResultsMode: (mode: 'fresh' | 'history' | null) => void;
   recommendByText: (body: RecommendTextRequest) => Promise<void>;
   recommendByImage: (body: RecommendImageRequest) => Promise<void>;
 }
@@ -29,9 +31,11 @@ export const createRecommendationSlice: StateCreator<any, [], [], Recommendation
   error: null,
   selectedHistoryId: null,
   isGiftMode: false,
+  resultsMode: null,
 
   setSelectedHistoryId: (id) => set({ selectedHistoryId: id }),
   setIsGiftMode: (v) => set({ isGiftMode: v }),
+  setResultsMode: (mode) => set({ resultsMode: mode }),
 
   recommendByText: async (body) => {
     set({ isLoading: true, error: null, imageResult: null });

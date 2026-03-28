@@ -11,9 +11,9 @@ import {
   LogOut,
 } from "lucide-react";
 import { useAppStore } from "../../store";
-import { AGE_RANGES, PROFILE_GENDERS } from "../../constants/ui.constants";
+import { PROFILE_GENDERS } from "../../constants/ui.constants";
 import { buildAccordStats } from "../../utils/mypage";
-import { ageRangeToBirthYear, toApiGender } from "../../utils/userProfile";
+import { toApiGender } from "../../utils/userProfile";
 
 export function MyPage() {
   const navigateTo = useAppStore((state) => state.navigateTo);
@@ -44,7 +44,7 @@ export function MyPage() {
 
   const [showEditModal, setShowEditModal] = useState(false);
   const [editNickname, setEditNickname] = useState(profile.nickname || "");
-  const [editAgeRange, setEditAgeRange] = useState(profile.ageRange || "");
+  const [editBirthYear, setEditBirthYear] = useState(profile.birthYear ? String(profile.birthYear) : "");
   const [editGender, setEditGender] = useState(profile.gender || "");
   const [isSavingProfile, setIsSavingProfile] = useState(false);
   const [profileSaveError, setProfileSaveError] = useState("");
@@ -74,18 +74,15 @@ export function MyPage() {
 
   const handleSaveProfile = async () => {
     const nickname = editNickname.trim();
+    const birthYear = Number(editBirthYear);
+    const currentYear = new Date().getFullYear();
 
-    if (!nickname || !editGender || !editAgeRange) {
+    if (!nickname || !editGender || !editBirthYear) {
       return;
     }
 
-    const birthYear =
-      editAgeRange === profile.ageRange && typeof profile.birthYear === "number"
-        ? profile.birthYear
-        : ageRangeToBirthYear(editAgeRange);
-
-    if (typeof birthYear !== "number") {
-      setProfileSaveError("연령대 정보를 다시 선택한 뒤 저장해 주세요.");
+    if (!/^\d{4}$/.test(editBirthYear) || birthYear < 1900 || birthYear > currentYear) {
+      setProfileSaveError(`1900~${currentYear} 사이의 연도를 입력해 주세요.`);
       return;
     }
 
@@ -167,7 +164,7 @@ export function MyPage() {
             className="absolute top-4 right-4 w-8 h-8 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20 transition-colors"
             onClick={() => {
               setEditNickname(profile.nickname || "");
-              setEditAgeRange(profile.ageRange || "");
+              setEditBirthYear(profile.birthYear ? String(profile.birthYear) : "");
               setEditGender(profile.gender || "");
               setProfileSaveError("");
               setShowEditModal(true);
@@ -194,7 +191,7 @@ export function MyPage() {
                 className="text-white/50 mt-0.5"
                 style={{ fontSize: "0.75rem" }}
               >
-                {profile.gender || "미설정"} · {profile.ageRange || "20대"}
+                {profile.gender || "미설정"} · {profile.birthYear ? `${profile.birthYear}년생` : "미설정"}
               </p>
             </div>
           </div>
@@ -451,33 +448,21 @@ export function MyPage() {
 
             <div className="mb-6">
               <label
-                className="block text-[#B8B4AE] mb-3"
+                className="block text-[#B8B4AE] mb-2"
                 style={{ fontSize: "0.6875rem", letterSpacing: "0.08em" }}
               >
-                연령대
+                출생연도
               </label>
-              <div className="grid grid-cols-3 gap-2">
-                {AGE_RANGES.map((range) => (
-                  <motion.button
-                    key={range}
-                    className="py-3 rounded-xl transition-colors"
-                    style={{
-                      background:
-                        editAgeRange === range
-                          ? "linear-gradient(135deg, #6B7B5E, #8FA380)"
-                          : "#FAFAF8",
-                      color: editAgeRange === range ? "#FFFFFF" : "#8A8680",
-                      fontSize: "0.875rem",
-                      border:
-                        editAgeRange === range ? "none" : "1px solid #E8E6E1",
-                    }}
-                    onClick={() => setEditAgeRange(range)}
-                    whileTap={{ scale: 0.97 }}
-                  >
-                    {range}
-                  </motion.button>
-                ))}
-              </div>
+              <input
+                type="number"
+                value={editBirthYear}
+                onChange={(e) => setEditBirthYear(e.target.value)}
+                placeholder={`예: 1998`}
+                className="w-full px-4 py-3 rounded-xl bg-[#FAFAF8] border border-[#E8E6E1] text-[#1A1A1A] placeholder:text-[#D4D0C8] focus:outline-none focus:border-[#6B7B5E] transition-colors"
+                style={{ fontSize: "0.9375rem" }}
+                min={1900}
+                max={new Date().getFullYear()}
+              />
             </div>
 
             {profileSaveError && (
@@ -495,14 +480,14 @@ export function MyPage() {
                 background:
                   editNickname.trim() &&
                   editGender &&
-                  editAgeRange &&
+                  editBirthYear &&
                   !isSavingProfile
                     ? "#1A1A1A"
                     : "#E8E6E1",
                 color:
                   editNickname.trim() &&
                   editGender &&
-                  editAgeRange &&
+                  editBirthYear &&
                   !isSavingProfile
                     ? "#FFFFFF"
                     : "#B8B4AE",
@@ -514,13 +499,13 @@ export function MyPage() {
               disabled={
                 !editNickname.trim() ||
                 !editGender ||
-                !editAgeRange ||
+                !editBirthYear ||
                 isSavingProfile
               }
               whileTap={
                 editNickname.trim() &&
                 editGender &&
-                editAgeRange &&
+                editBirthYear &&
                 !isSavingProfile
                   ? { scale: 0.98 }
                   : {}

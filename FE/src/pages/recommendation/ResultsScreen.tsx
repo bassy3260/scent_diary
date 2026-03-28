@@ -13,17 +13,19 @@ export function ResultsScreen() {
   const navigateTo = useAppStore((state) => state.navigateTo);
   const setSelectedPerfumeId = useAppStore((state) => state.setSelectedPerfumeId);
   const selectedHistoryId = useAppStore((state) => state.selectedHistoryId);
-  const setSelectedHistoryId = useAppStore((state) => state.setSelectedHistoryId);
   const selectedRecommendationDetail = useAppStore((state) => state.selectedRecommendationDetail);
   const selectedRecommendationDetailId = useAppStore((state) => state.selectedRecommendationDetailId);
   const fetchRecommendationDetail = useAppStore((state) => state.fetchRecommendationDetail);
-  const clearSelectedRecommendationDetail = useAppStore((state) => state.clearSelectedRecommendationDetail);
   const loading = useAppStore((state) => state.loading);
   const error = useAppStore((state) => state.error);
   const { setDiaryPrefill } = useDiaryStore();
 
+  const { textResult, imageResult } = useRecommendationStore();
+  const resultsMode = useAppStore((state) => state.resultsMode);
+
   const selectedHistoryNumericId = selectedHistoryId ? Number(selectedHistoryId) : null;
-  const isHistoryMode = selectedHistoryNumericId !== null && !Number.isNaN(selectedHistoryNumericId);
+  // resultsMode로 명시적 분기: 'history'일 때만 히스토리 모드
+  const isHistoryMode = resultsMode === 'history' && selectedHistoryNumericId !== null && !Number.isNaN(selectedHistoryNumericId);
   const historyDetail = isHistoryMode && selectedRecommendationDetailId === selectedHistoryNumericId
     ? selectedRecommendationDetail
     : null;
@@ -34,7 +36,6 @@ export function ResultsScreen() {
     void fetchRecommendationDetail(selectedHistoryNumericId);
   }, [fetchRecommendationDetail, isHistoryMode, selectedHistoryNumericId, selectedRecommendationDetail, selectedRecommendationDetailId]);
 
-  const { textResult, imageResult } = useRecommendationStore();
   const currentResults = useMemo(
     () => textResult?.results ?? imageResult?.results ?? [],
     [textResult, imageResult],
@@ -42,14 +43,17 @@ export function ResultsScreen() {
   const fallbackHeroResult = currentResults[0] ?? null;
   const fallbackRestResults = currentResults.slice(1);
 
-  const uploadedImage = isHistoryMode
-    ? (historyDetail?.input.image ?? null)
-    : (imageResult?.input.image ?? null);
+  // 이미지: 이미지 추천 신선 결과일 때만 표시
+  const uploadedImage = imageResult?.input.image ?? (isHistoryMode ? (historyDetail?.input.image ?? null) : null);
+
+  const fullKeyword = [profile.emotionText, ...(profile.moodKeywords ?? [])]
+    .filter(s => s && s.trim() !== '')
+    .join(', ');
 
   const summaryLine = historyDetail
     ? getRecommendationSummaryText(historyDetail.input)
-    : profile.emotionText
-      ? `"${profile.emotionText.slice(0, 50)}${profile.emotionText.length > 50 ? '...' : ''}"`
+    : fullKeyword
+      ? `"${fullKeyword.slice(0, 60)}${fullKeyword.length > 60 ? '...' : ''}"`
       : '오늘의 분위기에 어울리는 향을 골라봤어요.';
 
   const displayKeyword = historyDetail
@@ -67,14 +71,10 @@ export function ResultsScreen() {
   };
 
   const handleBack = () => {
-    clearSelectedRecommendationDetail();
-    setSelectedHistoryId(null);
     navigateTo('history');
   };
 
   const handleRestart = () => {
-    clearSelectedRecommendationDetail();
-    setSelectedHistoryId(null);
     navigateTo('recommend-prestep');
   };
 

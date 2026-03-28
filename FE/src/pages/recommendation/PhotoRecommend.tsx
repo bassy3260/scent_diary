@@ -67,6 +67,9 @@ export function PhotoRecommend() {
 
   useEffect(() => {
     updateProfile({ imageRoute: '', priceRange: '', notePreference: '' });
+    useAppStore.setState({ imageResult: null, textResult: null, resultsMode: null });
+    useAppStore.getState().setSelectedHistoryId(null);
+    useAppStore.getState().clearSelectedRecommendationDetail();
   }, []);
 
   const handleUploadClick = () => fileInputRef.current?.click();

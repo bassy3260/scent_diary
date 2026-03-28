@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
-import { ChevronLeft, Package, Layers, X } from 'lucide-react';
+import { ChevronLeft, Package, Layers, X, SlidersHorizontal } from 'lucide-react';
 import { useAppStore } from '../../store';
 import { ImageWithFallback } from '../../components/common/ImageWithFallback';
 import { buildAccordStats, getAccordColor } from '../../utils/mypage';
@@ -18,6 +18,9 @@ export function MyCollectionScreen() {
   const loading = useAppStore((state) => state.loading);
   const error = useAppStore((state) => state.error);
   const [activeFilter, setActiveFilter] = useState<string>(ALL_FILTER);
+  const [currentPage, setCurrentPage] = useState(0);
+  const [filterSheetOpen, setFilterSheetOpen] = useState(false);
+  const PAGE_SIZE = 5;
 
   useEffect(() => {
     void fetchMyPerfumes();
@@ -32,6 +35,14 @@ export function MyCollectionScreen() {
     [activeFilter, myPerfumes],
   );
   const totalCount = myPerfumesPageInfo?.totalElements ?? myPerfumes.length;
+
+  const totalPages = Math.ceil(filteredPerfumes.length / PAGE_SIZE);
+  const pagedPerfumes = filteredPerfumes.slice(currentPage * PAGE_SIZE, (currentPage + 1) * PAGE_SIZE);
+
+  const handleFilterChange = (filter: string) => {
+    setActiveFilter(filter);
+    setCurrentPage(0);
+  };
 
   const handleViewDetail = (perfume: MyPerfumeItem) => {
     setSelectedPerfumeId(perfume.perfumeId);
@@ -144,85 +155,45 @@ export function MyCollectionScreen() {
               )}
             </motion.div>
 
-            <div className="px-5 pb-2.5 flex flex-wrap gap-1.5">
+            <div className="px-5 pb-3 flex items-center justify-between">
+              <div className="flex items-center gap-1.5">
+                {activeFilter !== ALL_FILTER && activeAccordColor && (
+                  <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: activeAccordColor }} />
+                )}
+                <p className="text-[#8A8680]" style={{ fontSize: '0.75rem' }}>
+                  {activeFilter === ALL_FILTER
+                    ? `전체 ${filteredPerfumes.length}개`
+                    : `${activeFilter} 계열 · ${filteredPerfumes.length}개`}
+                </p>
+                {activeFilter !== ALL_FILTER && (
+                  <motion.button
+                    className="w-4 h-4 rounded-full flex items-center justify-center"
+                    style={{ background: '#E8E6E1' }}
+                    onClick={() => handleFilterChange(ALL_FILTER)}
+                    whileTap={{ scale: 0.85 }}
+                  >
+                    <X size={9} className="text-[#8A8680]" />
+                  </motion.button>
+                )}
+              </div>
               <motion.button
-                onClick={() => setActiveFilter(ALL_FILTER)}
-                className="flex items-center gap-1 rounded-full transition-colors"
+                className="flex items-center gap-1.5 rounded-full px-3 py-1.5"
                 style={{
+                  background: activeFilter !== ALL_FILTER ? '#1A1A1A' : '#F0EEE9',
+                  color: activeFilter !== ALL_FILTER ? '#FFFFFF' : '#6B6862',
                   fontSize: '0.6875rem',
-                  fontWeight: activeFilter === ALL_FILTER ? 600 : 400,
-                  padding: '3px 10px',
-                  background: activeFilter === ALL_FILTER ? '#1A1A1A' : 'transparent',
-                  color: activeFilter === ALL_FILTER ? '#FFFFFF' : '#8A8680',
-                  border: `1px solid ${activeFilter === ALL_FILTER ? '#1A1A1A' : '#D8D5CF'}`,
                 }}
+                onClick={() => setFilterSheetOpen(true)}
                 whileTap={{ scale: 0.93 }}
               >
-                전체
-                <span
-                  style={{
-                    fontSize: '0.5625rem',
-                    color: activeFilter === ALL_FILTER ? 'rgba(255,255,255,0.65)' : '#B8B4AE',
-                    marginLeft: 1,
-                  }}
-                >
-                  {myPerfumes.length}
-                </span>
+                <SlidersHorizontal size={12} />
+                계열 필터
               </motion.button>
-
-              {accordFilters.map((filter) => {
-                const isActive = activeFilter === filter.name;
-
-                return (
-                  <motion.button
-                    key={filter.name}
-                    onClick={() => setActiveFilter(filter.name)}
-                    className="flex items-center gap-1 rounded-full transition-colors"
-                    style={{
-                      fontSize: '0.6875rem',
-                      fontWeight: isActive ? 600 : 400,
-                      padding: '3px 10px',
-                      background: isActive ? filter.color : 'transparent',
-                      color: isActive ? '#FFFFFF' : '#6B6862',
-                      border: `1px solid ${isActive ? filter.color : '#D8D5CF'}`,
-                    }}
-                    whileTap={{ scale: 0.93 }}
-                  >
-                    {!isActive && (
-                      <span
-                        className="w-1.5 h-1.5 rounded-full shrink-0 inline-block"
-                        style={{ backgroundColor: filter.color, opacity: 0.85 }}
-                      />
-                    )}
-                    {filter.name}
-                    <span
-                      style={{
-                        fontSize: '0.5625rem',
-                        color: isActive ? 'rgba(255,255,255,0.65)' : '#B8B4AE',
-                        marginLeft: 1,
-                      }}
-                    >
-                      {filter.count}
-                    </span>
-                  </motion.button>
-                );
-              })}
-            </div>
-
-            <div className="px-5 pb-1.5 flex items-center gap-1.5">
-              {activeFilter !== ALL_FILTER && activeAccordColor && (
-                <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: activeAccordColor }} />
-              )}
-              <p className="text-[#B8B4AE]" style={{ fontSize: '0.6875rem' }}>
-                {activeFilter === ALL_FILTER
-                  ? `전체 ${filteredPerfumes.length}개`
-                  : `${activeFilter} 계열 ${filteredPerfumes.length}개`}
-              </p>
             </div>
 
             <div className="px-5 space-y-2">
               <AnimatePresence mode="popLayout">
-                {filteredPerfumes.map((perfume, index) => {
+                {pagedPerfumes.map((perfume, index) => {
                   return (
                     <motion.div
                       key={perfume.memberPerfumeId}
@@ -290,9 +261,149 @@ export function MyCollectionScreen() {
                 })}
               </AnimatePresence>
             </div>
+
+            {totalPages > 1 && (
+              <motion.div
+                className="flex items-center justify-center gap-3 py-5"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.2 }}
+              >
+                <motion.button
+                  className="w-8 h-8 rounded-full flex items-center justify-center"
+                  style={{
+                    background: currentPage === 0 ? '#F0EEE9' : '#1A1A1A',
+                    color: currentPage === 0 ? '#B8B4AE' : '#FFFFFF',
+                  }}
+                  onClick={() => setCurrentPage(p => Math.max(0, p - 1))}
+                  disabled={currentPage === 0}
+                  whileTap={currentPage > 0 ? { scale: 0.88 } : {}}
+                >
+                  <ChevronLeft size={15} />
+                </motion.button>
+
+                <div className="flex items-center gap-1.5">
+                  {Array.from({ length: totalPages }).map((_, i) => (
+                    <motion.button
+                      key={i}
+                      onClick={() => setCurrentPage(i)}
+                      className="rounded-full"
+                      style={{
+                        width: i === currentPage ? 18 : 6,
+                        height: 6,
+                        backgroundColor: i === currentPage
+                          ? (activeAccordColor ?? '#1A1A1A')
+                          : '#D8D5CF',
+                      }}
+                      animate={{ width: i === currentPage ? 18 : 6 }}
+                      transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+                    />
+                  ))}
+                </div>
+
+                <motion.button
+                  className="w-8 h-8 rounded-full flex items-center justify-center"
+                  style={{
+                    background: currentPage === totalPages - 1 ? '#F0EEE9' : '#1A1A1A',
+                    color: currentPage === totalPages - 1 ? '#B8B4AE' : '#FFFFFF',
+                  }}
+                  onClick={() => setCurrentPage(p => Math.min(totalPages - 1, p + 1))}
+                  disabled={currentPage === totalPages - 1}
+                  whileTap={currentPage < totalPages - 1 ? { scale: 0.88 } : {}}
+                >
+                  <ChevronLeft size={15} className="rotate-180" />
+                </motion.button>
+              </motion.div>
+            )}
           </>
         )}
       </div>
+
+      {/* 어코드 필터 바텀시트 */}
+      <AnimatePresence>
+        {filterSheetOpen && (
+          <>
+            <motion.div
+              className="absolute inset-0 z-20"
+              style={{ background: 'rgba(0,0,0,0.35)' }}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setFilterSheetOpen(false)}
+            />
+            <motion.div
+              className="absolute bottom-0 left-0 right-0 z-30 rounded-t-3xl px-5 pt-5"
+              style={{ background: '#FAFAF8', paddingBottom: 'calc(env(safe-area-inset-bottom) + 80px)' }}
+              initial={{ y: '100%' }}
+              animate={{ y: 0 }}
+              exit={{ y: '100%' }}
+              transition={{ type: 'spring', stiffness: 400, damping: 35 }}
+            >
+              <div className="flex items-center justify-between mb-4">
+                <p className="text-[#1A1A1A]" style={{ fontSize: '0.9375rem', fontWeight: 600 }}>
+                  계열 필터
+                </p>
+                <motion.button
+                  className="w-7 h-7 rounded-full flex items-center justify-center"
+                  style={{ background: '#F0EEE9' }}
+                  onClick={() => setFilterSheetOpen(false)}
+                  whileTap={{ scale: 0.85 }}
+                >
+                  <X size={13} className="text-[#8A8680]" />
+                </motion.button>
+              </div>
+
+              <div className="flex flex-wrap gap-2">
+                <motion.button
+                  onClick={() => { handleFilterChange(ALL_FILTER); setFilterSheetOpen(false); }}
+                  className="flex items-center gap-1 rounded-full"
+                  style={{
+                    fontSize: '0.8125rem',
+                    fontWeight: activeFilter === ALL_FILTER ? 600 : 400,
+                    padding: '6px 14px',
+                    background: activeFilter === ALL_FILTER ? '#1A1A1A' : '#F0EEE9',
+                    color: activeFilter === ALL_FILTER ? '#FFFFFF' : '#6B6862',
+                  }}
+                  whileTap={{ scale: 0.93 }}
+                >
+                  전체
+                  <span style={{ fontSize: '0.6875rem', opacity: 0.6, marginLeft: 2 }}>
+                    {myPerfumes.length}
+                  </span>
+                </motion.button>
+
+                {accordFilters.map((filter) => {
+                  const isActive = activeFilter === filter.name;
+                  return (
+                    <motion.button
+                      key={filter.name}
+                      onClick={() => { handleFilterChange(filter.name); setFilterSheetOpen(false); }}
+                      className="flex items-center gap-1.5 rounded-full"
+                      style={{
+                        fontSize: '0.8125rem',
+                        fontWeight: isActive ? 600 : 400,
+                        padding: '6px 14px',
+                        background: isActive ? filter.color : '#F0EEE9',
+                        color: isActive ? '#FFFFFF' : '#6B6862',
+                      }}
+                      whileTap={{ scale: 0.93 }}
+                    >
+                      <span
+                        className="w-2 h-2 rounded-full shrink-0"
+                        style={{ backgroundColor: isActive ? 'rgba(255,255,255,0.7)' : filter.color }}
+                      />
+                      {filter.name}
+                      <span style={{ fontSize: '0.6875rem', opacity: 0.6, marginLeft: 1 }}>
+                        {filter.count}
+                      </span>
+                    </motion.button>
+                  );
+                })}
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
