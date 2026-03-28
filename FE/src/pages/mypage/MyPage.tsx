@@ -20,8 +20,7 @@ export function MyPage() {
   const logout = useAppStore((state) => state.logout);
   const profile = useAppStore((state) => state.profile);
   const updateMe = useAppStore((state) => state.updateMe);
-  const diaryEntries = useAppStore((state) => state.diaryEntries);
-  const likedPerfumes = useAppStore((state) => state.likedPerfumes);
+const likedPerfumes = useAppStore((state) => state.likedPerfumes);
   const likesPageInfo = useAppStore((state) => state.likesPageInfo);
   const myPerfumes = useAppStore((state) => state.myPerfumes);
   const myPerfumesPageInfo = useAppStore((state) => state.myPerfumesPageInfo);
@@ -304,9 +303,9 @@ export function MyPage() {
             },
             {
               icon: BookOpen,
-              label: "다이어리",
-              count: diaryEntries.length,
-              screen: "diary" as const,
+              label: "내 리뷰",
+              count: reviewsCount,
+              screen: "my-reviews" as const,
               color: "#B8A88A",
             },
           ].map((item, index) => (

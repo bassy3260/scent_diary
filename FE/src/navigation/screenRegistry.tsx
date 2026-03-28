@@ -28,6 +28,7 @@ import { MyPage } from "../pages/mypage/MyPage";
 import { TasteProfile } from "../pages/mypage/TasteProfile";
 import { HistoryScreen } from "../pages/mypage/HistoryScreen";
 import { SettingsScreen } from "../pages/mypage/SettingsScreen";
+import { MyReviewsScreen } from "../pages/mypage/MyReviewsScreen";
 import type { Perfume } from "../types";
 
 export interface ScreenHandlers {
@@ -128,6 +129,8 @@ export function renderScreen(
       return <HistoryScreen />;
     case "settings":
       return <SettingsScreen />;
+    case "my-reviews":
+      return <MyReviewsScreen />;
 
     default:
       return null;
@@ -166,4 +169,5 @@ export const BOTTOM_NAV_SCREENS: Screen[] = [
   "my-collection",
   "taste-profile",
   "history",
+  "my-reviews",
 ];

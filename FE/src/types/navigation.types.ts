@@ -4,6 +4,6 @@ export type Screen =
   | 'emotion' | 'analyzing' | 'results' | 'photo-recommend'
   | 'detail' | 'search' | 'collection' | 'my-collection'
   | 'diary' | 'diary-write' | 'diary-detail' | 'tasting-write'
-  | 'mypage' | 'taste-profile' | 'history' | 'settings';
+  | 'mypage' | 'taste-profile' | 'history' | 'settings' | 'my-reviews';
 
 export type TransitionType = 'tab' | 'push' | 'sheet' | 'fade';
