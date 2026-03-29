@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.fragrance.recommend.mapper.RecommendResultMapper">
+
+    <!-- ===================== ResultMap ===================== -->
+
+    <resultMap id="listRowResultMap" type="com.example.fragrance.recommend.dto.RecommendHistoryQueryResult$ListRow">
+        <result property="recommendResultId" column="recommend_result_id"/>
+        <result property="createTime"        column="create_time"/>
+        <result property="keyword"           column="keyword"/>
+        <result property="inputImage"        column="input_image"/>
+        <result property="perfumeId"         column="perfume_id"/>
+        <result property="perfumeImage"      column="perfume_image"/>
+        <result property="brand"             column="brand"/>
+        <result property="perfumeName"       column="perfume_name"/>
+    </resultMap>
+
+    <resultMap id="detailHeaderResultMap" type="com.example.fragrance.recommend.dto.RecommendHistoryQueryResult$DetailHeaderRow">
+        <result property="recommendResultId" column="recommend_result_id"/>
+        <result property="createTime"        column="create_time"/>
+        <result property="keyword"           column="keyword"/>
+        <result property="inputImage"        column="input_image"/>
+    </resultMap>
+
+    <resultMap id="detailPerfumeResultMap" type="com.example.fragrance.recommend.dto.RecommendHistoryQueryResult$DetailPerfumeRow">
+        <result property="perfumeId"    column="perfume_id"/>
+        <result property="perfumeImage" column="perfume_image"/>
+        <result property="brand"        column="brand"/>
+        <result property="perfumeName"  column="perfume_name"/>
+        <result property="reasons"      column="reasons"/>
+        <result property="accordName"   column="accord_name"/>
+        <result property="noteLevel"    column="note_level"/>
+        <result property="noteName"     column="note_name"/>
+    </resultMap>
+
+    <!-- ===================== 목록 조회 ===================== -->
+
+    <!--
+        서브쿼리로 recommend_result_id 단위 페이징 후 JOIN.
+        recommend_result 1건에 향수 여러 개가 있어도 페이지가 잘리지 않음.
+    -->
+    <select id="findHistoryList" resultMap="listRowResultMap">
+        SELECT rr.recommend_result_id,
+        rr.create_time,
+        rr.keyword,
+        rr.image_route AS input_image,
+        p.perfume_id,
+        p.image_route  AS perfume_image,
+        p.brand,
+        p.perfume_name
+        FROM (
+        SELECT rr2.recommend_result_id,
+        rr2.create_time,
+        rr2.keyword,
+        rr2.image_route
+        FROM recommend_result rr2
+        WHERE rr2.member_id = #{memberId}
+        AND rr2.is_delete = FALSE
+        ORDER BY rr2.create_time DESC
+        LIMIT #{size} OFFSET #{offset}
+        ) rr
+        INNER JOIN perfume_recommend pr ON pr.recommend_result_id = rr.recommend_result_id
+        AND pr.is_delete = FALSE
+        INNER JOIN perfume p            ON p.perfume_id = pr.perfume_id
+        AND p.is_delete  = FALSE
+        ORDER BY rr.create_time DESC, pr.perfume_recommend_id ASC
+    </select>
+
+    <select id="countHistory" resultType="long">
+        SELECT COUNT(*)
+        FROM recommend_result
+        WHERE member_id = #{memberId}
+        AND is_delete = FALSE
+    </select>
+
+    <!-- ===================== 상세 조회 ===================== -->
+
+    <select id="findDetailHeader" resultMap="detailHeaderResultMap">
+        SELECT recommend_result_id,
+        create_time,
+        keyword,
+        image_route AS input_image
+        FROM recommend_result
+        WHERE recommend_result_id = #{recommendResultId}
+        AND member_id           = #{memberId}
+        AND is_delete           = FALSE
+    </select>
+
+    <!--
+        perfume_recommend + perfume + accord + note를 한 번에 JOIN.
+        (perfume × accord × note) 조합으로 flat row 반환 → Service에서 조립.
+    -->
+    <select id="findDetailPerfumes" resultMap="detailPerfumeResultMap">
+        SELECT p.perfume_id,
+        p.image_route  AS perfume_image,
+        p.brand,
+        p.perfume_name,
+        pr.reasons,
+        a.accord_name,
+        LOWER(pn.note_level::TEXT) AS note_level,
+        n.note_name
+        FROM perfume_recommend pr
+        INNER JOIN perfume p       ON p.perfume_id  = pr.perfume_id
+        AND p.is_delete   = FALSE
+        LEFT JOIN perfume_accord pa ON pa.perfume_id = p.perfume_id
+        AND pa.is_delete  = FALSE
+        LEFT JOIN accord a          ON a.accord_id   = pa.accord_id
+        AND a.is_delete   = FALSE
+        LEFT JOIN perfume_note pn   ON pn.perfume_id = p.perfume_id
+        AND pn.is_delete  = FALSE
+        LEFT JOIN note n            ON n.note_id     = pn.note_id
+        AND n.is_delete   = FALSE
+        WHERE pr.recommend_result_id = #{recommendResultId}
+        AND pr.is_delete           = FALSE
+        ORDER BY pr.perfume_recommend_id ASC,
+        pa.accord_order ASC,
+        pn.note_level,
+        n.note_name
+    </select>
+
+</mapper>

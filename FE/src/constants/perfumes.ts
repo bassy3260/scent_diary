@@ -1,0 +1,10 @@
+export const PERFUME_IMAGES = {
+  amber:    'https://images.unsplash.com/photo-1765031117402-93b2e530edec?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxsdXh1cnklMjBwZXJmdW1lJTIwYm90dGxlJTIwYW1iZXIlMjBnbGFzc3xlbnwxfHx8fDE3NzI3NzgwNDl8MA&ixlib=rb-4.1.0&q=80&w=1080',
+  minimal:  'https://images.unsplash.com/photo-1761778304143-4c89e7dd2457?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxwZXJmdW1lJTIwYm90dGxlJTIwbWluaW1hbGlzdCUyMHdoaXRlJTIwZWxlZ2FudHxlbnwxfHx8fDE3NzI3Nzk4NTV8MA&ixlib=rb-4.1.0&q=80&w=1080',
+  woody:    'https://images.unsplash.com/photo-1757313202626-8b763ce254a1?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxuaWNoZSUyMHBlcmZ1bWUlMjBkYXJrJTIwd29vZHklMjBib3R0bGV8ZW58MXx8fHwxNzcyNzc5ODU2fDA&ixlib=rb-4.1.0&q=80&w=1080',
+  floral:   'https://images.unsplash.com/photo-1767131543879-73614ee63985?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxwZXJmdW1lJTIwYm90dGxlJTIwY3J5c3RhbCUyMGNsZWFyJTIwcm9zZXxlbnwxfHx8fDE3NzI3Nzk4NTZ8MA&ixlib=rb-4.1.0&q=80&w=1080',
+  citrus:   'https://images.unsplash.com/photo-1662466618522-61a1f2067299?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxjaXRydXMlMjBiZXJnYW1vdCUyMGZyZXNoJTIwcGVyZnVtZXxlbnwxfHx8fDE3NzI3Nzk4NTd8MA&ixlib=rb-4.1.0&q=80&w=1080',
+  oriental: 'https://images.unsplash.com/photo-1771757333317-8023b0646881?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxsdXh1cnklMjBmcmFncmFuY2UlMjBvcmllbnRhbCUyMG91ZHxlbnwxfHx8fDE3NzI3NzgwNTB8MA&ixlib=rb-4.1.0&q=80&w=1080',
+  forest:   'https://images.unsplash.com/photo-1622596781860-8fb07ef95c70?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxtaXN0eSUyMGZvcmVzdCUyMG1vcm5pbmclMjBncmVlbiUyMG5hdHVyZXxlbnwxfHx8fDE3NzI3Nzk4NTh8MA&ixlib=rb-4.1.0&q=80&w=1080',
+  gradient: 'https://images.unsplash.com/photo-1716032936129-6deb663e8ac9?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxhYnN0cmFjdCUyMHNvZnQlMjBncmFkaWVudCUyMHBhc3RlbCUyMHNtb2tlfGVufDF8fHx8MTc3Mjc3ODA1MHww&ixlib=rb-4.1.0&q=80&w=1080',
+};

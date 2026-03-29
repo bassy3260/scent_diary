@@ -1,0 +1,42 @@
+pipeline{
+    agent any
+    
+    environment{
+        IMAGE_NAME = "perfume-ml"
+        CONTAINER_NAME = "perfume-ml"
+        PORT = "8126"
+    }
+    
+    stages{
+        stage('Checkout'){
+            steps{
+                checkout scm
+            }
+        }
+    
+
+        stage('Build'){
+            steps{
+                dir('ML'){
+                    sh "docker build --no-cache -t ${IMAGE_NAME} ."
+                }
+            }
+        }
+        
+        stage('Deploy'){
+            steps{
+                withCredentials([file(credentialsId: 'perfume-ml-env',variable:'ENV_FILE')]){
+                sh """
+                    docker stop ${CONTAINER_NAME} || true
+                    docker rm ${CONTAINER_NAME} || true
+                    docker run -d \\
+                        --name ${CONTAINER_NAME} \\
+                        --env-file $ENV_FILE \\
+                        -p ${PORT}:8126 \\
+                        ${IMAGE_NAME}
+                """
+                }
+            }
+        }
+    }
+}

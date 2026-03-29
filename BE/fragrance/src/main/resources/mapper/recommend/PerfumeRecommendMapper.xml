@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.fragrance.recommend.mapper.PerfumeRecommendMapper">
+    <!-- useGeneratedKeys + keyProperty 로 GENERATED ALWAYS AS IDENTITY 개념으로 자동 생성된 PK를 INSERT 후 JAVA객체필드에 자동생성-->
+    <insert id="insertRecommendResult" useGeneratedKeys="true" keyProperty="recommendResultId">
+        INSERT INTO recommend_result(member_id, keyword,image_route)
+        VALUES (#{memberId}, #{keyword}, #{imageRoute})
+    </insert>
+
+    <insert id="insertPerfumeRecommend">
+        INSERT INTO perfume_recommend(recommend_result_id, perfume_id, reasons)
+        VALUES
+        <foreach collection="list" item="item" separator=",">
+            (
+             #{item.recommendResultId},
+             #{item.perfumeId},
+             #{item.reasons}
+            )
+        </foreach>
+    </insert>
+</mapper>
