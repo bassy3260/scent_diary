@@ -1,5 +1,6 @@
 import base64
 import logging
+import time
 from typing import Literal
 
 import numpy as np
@@ -53,15 +54,24 @@ def _build_recommend_list(perfumes: list, reasons: list[str]) -> RecommendListRe
 
 
 @router.post("/recommend/text")
-def recommend(req: RecommendRequest, request: Request) -> RecommendListResponse:
+async def recommend(req: RecommendRequest, request: Request) -> RecommendListResponse:
+    t_total = time.time()
     embedder = request.app.state.embedder
     perfume_rows = request.app.state.perfume_rows
 
     weights = _build_weights(req.note)
+
+    t0 = time.time()
     results = recommend_perfumes(req.keyword, embedder, weights, rows=perfume_rows, max_price=req.price, top_k=3)
+    logger.info("[타이밍] RunPod 임베딩 + 유사도 계산: %.2fs", time.time() - t0)
 
     logger.debug("추천 결과 %d건 반환", len(results))
-    reasons = generate_reasons_batch(req.keyword, results, mode="text")
+
+    t0 = time.time()
+    reasons = await generate_reasons_batch(req.keyword, results, mode="text")
+    logger.info("[타이밍] LLM 추천 이유 생성: %.2fs", time.time() - t0)
+
+    logger.info("[타이밍] 전체: %.2fs", time.time() - t_total)
     return _build_recommend_list(results, reasons)
 
 
@@ -106,7 +116,7 @@ async def recommend_by_image(req: ImageRecommendRequest, request: Request) -> Im
 
     # 6. LLM 추천 이유 생성 (1회 배치 호출) + 응답 포맷
     t0 = time.time()
-    reasons = generate_reasons_batch(top_mood, results, mode="mood")
+    reasons = await generate_reasons_batch(top_mood, results, mode="mood")
     recommend_list = _build_recommend_list(results, reasons)
     logger.info("[타이밍] LLM 추천 이유 생성: %.2fs", time.time() - t0)
 

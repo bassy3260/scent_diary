@@ -2,7 +2,7 @@ import json
 import logging
 import os
 
-import requests
+import httpx
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -27,7 +27,7 @@ def _perfume_info_block(perfume_info: dict) -> str:
     )
 
 
-def _call_llm(user_prompt: str) -> str | None:
+async def _call_llm(user_prompt: str) -> str | None:
     """GMS API 호출 공통 로직. 실패 시 None 반환."""
     headers = {
         "Content-Type": "application/json",
@@ -48,16 +48,17 @@ def _call_llm(user_prompt: str) -> str | None:
         "response_format": {"type": "json_object"},
     }
     try:
-        response = requests.post(GMS_API_URL, headers=headers, json=payload, timeout=15)
+        async with httpx.AsyncClient(timeout=15) as client:
+            response = await client.post(GMS_API_URL, headers=headers, json=payload)
         response.raise_for_status()
         result = response.json()
         message = result["choices"][0]["message"]["content"].strip()
         if not message:
             raise ValueError("LLM 응답이 비어있습니다")
         return message
-    except requests.Timeout:
+    except httpx.TimeoutException:
         logger.warning("LLM API 타임아웃: %s", GMS_API_URL)
-    except requests.HTTPError as e:
+    except httpx.HTTPStatusError as e:
         logger.error("LLM API HTTP 오류: %s", e)
     except (KeyError, IndexError) as e:
         logger.error("LLM 응답 파싱 오류: %s", e)
@@ -82,7 +83,7 @@ def _parse_batch_response(raw: str, count: int, default: str) -> list[str]:
         return [default] * count
 
 
-def generate_reasons_batch(
+async def generate_reasons_batch(
     input_text: str,
     perfumes: list[dict],
     mode: str = "text",
@@ -127,7 +128,7 @@ def generate_reasons_batch(
 반드시 아래 JSON 형식으로만 답변하세요 (다른 텍스트 없이):
 {json_template}"""
 
-    raw = _call_llm(prompt)
+    raw = await _call_llm(prompt)
     if raw is None:
         return [default] * count
 
