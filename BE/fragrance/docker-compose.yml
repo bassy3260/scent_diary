@@ -1,0 +1,34 @@
+# Local dev infrastructure.
+#
+# Only Elasticsearch is managed here — PostgreSQL and Redis already run
+# natively on this machine (localhost:5432 / localhost:6379) and hold real
+# data, so bundling them would either clash on the port or start empty.
+#
+#   docker compose up -d      # start
+#   docker compose down       # stop (keeps the es-data volume)
+#   docker compose down -v    # stop and wipe the ES index
+#
+# After a fresh start the ES index is empty — call GET /api/v1/perfume/migrate
+# once (authenticated) to repopulate it from PostgreSQL.
+
+services:
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.18.0
+    container_name: scent-es
+    restart: unless-stopped
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false          # matches application.yaml: http:// with no auth
+      - ES_JAVA_OPTS=-Xms256m -Xmx256m
+    ports:
+      - "9200:9200"
+    volumes:
+      - es-data:/usr/share/elasticsearch/data
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:9200 || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+
+volumes:
+  es-data:
