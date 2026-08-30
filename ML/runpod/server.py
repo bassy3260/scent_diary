@@ -89,7 +89,11 @@ MOOD_LABEL_VARIANTS = {
 # 모델 로딩 (서버 시작 시 1회 실행)
 # ============================================================
 print("BAAI/bge-m3 모델 로딩 중...")
-embed_model = SentenceTransformer("BAAI/bge-m3", model_kwargs={"torch_dtype": torch.float16})
+_use_cuda = torch.cuda.is_available()
+embed_model = SentenceTransformer(
+    "BAAI/bge-m3",
+    model_kwargs={"torch_dtype": torch.float16} if _use_cuda else {},
+)
 embed_model.eval()
 print("BAAI/bge-m3 모델 로딩 완료!")
 

@@ -42,3 +42,9 @@ out/
 .env.*
 application-local.yml
 application-local.yaml
+
+### scent_diary local dev assets ###
+local-assets/
+scripts/perfume_urls.tsv
+scripts/manifest.csv
+scripts/image_route_*.sql

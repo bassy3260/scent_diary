@@ -9,8 +9,13 @@ load_dotenv()
 
 logger = logging.getLogger(__name__)
 
-GMS_API_URL = "https://gms.ssafy.io/gmsapi/api.openai.com/v1/chat/completions"
+# Google Gemini의 OpenAI 호환 엔드포인트 (응답 구조가 OpenAI와 동일해 파싱 로직 재사용 가능)
+GMS_API_URL = os.getenv(
+    "LLM_API_URL",
+    "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions",
+)
 GMS_API_KEY = os.getenv("GEMINI_API_KEY")
+LLM_MODEL = os.getenv("LLM_MODEL", "gemini-2.5-flash")
 
 
 def _perfume_info_block(perfume_info: dict) -> str:
@@ -34,10 +39,10 @@ def _call_llm(user_prompt: str) -> str | None:
         "Authorization": f"Bearer {GMS_API_KEY}"
     }
     payload = {
-        "model": "gpt-4o-mini",
+        "model": LLM_MODEL,
         "messages": [
             {
-                "role": "developer",
+                "role": "system",
                 "content": "당신은 향수 추천 전문가입니다. 사용자의 취향과 향수 정보를 바탕으로 추천 이유를 자연스럽게 설명해주세요."
             },
             {
