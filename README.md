@@ -76,14 +76,14 @@
 
 ![시스템 아키텍처](images/architecture.png)
 
-- **사용자 요청**은 `Nginx` 리버스 프록시를 거쳐 **Prod-net** 의 `React` 정적 서빙과 `Spring Boot` API로 라우팅됩니다.
+- **사용자 요청**은 `Nginx` 리버스 프록시를 거쳐 React` 정적 서빙과 `Spring Boot` API로 라우팅됩니다.
 - **CI/CD** — 개발자가 `GitLab` 에 브랜치를 머지하면 `Jenkins` 가 빌드 후 **Dev-net / Prod-net** 컨테이너로 각각 배포합니다.
 - **검색** — `Spring Boot` ↔ `Elasticsearch`. 향수 색인(이름·브랜드·노트·초성)에 검색 키워드를 질의하고 결과를 받습니다.
 - **이미지 저장** — 추천용 업로드 이미지·향수 이미지는 `AWS S3` 에 저장하고 서빙합니다.
-- **추천** — `Spring Boot` ↔ `FastAPI(ML)`. ML 서버는 협업 필터링(`scikit-learn` / NumPy)과
-  `RunPod` 서버리스 GPU(`YOLOv8` → `FashionCLIP`) 를 조합해 추천 결과를 만듭니다.
-- **추천 이유** — 추천 결과가 나오면 `GMS(Gemini 2.5 Flash)` 가 향수별 추천 근거를 한국어로 생성합니다.
-- 전체 스택은 `AWS EC2` 위에서 Docker 컨테이너로 구동됩니다. `PostgreSQL` · `Redis` 는 네트워크별로 분리 운영합니다.
+- **추천** — `Spring Boot` ↔ `FastAPI(ML)`. ML 서버는 협업 필터링과
+  `RunPod` 서버리스 GPU를 조합해 추천 결과를 만듭니다.
+- **추천 이유** — 추천 결과가 나오면 LLM API 가 향수별 추천 근거를 한국어로 생성합니다.
+- 전체 스택은 `AWS EC2` 위에서 Docker 컨테이너로 구동됩니다. 
 
 ---
 
@@ -108,7 +108,7 @@ flowchart LR
 ```mermaid
 flowchart LR
     A["옷차림·무드보드<br/>이미지 업로드"] --> B["YOLOv8<br/>인물·의상 검출/크롭"]
-    B --> C["FashionCLIP · SigLIP 앙상블<br/>무드 분류 (무드별 점수)"]
+    B --> C["FashionSigLIP 앙상블<br/>무드 분류 (무드별 점수)"]
     C --> D["mood → accord<br/>벡터 변환"]
     D --> E["향수 벡터와<br/>유사도 랭킹"]
     E --> F["GMS(Gemini)<br/>추천 이유 생성"]
