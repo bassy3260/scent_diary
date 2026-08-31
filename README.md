@@ -4,7 +4,7 @@
 
 **맡아보지 않아도, 나에게 어울리는 향수를 찾는 AI 향수 추천 서비스**
 
-![기간](https://img.shields.io/badge/기간-2026.02.07_~_2026.04.01-8A6FBF)
+![기간](https://img.shields.io/badge/기간-2026.02.15_~_2026.04.01-8A6FBF)
 ![팀 향기록](https://img.shields.io/badge/팀_향기록-7인-8A6FBF)
 ![SSAFY](https://img.shields.io/badge/SSAFY-특화_프로젝트-0A66C2)
 
@@ -28,16 +28,13 @@
 
 - **검색** — 이름·브랜드·노트는 물론 초성으로도 향수를 찾습니다. (Elasticsearch)
 - **텍스트 추천** — "비 오는 날 카페에서 책 읽는 느낌" 같은 문장을 향(accord) 벡터로 바꿔 추천합니다.
-- **이미지 추천** — 옷차림·무드보드 사진을 올리면 그 분위기에 맞는 향수를 추천합니다. (YOLO + FashionCLIP)
+- **이미지 추천** — 옷차림·무드보드 사진을 올리면 그 분위기에 맞는 향수를 추천합니다. (FashionCLIP)
 - **취향 분석** — 좋아요한 향수를 바탕으로 협업 필터링으로 개인화 추천합니다.
 - **추천 이유** — 모든 추천 결과에 LLM이 "왜 이 향수인지"를 한국어로 설명해 줍니다.
 
-> SSAFY 특화 프로젝트 · 진행 기간 `2026.01 ~ 2026.02` <!-- TODO: 기간 확인 -->
-> 팀명 **향기록** · 7인 — FE 2 · BE 3 · AI 2 (BE 3인 중 2인이 인프라 겸임)
-
 ---
 
-## 🛠️ 기술 스택
+## 🛠️ 기술 스택 
 
 ### Frontend
 ![React](https://img.shields.io/badge/React_19-61DAFB?style=for-the-badge&logo=react&logoColor=black)
