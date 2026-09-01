@@ -176,9 +176,8 @@ uvicorn app.main:app --reload --port 8000
 |---|---|
 | API 명세 (Swagger UI) | 앱 구동 후 `http://<host>:8081/swagger-ui.html` |
 | OpenAPI JSON | `http://<host>:8081/v3/api-docs` |
-| ERD | `<!-- TODO: 링크 또는 images/erd.png -->` |
 | 포팅 매뉴얼 | [`exec/`](exec/) |
-| 발표 자료 | `<!-- TODO -->` |
+
 
 ---
 
