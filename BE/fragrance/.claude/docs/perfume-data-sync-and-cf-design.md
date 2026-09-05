@@ -1,9 +1,11 @@
 # 향수 데이터 정합성 + CF 추천 재적재 설계 논의
 
-작성일: 2026-09-05
-상태: **임베딩 동기화 파이프라인(트리거 → 아웃박스 → 워커 → ML 단건 임베딩 → DB 반영)
-end-to-end 검증 완료.** 재시도/포기(DLQ) 로직도 구현 완료. 남은 건 ES 단건 반영과 CF
-재적재 — 6번 체크리스트 참고.
+작성일: 2026-09-05 (갱신: 2026-09-06)
+상태: **임베딩+ES 동기화 파이프라인(트리거 → 아웃박스 → 워커 → ML 단건 임베딩 → ES 단건
+upsert/delete) end-to-end 검증 완료.** 재시도/포기(DLQ)도 구현+검증 완료.
+`perfume_rows`(ML 추천 서빙용 캐시) 재로드도 "dirty 체크 + 최소 간격 제한" 방식으로
+구현+검증 완료. 남은 건 CF 쪽에 같은 재로드 패턴 적용, ES 호출 타임아웃 미설정 —
+6번 체크리스트 참고.
 
 ---
 
@@ -286,17 +288,44 @@ FastAPI가 느려지면 이 취향 맵 페이지 로딩도 그 영향을 그대�
       `perfume_id` 전체를 찾아 아웃박스에 기록 (3-1절 참고, 파급 범위 큼 주의). 검증 완료
       (사용자가 직접 함수/트리거를 재작성해서 파급 동작까지 확인함)
 - [x] 아웃박스 폴링 워커 — `OutboxWorker`(BE, `@Scheduled(fixedDelay=10_000)`), 배치 내
-      `perfume_id` 중복 제거 후 처리(2-8 발견 계기가 된 실측 로그 참고). 지금은 뼈대만이고
-      `handle()` 내부(ML 호출/ES 반영)는 비어있음 — 아래 두 항목이 그 자리를 채움
-- [ ] ML 쪽에 단건 임베딩 엔드포인트 신규 (`embed.py` 로직을 API로) — 진행 중
-- [ ] ES upsert를 단건으로 처리하는 매퍼/서비스 신규, DELETE 이벤트는 ES `delete` 호출
-- [ ] (2-8 신규) `perfume_rows`도 CF와 같은 방식으로 주기적 재로드 추가 필요 — 별도 작업
+      `perfume_id` 중복 제거 후 처리(2-8 발견 계기가 된 실측 로그 참고)
+- [x] ML 쪽 단건 임베딩 엔드포인트 (`POST /api/v1/embed/perfume/{id}`, `embedding_service.py`)
+      — `OutboxWorker.handle()`이 실제로 호출하도록 연결 완료, end-to-end 검증 완료
+      (트리거 → outbox → 워커 → ML 호출 → `perfume_embedding` 실제 갱신 확인)
+- [x] 재시도/포기(DLQ) — `V6__outbox_retry_tracking.sql` (`retry_count`/`given_up`/`last_error`),
+      `MAX_RETRIES=5` 초과 시 포기. SQL 검증 완료, 실전에서는 이번엔 전부 성공해서 발동 안 함
+- [x] **ES upsert를 단건으로 처리하는 매퍼/서비스** — `PerfumeMapper.findByIdForElasticsearch`
+      + `PerfumeSearchService.syncPerfumeToElasticsearch(perfumeId)`. `event_type`으로 분기 안
+      하고, 그 순간 DB를 다시 조회해서 `null`(없거나 soft-delete)이면 ES `delete`, 있으면
+      `save`(upsert)로 처리. `OutboxWorker.handle()`에서 ML 호출 다음에 이어서 호출.
+      **end-to-end 검증 완료**: `perfume_id=4`를 실제로 soft-delete → ES 문서 삭제 확인
+      (`found: False`) → 복구 → ES 문서 재생성 확인(`found: True`), 양방향 다 확인함.
+      이걸로 `migrateAllToElasticsearch()`의 "삭제 미반영" 버그가 트리거 경로로는 해결됨
+      (전체 재색인 자체의 upsert-only 문제는 `architecture-decisions.md` 참고, 별도 남음)
+- [x] **`perfume_rows` 재로드** (2-8 해결) — 처음엔 순수 시간 기반(30초)으로 구현했다가,
+      "dirty 체크 + 최소 간격 제한" 방식으로 업그레이드함:
+      - `V7__outbox_processed_at_index.sql` — dirty 체크 쿼리용 인덱스
+      - `ML/app/db/database.py`의 `has_outbox_activity_since(since)` — `outbox_events`에서
+        마지막 재로드 이후 완료된(`processed=true`) 이벤트가 있는지 확인 (새 컬럼 없이 기존
+        아웃박스 테이블을 dirty 신호로 재사용)
+      - `ML/app/main.py`의 `_reload_perfume_rows_periodically` — 5초마다 dirty 체크
+        (`PERFUME_ROWS_DIRTY_CHECK_SECONDS`), 바뀐 게 있어도 최소 30초
+        (`PERFUME_ROWS_RELOAD_SECONDS`) 간격으로만 실제 재로드. 블루-그린 스왑(새 리스트
+        다 만든 뒤 `app.state.perfume_rows`에 한 번에 대입)이라 재로드 중 서빙 끊김 없음
+      - **검증 완료**: 아무 변화 없을 때 6~8초 대기해도 재로드 로그 안 뜸 확인, `outbox_events`에
+        가짜 처리완료 행을 직접 넣어서 다음 체크 주기(2초 이내)에 실제 재로드(1314건,
+        1.03s) 발동하는 것까지 확인
+- [ ] (후속) DLQ `given_up` 항목을 수동으로 재실행(redrive)하는 API/스크립트 — 지금은 수동 SQL만
+- [ ] (후속) `PerfumeSearchService.syncPerfumeToElasticsearch` 호출에 명시적 타임아웃 없음
+      (ML 호출 쪽엔 있음) — 발견만 하고 아직 안 고침
 
 **CF 추천**
-- [ ] `cf_recommender.load()`를 주기적으로 재호출하는 스케줄러 추가 (1차: 단순 시간 기반)
+- [ ] `cf_recommender.load()`를 주기적으로 재호출하는 스케줄러 추가 — `perfume_rows`에서
+      이미 검증된 dirty 체크(`has_outbox_activity_since`) + 최소 간격 패턴을 그대로
+      재사용하면 됨(`_reload_perfume_rows_periodically`를 참고용 템플릿으로 삼아서 CF용으로
+      복제/일반화). 순수 시간 기반보다 처음부터 이 방식으로 가는 게 나을 듯
 - [ ] `fetch_user_likes`, `fetch_user_accord_tf`, `fetch_perfume_accord_map`에
       `perfume.is_delete = false` 필터 추가 (2-7 버그 수정, 재적재 주기와 무관하게 필요)
-- [ ] (규모 커지면) dirty flag + 최소 간격 디바운스로 고도화
 
 **타이밍 계측**
 - [ ] `recommend_by_member`에 `/recommend/image`와 같은 패턴의 타이밍 로그 추가
