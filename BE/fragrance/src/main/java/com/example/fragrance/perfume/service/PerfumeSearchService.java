@@ -90,4 +90,24 @@ public class PerfumeSearchService {
 
         return "SUCCESS: Migrated " + allPerfumes.size() + " perfumes to ES";
     }
+
+    /**
+     * 향수 1건만 ES에 반영한다 (outbox 워커가 호출).
+     * event_type(UPDATE/DELETE 등)으로 분기하지 않고, 지금 이 순간 DB에서
+     * 다시 조회한 상태를 그대로 신뢰한다 -- perfume이 없거나 is_delete=true면
+     * ES에서 제거, 살아있으면 upsert. 트리거가 기록해둔 event_type 문자열보다
+     * "지금 DB에 뭐가 있는지"가 더 확실한 진실이기 때문.
+     */
+    @Transactional(readOnly = true)
+    public void syncPerfumeToElasticsearch(Long perfumeId) {
+        PerfumeSearchDto dto = perfumeMapper.findByIdForElasticsearch(perfumeId);
+
+        if (dto == null) {
+            elasticsearchOperations.delete(String.valueOf(perfumeId), PerfumeSearchDto.class);
+            return;
+        }
+
+        dto.setChosung(KoreanUtils.getChosung(dto.getName()));
+        elasticsearchOperations.save(dto);
+    }
 }

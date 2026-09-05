@@ -1,5 +1,6 @@
 
 import os
+from datetime import datetime
 from dotenv import load_dotenv
 from sqlalchemy import create_engine,text
 
@@ -174,6 +175,23 @@ def upsert_perfume_embedding(
             "single_embedding": _to_pgvector_literal(single_embedding),
             "desc_embedding": _to_pgvector_literal(desc_embedding),
         })
+
+
+def has_outbox_activity_since(since: datetime) -> bool:
+    """BE(Spring)의 outbox 워커가 `since` 이후로 향수 하나라도 성공 처리했는지 반환.
+
+    perfume_rows(메모리 캐시)의 dirty 체크용 -- perfume_embedding 자체엔 수정
+    시각 컬럼이 없어서, 같은 DB의 outbox_events.processed_at(워커가 실제로
+    반영을 끝낸 시각)을 대신 신호로 쓴다. idx_outbox_events_processed_at
+    (WHERE processed = true) 인덱스를 그대로 탐."""
+    query = text("""
+        SELECT EXISTS (
+            SELECT 1 FROM outbox_events
+            WHERE processed = true AND processed_at > :since
+        )
+    """)
+    with get_connection() as conn:
+        return bool(conn.execute(query, {"since": since}).scalar())
 
 
 def fetch_perfumes():

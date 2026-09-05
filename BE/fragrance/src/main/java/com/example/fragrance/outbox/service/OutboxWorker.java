@@ -13,14 +13,14 @@ import org.springframework.web.client.RestTemplate;
 
 import com.example.fragrance.outbox.entity.OutboxEvent;
 import com.example.fragrance.outbox.mapper.OutboxEventMapper;
+import com.example.fragrance.perfume.service.PerfumeSearchService;
 
 import lombok.extern.slf4j.Slf4j;
 
 /**
  * outbox_events를 주기적으로 폴링해서 처리하는 워커.
  *
- * 지금은 향수 1건당 ML의 단건 임베딩 재계산 API만 호출함.
- * ES 반영(단건 upsert / DELETE 이벤트는 ES에서도 delete)은 다음 단계에서 여기에 채워 넣을 예정.
+ * 향수 1건당 ML의 단건 임베딩 재계산 API를 호출하고, 이어서 ES에도 그 향수 1건을 반영한다.
  */
 @Slf4j
 @Component
@@ -30,6 +30,7 @@ public class OutboxWorker {
     private static final int MAX_RETRIES = 5;
 
     private final OutboxEventMapper outboxEventMapper;
+    private final PerfumeSearchService perfumeSearchService;
     private final RestTemplate embeddingApiClient;
     private final String fastapiUrl;
 
@@ -39,10 +40,12 @@ public class OutboxWorker {
     // @Scheduled 스레드 자체가 막혀, 그 뒤로 폴링이 전부 멈추는 훨씬 심각한 문제가 됨.
     public OutboxWorker(
             OutboxEventMapper outboxEventMapper,
+            PerfumeSearchService perfumeSearchService,
             RestTemplateBuilder restTemplateBuilder,
             @Value("${fastapi.url}") String fastapiUrl
     ) {
         this.outboxEventMapper = outboxEventMapper;
+        this.perfumeSearchService = perfumeSearchService;
         this.fastapiUrl = fastapiUrl;
         this.embeddingApiClient = restTemplateBuilder
                 .connectTimeout(Duration.ofSeconds(5))
@@ -89,12 +92,14 @@ public class OutboxWorker {
     }
 
     private void handle(Long perfumeId, List<OutboxEvent> group) {
-        // TODO: ES 반영은 다음 조각에서 여기 추가 -- DELETE 이벤트면 ES에서도 delete,
-        //  그 외에는 이 perfumeId 한 건만 upsert.
         String url = fastapiUrl + "/api/v1/embed/perfume/" + perfumeId;
         embeddingApiClient.postForObject(url, null, String.class);
 
-        log.debug("[OutboxWorker] perfumeId={} 임베딩 재계산 요청 완료 (묶인 이벤트: {})", perfumeId,
+        // event_type으로 분기하지 않는다 -- syncPerfumeToElasticsearch가 그 시점의 DB 상태를
+        // 다시 조회해서 살아있으면 upsert, 없거나 soft-delete면 ES에서 제거를 알아서 처리함.
+        perfumeSearchService.syncPerfumeToElasticsearch(perfumeId);
+
+        log.debug("[OutboxWorker] perfumeId={} 임베딩+ES 반영 완료 (묶인 이벤트: {})", perfumeId,
                 group.stream().map(OutboxEvent::getEventType).collect(Collectors.joining(", ")));
     }
 

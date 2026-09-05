@@ -18,4 +18,7 @@ public interface PerfumeMapper {
     long countSearchPerfumes(@Param("search") String search);
 
     List<PerfumeSearchDto> findAllForElasticsearch();
+
+    /** findAllForElasticsearch()의 단건 버전. 존재하지 않거나 soft-delete된 향수면 null. */
+    PerfumeSearchDto findByIdForElasticsearch(@Param("perfumeId") Long perfumeId);
 }

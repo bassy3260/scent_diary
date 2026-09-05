@@ -241,12 +241,59 @@ psycopg2가 리스트를 일반 배열 리터럴로 잘못 변환해버리는 �
 
 ---
 
+## ADR 8. `perfume_rows` 캐시 재로드 — Dirty 체크 + 최소 간격 제한
+
+### Context
+ML의 `/recommend/text`, `/recommend/image`가 유사도 계산에 쓰는 `perfume_rows`도
+`cf_recommender`와 같은 문제(서버 시작 시 1회 로드, 이후 절대 갱신 안 됨)를 갖고 있었다
+(ADR 6 Context에서 같이 발견). ADR 6에서는 "1차: 단순 시간 기반, 2차: dirty flag + 디바운스"로
+단계적으로 가기로 했었는데, 실제 구현 단계에서 바로 2차로 가기로 결정을 바꿨다.
+
+### Decision
+`outbox_events` 테이블을 그대로 "dirty 신호"로 재사용하는 방식을 택했다. 새 컬럼이나
+별도 상태 저장 없이, "마지막 재로드 이후로 처리 완료된 이벤트가 있는가"를 매번 쿼리로
+확인한다(`has_outbox_activity_since`). 백그라운드 루프가 `PERFUME_ROWS_DIRTY_CHECK_SECONDS`
+(5초)마다 이 확인을 하고, dirty이면서 마지막 재로드로부터 `PERFUME_ROWS_RELOAD_SECONDS`
+(30초, 최소 간격) 이상 지났을 때만 실제로 `load_perfume_rows()`를 다시 호출해
+`app.state.perfume_rows`를 통째로 교체한다(블루-그린 스왑).
+
+### Alternatives
+- **순수 시간 기반 스케줄만** (당초 ADR 6의 1차안): 구현이 제일 단순하지만, 바뀐 게
+  하나도 없어도 매번 전체(1314건, 실측 0.6~1초)를 다시 읽어오는 낭비가 생김. 실제
+  구현하면서 "이왕 만드는 거 처음부터 낭비 없는 방식으로 가자"고 판단해 1차안을
+  건너뛰고 바로 아래 방식으로 감.
+- **Spring(OutboxWorker)이 향수 갱신 직후 ML에 "지금 재로드해" 호출**: 이벤트 즉시 반응
+  이라 제일 빨라 보이지만, `perfume_rows` 재로드는 건별이 아니라 전체를 다시 읽는
+  배치성 작업이라(ADR 6과 동일 이유) 향수 여러 건이 짧은 시간에 바뀌면 똑같은 전체
+  재로드가 여러 번 겹쳐 도는 문제가 생김. 또한 스프링이 ML의 내부 캐싱 전략(언제
+  새로고침할지)까지 알아야 해서 두 서비스가 불필요하게 얽히게 됨. 기각.
+- **아예 새 "dirty" 테이블/컬럼을 만들기**: 더 명시적이지만, 이미 있는 `outbox_events`가
+  "무언가 바뀌었다"는 사실을 정확히 기록하고 있어서 그대로 재사용하는 게 중복을 피하는
+  선택. 기각(불필요).
+
+### Consequences
+- `outbox_events.processed_at`을 조회 조건으로 쓰므로 인덱스(`V7__outbox_processed_at_index.sql`,
+  `WHERE processed = true` 부분 인덱스)를 추가로 만들었다.
+- dirty 체크 자체가 5초마다 도는 추가 쿼리이긴 하지만 `EXISTS` + 인덱스라 매우 저렴함.
+- 검증 완료: 변화 없을 때 재로드 안 일어남 확인, `outbox_events`에 처리완료 행을 직접
+  넣어 다음 체크 주기(2초 이내)에 재로드 발동하는 것까지 확인(1314건, 1.03s).
+- CF 쪽(`cf_recommender.load()`) 재로드도 아직 미구현인데, 이 구현을 그대로 템플릿
+  삼아 복제/일반화하면 될 것으로 봄 — ADR 6은 그 상태로 유지.
+
+---
+
 ## 아직 결정 안 하고 남겨둔 것
 
-- **ES 재색인 방식**: 지금은 `PerfumeSearchService.migrateAllToElasticsearch()`가
-  upsert만 하고 삭제된 문서를 절대 안 지우는 버그가 있음(발견만 하고 미수정). 업계 표준인
+- **ES 전체 재색인(`migrateAllToElasticsearch`) 방식**: 트리거 경로로 들어오는 개별
+  변경은 ADR 3/`syncPerfumeToElasticsearch`로 삭제까지 정확히 반영되도록 이미 해결됨
+  (검증 완료 — soft-delete 시 ES 문서 삭제, 복구 시 재생성 둘 다 확인). 다만
+  `migrateAllToElasticsearch()`(전체 재색인 API) 자체는 여전히 upsert-only라 이걸로
+  전체 재색인을 돌리면 그새 삭제된 향수가 안 지워지는 문제가 남아있음. 업계 표준인
   "Reindex + Alias Swap"(새 인덱스에 전체를 새로 채우고 alias만 원자적으로 교체) 방식을
   검토 중 — 다음 ADR 후보.
+- **`PerfumeSearchService.syncPerfumeToElasticsearch`에 타임아웃 없음**: ML 호출 쪽(ADR 4)엔
+  전용 타임아웃을 걸었는데, 바로 다음에 실행되는 ES 호출엔 아직 명시적 타임아웃이 없음
+  (Spring Data Elasticsearch 클라이언트 기본값에 의존 중). 발견만 하고 아직 미수정.
 - **CF 모델 교체 시 Blue-Green 스왑**: 지금 설계(`load()` 재호출)는 재학습 도중 기존
   서빙을 막을 위험이 있음. `app.state.cf_recommender`를 새 인스턴스로 다 만든 뒤
   참조만 교체하는 방식이 더 안전 — 다음 ADR 후보.
