@@ -1,7 +1,20 @@
+buildscript {
+	repositories {
+		mavenCentral()
+	}
+	dependencies {
+		// The Flyway Gradle plugin runs with its own classloader, so DB-specific
+		// support and the JDBC driver must be added here, not under `dependencies {}`.
+		classpath 'org.flywaydb:flyway-database-postgresql:11.7.2'
+		classpath 'org.postgresql:postgresql:42.7.4'
+	}
+}
+
 plugins {
 	id 'java'
 	id 'org.springframework.boot' version '3.5.11'
 	id 'io.spring.dependency-management' version '1.1.7'
+	id 'org.flywaydb.flyway' version '11.7.2'
 }
 
 group = 'com.example'
@@ -24,6 +37,9 @@ dependencies {
 	implementation 'org.mybatis.spring.boot:mybatis-spring-boot-starter:3.0.4'
 //	runtimeOnly 'com.mysql:mysql-connector-j'
     implementation 'org.postgresql:postgresql'
+
+    implementation 'org.flywaydb:flyway-core'
+    implementation 'org.flywaydb:flyway-database-postgresql'
 
     implementation 'org.springframework.boot:spring-boot-starter-security'
 	implementation 'io.jsonwebtoken:jjwt-api:0.12.6'
@@ -48,4 +64,17 @@ dependencies {
 
 tasks.named('test') {
 	useJUnitPlatform()
+}
+
+// Used only for CLI ops (flywayInfo/flywayBaseline/flywayRepair) against a real
+// DB; connection info comes from the same env vars as application.yaml / .env,
+// never hardcoded here. The app itself picks up Flyway via Spring Boot autoconfig.
+flyway {
+	url = "jdbc:postgresql://${System.getenv('DB_HOST') ?: 'localhost'}:${System.getenv('DB_PORT') ?: '5432'}/${System.getenv('DB_NAME') ?: ''}"
+	user = System.getenv('DB_USERNAME')
+	password = System.getenv('DB_PASSWORD')
+	locations = ['filesystem:src/main/resources/db/migration']
+	baselineOnMigrate = true
+	baselineVersion = '4'
+	baselineDescription = 'pre-flyway schema (adopted 2026-09-05)'
 }
