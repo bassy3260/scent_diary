@@ -48,3 +48,8 @@ local-assets/
 scripts/perfume_urls.tsv
 scripts/manifest.csv
 scripts/image_route_*.sql
+scripts/db_backups/
+
+### JVM crash dumps (메모리 부족 등으로 gradle 데몬이 죽을 때 생성됨, 매번 다른 pid로 반복 생성) ###
+hs_err_pid*.log
+replay_pid*.log

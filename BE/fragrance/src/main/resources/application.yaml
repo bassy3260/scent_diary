@@ -15,6 +15,17 @@ spring:
       password: ${REDIS_PASSWORD}
   elasticsearch:
     uris: http://${ES_HOST}:${ES_PORT}
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    # This project's DBs (local + prod) already had this exact schema before
+    # Flyway was introduced. baseline-on-migrate marks V1..V4 as already
+    # applied (without re-running them) the first time Flyway connects to
+    # such a DB, then runs any V5+ normally. A genuinely empty DB (fresh
+    # teammate/CI setup) ignores the baseline and just runs V1..V4 for real.
+    baseline-on-migrate: true
+    baseline-version: "4"
+    baseline-description: "pre-flyway schema (adopted 2026-09-05)"
 
 jwt:
   secret: ${JWT_SECRET:default-dev-secret-key-must-be-at-least-256-bits-long-for-hs256}

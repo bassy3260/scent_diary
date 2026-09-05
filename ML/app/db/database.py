@@ -88,6 +88,94 @@ def fetch_perfume_cards(perfume_ids: list[int]) -> list[dict]:
     return [row_map[pid] for pid in perfume_ids if pid in row_map]
 
 
+def fetch_perfume_by_id(perfume_id: int) -> dict | None:
+    """향수 1건의 임베딩 재계산에 필요한 데이터 반환. 없으면 None (fetch_perfumes()의 단건 버전)."""
+    query = text("""
+        SELECT
+        p.perfume_id,
+        p.perfume_name,
+        p.price,
+        p.description,
+        (SELECT STRING_AGG(a.accord_name, ',')
+         FROM perfume_accord pa JOIN accord a ON a.accord_id = pa.accord_id
+         WHERE pa.perfume_id = p.perfume_id) AS accords,
+        (SELECT STRING_AGG(n.note_name, ',')
+         FROM perfume_note pn JOIN note n ON n.note_id = pn.note_id
+         WHERE pn.perfume_id = p.perfume_id AND pn.note_level = 'TOP') AS top_notes,
+        (SELECT STRING_AGG(n.note_name, ',')
+         FROM perfume_note pn JOIN note n ON n.note_id = pn.note_id
+         WHERE pn.perfume_id = p.perfume_id AND pn.note_level = 'MIDDLE') AS middle_notes,
+        (SELECT STRING_AGG(n.note_name, ',')
+         FROM perfume_note pn JOIN note n ON n.note_id = pn.note_id
+         WHERE pn.perfume_id = p.perfume_id AND pn.note_level = 'BASE') AS base_notes,
+        (SELECT STRING_AGG(n.note_name, ',')
+         FROM perfume_note pn JOIN note n ON n.note_id = pn.note_id
+         WHERE pn.perfume_id = p.perfume_id AND pn.note_level = 'SINGLE') AS single_notes
+        FROM perfume p
+        WHERE p.perfume_id = :perfume_id
+    """)
+    with get_connection() as conn:
+        row = conn.execute(query, {"perfume_id": perfume_id}).mappings().first()
+    return dict(row) if row else None
+
+
+def _to_pgvector_literal(values: list[float]) -> str:
+    """pgvector의 vector 타입은 '[0.1,0.2,...]' 형식의 텍스트를 CAST로 받아들인다.
+    (이 프로젝트엔 pgvector 파이썬 패키지의 어댑터 등록이 없어서, 리스트를 바로
+    바인딩하면 psycopg2가 일반 배열 리터럴로 변환해버려 타입이 안 맞음 -- 그래서
+    직접 이 형식의 문자열로 만들어 CAST(:x AS vector)로 넘긴다.)"""
+    return "[" + ",".join(str(v) for v in values) + "]"
+
+
+def upsert_perfume_embedding(
+    perfume_id: int,
+    content: str,
+    accords_list: list[str],
+    main_accord: str | None,
+    accord_embedding: list[float],
+    top_embedding: list[float],
+    middle_embedding: list[float],
+    base_embedding: list[float],
+    single_embedding: list[float],
+    desc_embedding: list[float],
+) -> None:
+    """perfume_embedding에 향수 1건을 upsert (scripts/embed.py의 ON CONFLICT 로직과 동일)."""
+    query = text("""
+        INSERT INTO perfume_embedding
+        (perfume_id, content, accords, main_accord,
+         accord_embedding, top_embedding, middle_embedding, base_embedding, single_embedding, desc_embedding)
+        VALUES
+        (:perfume_id, :content, :accords, :main_accord,
+         CAST(:accord_embedding AS vector), CAST(:top_embedding AS vector),
+         CAST(:middle_embedding AS vector), CAST(:base_embedding AS vector),
+         CAST(:single_embedding AS vector), CAST(:desc_embedding AS vector))
+        ON CONFLICT (perfume_id) DO UPDATE SET
+            content          = EXCLUDED.content,
+            accords          = EXCLUDED.accords,
+            main_accord      = EXCLUDED.main_accord,
+            accord_embedding = EXCLUDED.accord_embedding,
+            top_embedding    = EXCLUDED.top_embedding,
+            middle_embedding = EXCLUDED.middle_embedding,
+            base_embedding   = EXCLUDED.base_embedding,
+            single_embedding = EXCLUDED.single_embedding,
+            desc_embedding   = EXCLUDED.desc_embedding
+    """)
+    # engine.begin(): 블록이 정상 종료되면 자동 커밋, 예외가 나면 자동 롤백.
+    with engine.begin() as conn:
+        conn.execute(query, {
+            "perfume_id": perfume_id,
+            "content": content,
+            "accords": accords_list,
+            "main_accord": main_accord,
+            "accord_embedding": _to_pgvector_literal(accord_embedding),
+            "top_embedding": _to_pgvector_literal(top_embedding),
+            "middle_embedding": _to_pgvector_literal(middle_embedding),
+            "base_embedding": _to_pgvector_literal(base_embedding),
+            "single_embedding": _to_pgvector_literal(single_embedding),
+            "desc_embedding": _to_pgvector_literal(desc_embedding),
+        })
+
+
 def fetch_perfumes():
     with get_connection() as conn:
 

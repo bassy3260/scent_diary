@@ -121,10 +121,21 @@
         SET is_delete = true, delete_time = NOW()
         WHERE member_id = #{memberId};
 
+        /* 일기 사진 (diary_image) - diary의 자식이라 함께 처리하지 않으면
+           탈퇴 회원 소유 diary는 안 보이는데 사진만 남는 상태가 됨 */
+        UPDATE public.diary_image
+        SET is_delete = true, delete_time = NOW()
+        WHERE diary_id IN (SELECT diary_id FROM public.diary WHERE member_id = #{memberId});
+
         /* 시향일지 (try_diary) */
         UPDATE public.try_diary
         SET is_delete = true, delete_time = NOW()
         WHERE member_id = #{memberId};
+
+        /* 시향일지에 기록된 향수 (try_diary_perfume) - try_diary의 자식 */
+        UPDATE public.try_diary_perfume
+        SET is_delete = true, delete_time = NOW()
+        WHERE try_diary_id IN (SELECT try_diary_id FROM public.try_diary WHERE member_id = #{memberId});
     </update>
 
 </mapper>
