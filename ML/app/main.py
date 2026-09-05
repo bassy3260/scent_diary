@@ -92,3 +92,6 @@ app = FastAPI(lifespan=lifespan)
 
 from app.api.v1 import recommend
 app.include_router(recommend.router, prefix="/api/v1")
+
+from app.api.v1 import embed
+app.include_router(embed.router, prefix="/api/v1")

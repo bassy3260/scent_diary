@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.fragrance.outbox.mapper.OutboxEventMapper">
+
+    <resultMap id="OutboxEventMap" type="com.example.fragrance.outbox.entity.OutboxEvent">
+        <id property="outboxEventId" column="outbox_event_id"/>
+        <result property="perfumeId" column="perfume_id"/>
+        <result property="eventType" column="event_type"/>
+        <result property="processed" column="processed"/>
+        <result property="createdAt" column="created_at"/>
+        <result property="processedAt" column="processed_at"/>
+        <result property="retryCount" column="retry_count"/>
+        <result property="givenUp" column="given_up"/>
+        <result property="lastError" column="last_error"/>
+    </resultMap>
+
+    <!-- idx_outbox_events_unprocessed(부분 인덱스, WHERE processed = false)를 그대로 타는 조회.
+         given_up=true인 행도 processed=true로 같이 표시해두므로, 이 조건 하나로 자동 제외됨. -->
+    <select id="findUnprocessed" resultMap="OutboxEventMap">
+        SELECT outbox_event_id, perfume_id, event_type, processed, created_at, processed_at,
+               retry_count, given_up, last_error
+        FROM outbox_events
+        WHERE processed = false
+        ORDER BY created_at
+        LIMIT #{limit}
+    </select>
+
+    <update id="markProcessed">
+        UPDATE outbox_events
+        SET processed = true,
+            processed_at = NOW()
+        WHERE outbox_event_id = #{outboxEventId}
+    </update>
+
+    <!-- UPDATE ... RETURNING 이라 select로 선언함. 결과가 있는 문장이라 MyBatis가 그대로 매핑함 -->
+    <select id="recordFailureAndGetRetryCount" resultType="int">
+        UPDATE outbox_events
+        SET retry_count = retry_count + 1,
+            last_error = #{errorMessage}
+        WHERE outbox_event_id = #{outboxEventId}
+        RETURNING retry_count
+    </select>
+
+    <update id="markGivenUp">
+        UPDATE outbox_events
+        SET processed = true,
+            given_up = true,
+            processed_at = NOW()
+        WHERE outbox_event_id = #{outboxEventId}
+    </update>
+
+</mapper>
