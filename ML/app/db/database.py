@@ -23,11 +23,16 @@ def get_connection():
     return engine.connect()
 
 def fetch_user_likes() -> list[dict]:
-    """모든 유저의 소장 향수 (member_id, perfume_id) 목록 반환"""
+    """모든 유저의 소장 향수 (member_id, perfume_id) 목록 반환.
+
+    perfume.is_delete까지 확인한다 -- member_perfume 행 자체는 안 지워졌어도
+    향수가 이후에 삭제됐을 수 있어서, 그 경우까지 걸러내지 않으면 삭제된 향수가
+    계속 추천 후보/유저 취향 신호로 남는 문제가 있었다."""
     query = text("""
-        SELECT member_id, perfume_id
-        FROM member_perfume
-        WHERE is_delete = false
+        SELECT l.member_id, l.perfume_id
+        FROM member_perfume l
+        JOIN perfume p ON p.perfume_id = l.perfume_id
+        WHERE l.is_delete = false AND p.is_delete = false
     """)
     with get_connection() as conn:
         rows = conn.execute(query).mappings().all()
@@ -35,14 +40,16 @@ def fetch_user_likes() -> list[dict]:
 
 
 def fetch_user_accord_tf(bm25_k: float = 4.0) -> list[dict]:
-    """유저별 어코드 BM25 TF 반환 (CF 추천 모델 학습용)"""
+    """유저별 어코드 BM25 TF 반환 (CF 추천 모델 학습용). fetch_user_likes()와 같은
+    이유로 perfume.is_delete도 같이 확인한다."""
     query = text(f"""
         SELECT l.member_id,
                pa.accord_id,
                CAST(COUNT(*) AS FLOAT) / (COUNT(*) + {bm25_k}) AS tf
         FROM   member_perfume l
+        JOIN   perfume p ON p.perfume_id = l.perfume_id
         JOIN   perfume_accord pa ON l.perfume_id = pa.perfume_id
-        WHERE  l.is_delete = false
+        WHERE  l.is_delete = false AND p.is_delete = false
         GROUP  BY l.member_id, pa.accord_id
     """)
     with get_connection() as conn:
@@ -51,8 +58,14 @@ def fetch_user_accord_tf(bm25_k: float = 4.0) -> list[dict]:
 
 
 def fetch_perfume_accord_map() -> list[dict]:
-    """향수-어코드 매핑 반환 (CF 콘텐츠 벡터 구축용)"""
-    query = text("SELECT perfume_id, accord_id FROM perfume_accord")
+    """향수-어코드 매핑 반환 (CF 콘텐츠 벡터 구축용). 삭제된 향수는 제외 --
+    이게 없으면 삭제된 향수가 계속 추천 후보 목록(perfume_tfidf_matrix)에 남는다."""
+    query = text("""
+        SELECT pa.perfume_id, pa.accord_id
+        FROM perfume_accord pa
+        JOIN perfume p ON p.perfume_id = pa.perfume_id
+        WHERE p.is_delete = false
+    """)
     with get_connection() as conn:
         rows = conn.execute(query).mappings().all()
     return [{"perfume_id": r["perfume_id"], "accord_id": r["accord_id"]} for r in rows]

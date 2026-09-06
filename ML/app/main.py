@@ -73,6 +73,43 @@ async def _reload_perfume_rows_periodically(app: FastAPI) -> None:
             logger.exception("[perfume_rows] 재로드 실패(%.2fs 경과), 기존 값 유지", time.time() - t0)
 
 
+# cf_recommender도 perfume_rows와 같은 문제(서버 시작 시 1회 로드, 이후 절대 갱신 안 됨)를
+# 갖고 있었음. 다만 dirty 신호가 다르다 -- perfume_rows는 outbox_events(향수 쪽 변경)로
+# 감지했지만, CF는 유저의 좋아요/소장(member_perfume) 변경에도 반응해야 하는데 거기엔
+# 아직 트리거가 없다. 그래서 1차는 순수 시간 기반으로 간다 -- member_perfume용 트리거를
+# 나중에 추가하면 여기도 dirty-check 패턴으로 업그레이드 가능.
+CF_RELOAD_SECONDS = int(os.getenv("CF_RELOAD_SECONDS", "1800"))  # 기본 30분
+
+
+def _build_cf_recommender() -> CfRecommender:
+    """블루-그린 스왑용: 새 CfRecommender 인스턴스를 만들고 load()까지 마쳐서 반환."""
+    new_cf = CfRecommender()
+    new_cf.load()
+    return new_cf
+
+
+async def _reload_cf_recommender_periodically(app: FastAPI) -> None:
+    """CF_RELOAD_SECONDS마다 CF 추천 모델을 통째로 다시 학습해서 교체한다 (순수 시간 기반).
+
+    블루-그린 스왑: 새 CfRecommender를 완전히 다 만든 뒤에야 app.state.cf_recommender를
+    교체하므로, 재학습(KNN 재적합 등) 도중에도 기존 모델이 계속 정상 서빙된다 -- 재로드
+    중 서빙이 끊기거나 절반만 갱신된 상태로 보이는 일이 없음.
+    """
+    while True:
+        await asyncio.sleep(CF_RELOAD_SECONDS)
+        t0 = time.time()
+        try:
+            # CfRecommender.load()는 동기(블로킹) DB 호출 + KNN 적합이라, 이벤트
+            # 루프를 막지 않도록 별도 스레드에서 실행한다.
+            new_cf = await asyncio.to_thread(_build_cf_recommender)
+            app.state.cf_recommender = new_cf  # 참조 교체 (원자적)
+            logger.info("[cf_recommender] 재로드 완료: %.2fs 소요", time.time() - t0)
+        except Exception:
+            # 재로드가 실패해도 기존 app.state.cf_recommender는 그대로 유지되므로
+            # 서빙 자체는 계속 정상 동작함 -- 다음 주기에 다시 시도.
+            logger.exception("[cf_recommender] 재로드 실패(%.2fs 경과), 기존 모델 유지", time.time() - t0)
+
+
 class PodEmbedder:
     """RunPod Pod 임베딩 엔드포인트 호출 wrapper"""
 
@@ -136,14 +173,18 @@ async def lifespan(app: FastAPI):
             logger.info("어코드 임베딩 계산 및 저장 완료: %.2fs → %s", time.time() - t0, ACCORD_EMB_PATH)
         app.state.accord_embeddings = accord_vecs  # shape: (33, 1024)
     reload_task = asyncio.create_task(_reload_perfume_rows_periodically(app))
+    cf_reload_task = asyncio.create_task(_reload_cf_recommender_periodically(app))
     logger.info(
         "앱 시작 완료: 임베더 및 향수 데이터 로드됨 "
-        "(perfume_rows: %d초마다 dirty 체크, 바뀐 게 있어도 최소 %d초 간격으로 재로드)",
+        "(perfume_rows: %d초마다 dirty 체크, 바뀐 게 있어도 최소 %d초 간격으로 재로드 / "
+        "cf_recommender: %d초마다 순수 시간 기반 재로드)",
         PERFUME_ROWS_DIRTY_CHECK_SECONDS, PERFUME_ROWS_MIN_RELOAD_INTERVAL_SECONDS,
+        CF_RELOAD_SECONDS,
     )
     yield
     # shutdown
     reload_task.cancel()
+    cf_reload_task.cancel()
     engine.dispose()
     logger.info("앱 종료: DB 연결 풀 해제됨")
 
