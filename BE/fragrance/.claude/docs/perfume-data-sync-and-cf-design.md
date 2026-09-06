@@ -7,7 +7,7 @@ upsert/delete) end-to-end 검증 완료.** 재시도/포기(DLQ)도 구현+검�
 (`perfume_rows`는 "dirty 체크 + 최소 간격 제한", `cf_recommender`는 순수 시간 기반).
 CF 데이터 조회 함수의 `is_delete` 미필터링 버그도 수정 완료. ES 전체 재색인도
 Reindex + Alias Swap 방식으로 개선 완료(무중단 재색인). 남은 건 DLQ `given_up` 재실행
-(redrive) API뿐 — 당장 필요성 낮아 보류. 6번 체크리스트 참고.
+(redrive) API뿐 — 당장 필요성 낮아 보류. 6장 참고.
 
 ---
 
@@ -278,80 +278,62 @@ FastAPI가 느려지면 이 취향 맵 페이지 로딩도 그 영향을 그대�
 
 ---
 
-## 6. 다음에 실제로 할 일 (구현 착수 시 체크리스트)
+## 6. 실제 구현 결과
 
-**향수 임베딩/ES (DB 트리거 기반 아웃박스)**
-- [x] `outbox_events` 테이블 설계 (perfume_id, event_type, processed, created_at) —
-      `V5__perfume_change_outbox.sql`, 로컬 DB에 `flywayMigrate`로 적용 완료(스키마 버전 5)
-- [x] `perfume`, `perfume_accord`, `perfume_note` 각각에 `AFTER INSERT/UPDATE/DELETE`
-      트리거 — `NEW`/`OLD.perfume_id`를 그대로 아웃박스에 기록. 실제 커밋 테스트로 검증 완료
-      (`perfume_id=1` UPDATE → `outbox_events`에 즉시 행 생성 확인)
-- [x] `accord`, `note` 각각에 트리거 — `perfume_accord`/`perfume_note` 조인으로 연관된
-      `perfume_id` 전체를 찾아 아웃박스에 기록 (3-1절 참고, 파급 범위 큼 주의). 검증 완료
-      (사용자가 직접 함수/트리거를 재작성해서 파급 동작까지 확인함)
-- [x] 아웃박스 폴링 워커 — `OutboxWorker`(BE, `@Scheduled(fixedDelay=10_000)`), 배치 내
-      `perfume_id` 중복 제거 후 처리(2-8 발견 계기가 된 실측 로그 참고)
-- [x] ML 쪽 단건 임베딩 엔드포인트 (`POST /api/v1/embed/perfume/{id}`, `embedding_service.py`)
-      — `OutboxWorker.handle()`이 실제로 호출하도록 연결 완료, end-to-end 검증 완료
-      (트리거 → outbox → 워커 → ML 호출 → `perfume_embedding` 실제 갱신 확인)
-- [x] 재시도/포기(DLQ) — `V6__outbox_retry_tracking.sql` (`retry_count`/`given_up`/`last_error`),
-      `MAX_RETRIES=5` 초과 시 포기. SQL 검증 완료, 실전에서는 이번엔 전부 성공해서 발동 안 함
-- [x] **ES upsert를 단건으로 처리하는 매퍼/서비스** — `PerfumeMapper.findByIdForElasticsearch`
-      + `PerfumeSearchService.syncPerfumeToElasticsearch(perfumeId)`. `event_type`으로 분기 안
-      하고, 그 순간 DB를 다시 조회해서 `null`(없거나 soft-delete)이면 ES `delete`, 있으면
-      `save`(upsert)로 처리. `OutboxWorker.handle()`에서 ML 호출 다음에 이어서 호출.
-      **end-to-end 검증 완료**: `perfume_id=4`를 실제로 soft-delete → ES 문서 삭제 확인
-      (`found: False`) → 복구 → ES 문서 재생성 확인(`found: True`), 양방향 다 확인함.
-      이걸로 `migrateAllToElasticsearch()`의 "삭제 미반영" 버그가 트리거 경로로는 해결됨
-      (전체 재색인 자체의 upsert-only 문제는 `architecture-decisions.md` 참고, 별도 남음)
-- [x] **`perfume_rows` 재로드** (2-8 해결) — 처음엔 순수 시간 기반(30초)으로 구현했다가,
-      "dirty 체크 + 최소 간격 제한" 방식으로 업그레이드함:
-      - `V7__outbox_processed_at_index.sql` — dirty 체크 쿼리용 인덱스
-      - `ML/app/db/database.py`의 `has_outbox_activity_since(since)` — `outbox_events`에서
-        마지막 재로드 이후 완료된(`processed=true`) 이벤트가 있는지 확인 (새 컬럼 없이 기존
-        아웃박스 테이블을 dirty 신호로 재사용)
-      - `ML/app/main.py`의 `_reload_perfume_rows_periodically` — 5초마다 dirty 체크
-        (`PERFUME_ROWS_DIRTY_CHECK_SECONDS`), 바뀐 게 있어도 최소 30초
-        (`PERFUME_ROWS_RELOAD_SECONDS`) 간격으로만 실제 재로드. 블루-그린 스왑(새 리스트
-        다 만든 뒤 `app.state.perfume_rows`에 한 번에 대입)이라 재로드 중 서빙 끊김 없음
-      - **검증 완료**: 아무 변화 없을 때 6~8초 대기해도 재로드 로그 안 뜸 확인, `outbox_events`에
-        가짜 처리완료 행을 직접 넣어서 다음 체크 주기(2초 이내)에 실제 재로드(1314건,
-        1.03s) 발동하는 것까지 확인
-- [ ] (후속, 보류) DLQ `given_up` 항목을 수동으로 재실행(redrive)하는 API/스크립트 —
-      지금은 수동 SQL만. 실전에서 아직 한 번도 `given_up`이 발생한 적 없어 우선순위 낮춤
-- [x] `PerfumeSearchService.syncPerfumeToElasticsearch`/ES 호출 전반에 명시적 타임아웃
-      설정 — `application.yaml`의 `spring.elasticsearch.connection-timeout`(3s)/
-      `socket-timeout`(10s). (Spring Boot 기본값도 이미 1s/30s로 존재했으나, 이 프로젝트는
-      대량 벌크가 아니라 단건 upsert/delete 위주라 더 짧게 잡아 빨리 실패 → outbox
-      워커의 재시도/DLQ에 맡기는 쪽으로 명시)
-- [x] **전체 재색인을 Reindex + Alias Swap 방식으로 개선** —
-      `PerfumeSearchService.migrateAllToElasticsearch()`가 기존엔 `perfumes` 인덱스에
-      직접 upsert했으나(재색인 중 검색 불안정, 매핑 변경 불가), 이제 매번
-      `perfumes_<timestamp>` 새 인덱스를 만들어 전체 적재 후 `perfumes` 별칭을 원자적으로
-      옛 인덱스 → 새 인덱스로 스왑하고 옛 인덱스를 삭제하는 방식으로 교체. 로컬 ES에 직접
-      검증 완료: (1) "perfumes"가 아직 별칭이 아니라 진짜 인덱스로 존재하는 최초 마이그레이션
-      케이스, (2) 별칭 → 별칭 정상 스왑 케이스, (3) 별칭 스왑 실패 시 방금 만든 새 인덱스를
-      정리하는 예외 처리까지 모두 확인. 검증 중 `IndexOperations.getAliases()`가 별칭이
-      없을 때 빈 Map이 아니라 `ResourceNotFoundException`을 던지는 것도 발견해 같이 수정
+### 향수 임베딩/ES (DB 트리거 기반 아웃박스)
 
-**CF 추천**
-- [x] `cf_recommender.load()`를 주기적으로 재호출하는 스케줄러 추가 — `ML/app/main.py`의
-      `_build_cf_recommender()` + `_reload_cf_recommender_periodically()`. 1차는 순수
-      시간 기반(`CF_RELOAD_SECONDS`, 기본 30분)으로 감; `member_perfume`(좋아요/소장) 변경엔
-      아직 전용 트리거가 없어서 `perfume_rows`식 dirty 체크는 다음 단계로 남김. 블루-그린
-      스왑(새 `CfRecommender` 완전히 만든 뒤 `app.state.cf_recommender` 교체)이라 재학습
-      중에도 서빙 끊김 없음
-- [x] `fetch_user_likes`, `fetch_user_accord_tf`, `fetch_perfume_accord_map`에
-      `perfume.is_delete = false` 필터 추가 완료 (2-7 버그 수정)
+`outbox_events` 테이블(`V5__perfume_change_outbox.sql`)을 중심으로, `perfume`/
+`perfume_accord`/`perfume_note`에는 `NEW`/`OLD.perfume_id`를 그대로 기록하는 트리거를,
+`accord`/`note`(원본 테이블)에는 조인으로 연관된 `perfume_id` 전체를 찾아 기록하는 트리거를
+걸었다(3-1절 설계 그대로). BE의 `OutboxWorker`(`@Scheduled(fixedDelay=10_000)`)가 이 테이블을
+폴링해 배치 내 `perfume_id` 중복을 제거한 뒤, ML의 단건 임베딩 엔드포인트
+(`POST /api/v1/embed/perfume/{id}`)를 호출하고 이어서
+`PerfumeSearchService.syncPerfumeToElasticsearch(perfumeId)`로 ES까지 갱신한다. 이 서비스
+메서드는 `event_type`으로 분기하지 않고 그 순간 DB를 다시 조회해서 없거나 soft-delete면
+ES `delete`, 있으면 upsert로 처리 — "지금 DB에 뭐가 있는지"가 트리거가 남긴 이벤트 타입보다
+확실한 진실이라는 판단. 재시도는 `V6__outbox_retry_tracking.sql`의 `retry_count`/`given_up`/
+`last_error`로 DLQ화(`MAX_RETRIES=5`). `perfume_id=4`를 soft-delete→ES 문서 삭제→복구→ES
+재생성까지 양방향으로 실제 검증했다.
 
-**타이밍 계측**
-- [x] `recommend_by_member`에 `/recommend/image`와 같은 패턴의 타이밍 로그 추가 완료
-- [x] `PreferenceServiceImpl`에도 단계별 타이밍 로그 추가 완료 (`countOwnedPerfumes`,
-      FastAPI 호출, 전체)
+`perfume_rows`(ML 추천 서빙 캐시)는 서버 시작 시 1회만 로드되고 갱신이 안 되던 문제(2-8)를
+"dirty 체크 + 최소 간격 제한"으로 해결했다: `has_outbox_activity_since(since)`가 아웃박스
+테이블을 별도 컬럼 추가 없이 그대로 dirty 신호로 재사용하고, 5초마다 저비용으로 확인하되
+바뀐 게 있어도 최소 30초 간격으로만 블루-그린 스왑 재로드한다(재로드 중 서빙 끊김 없음).
 
-**후속 후보 (당장 착수 안 함)**
-- [ ] `member_perfume`(좋아요/소장) 변경 감지용 트리거 + CF 재로드도 dirty 체크로 고도화
-- [ ] DLQ redrive API/스크립트
+전체 재색인(`migrateAllToElasticsearch()`)은 "perfumes" 인덱스에 직접 upsert하던 방식에서
+**Reindex + Alias Swap**으로 교체했다 — 매번 `perfumes_<timestamp>` 새 인덱스에 전체 적재 후
+`perfumes` 별칭을 원자적으로 스왑하고 옛 인덱스를 삭제. 최초 마이그레이션(별칭이 아직
+없고 "perfumes"가 진짜 인덱스인 경우), 별칭→별칭 정상 스왑, 스왑 실패 시 방금 만든 새
+인덱스 정리까지 로컬 ES로 직접 검증했다(이 과정에서 `IndexOperations.getAliases()`가 별칭이
+없을 때 빈 Map이 아니라 `ResourceNotFoundException`을 던지는 것도 발견해 같이 처리). ES
+호출 전반에는 `application.yaml`에 명시적 타임아웃(connection 3s / socket 10s)도 추가했다 —
+대량 벌크가 아니라 단건 upsert/delete 위주라 짧게 잡아 빨리 실패하고 outbox 재시도에
+맡기는 쪽으로.
+
+DLQ `given_up` 항목의 수동 재실행(redrive) API는 실전에서 한 번도 발동한 적이 없어 보류
+상태로 남겨뒀다(지금은 필요 시 수동 SQL로 처리).
+
+### CF 추천
+
+`cf_recommender.load()`가 서버 시작 시 1회만 실행되던 문제는 순수 시간 기반 스케줄러
+(`_build_cf_recommender()` + `_reload_cf_recommender_periodically()`, 기본 30분)로 우선
+해결했다. `member_perfume`(좋아요/소장) 변경엔 아직 전용 트리거가 없어서 `perfume_rows`식
+dirty 체크로 고도화하는 건 후속 과제로 남겼다 — 이것도 블루-그린 스왑이라 재학습 중 서빙
+끊김은 없음.
+
+`fetch_user_likes`/`fetch_user_accord_tf`/`fetch_perfume_accord_map`(2-7 버그: 삭제된
+향수가 계속 추천 후보/취향 벡터에 남던 문제)에는 `perfume.is_delete = false` 필터를 추가했다.
+
+### 타이밍 계측
+
+`recommend_by_member`(ML)와 `PreferenceServiceImpl.getMemberRecommend`(BE) 양쪽에
+`/recommend/image`와 같은 패턴의 단계별 타이밍 로그를 추가해, 취향 맵 요청이 DB/네트워크/
+CF추론/카드조회 중 어디서 시간을 쓰는지 실측 가능하게 만들었다.
+
+### 후속 후보 (당장 착수 안 함)
+
+`member_perfume` 변경 감지용 트리거 + CF 재로드의 dirty 체크 고도화, DLQ redrive API —
+둘 다 지금 규모/운영 이력상 우선순위가 낮아 미착수.
 
 ---
 

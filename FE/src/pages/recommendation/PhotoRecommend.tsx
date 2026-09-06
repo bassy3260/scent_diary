@@ -79,10 +79,15 @@ export function PhotoRecommend() {
   const handleRecommend = async () => {
     if (!uploadedFile || isUploading) return;
     setIsUploading(true);
-    const { uploadImageToS3 } = await import('../../api/s3');
-    const fileName = await uploadImageToS3(uploadedFile);
-    updateProfile({ imageRoute: fileName });
-    navigateTo('analyzing');
+    try {
+      const { uploadImageLocal } = await import('../../api/upload');
+      const fileName = await uploadImageLocal(uploadedFile);
+      updateProfile({ imageRoute: fileName });
+      navigateTo('analyzing');
+    } catch (e) {
+      console.error('이미지 업로드 실패', e);
+      setIsUploading(false);
+    }
   };
 
   // ── 설문 화면 ──────────────────────────────────────────
