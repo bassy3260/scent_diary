@@ -4,10 +4,16 @@ app/services/cf_recommender.py
 소장 향수 기반 협업 필터링 추천 서비스
 
 알고리즘:
-  - BM25 TF × User-IDF 로 유저 취향 벡터 구성
+  - BM25 TF × Catalog-IDF 로 유저 취향 벡터 구성
   - KNN (코사인 유사도) 로 유사 유저 탐색
   - 유사도 가중 CF 점수 + 콘텐츠 점수 혼합
   - 소장 수에 따라 CF ↔ 콘텐츠 비중 자동 조절 (cold-start 대응)
+
+IDF는 기본적으로 "향수 카탈로그" 기준(idf_mode="catalog")으로 희귀도를 잰다. 원래는
+"유저" 기준(idf_mode="user")이었으나, 실험으로 검증한 결과 유저 표본이 작으면 희귀도가
+왜곡돼서 정작 IDF가 있어야 할 이유(주력 취향 속 소수 취향이 묻히지 않게 하는 것)를
+못 살리는 문제를 발견해 카탈로그 기준으로 교체함
+(docs/cf-idf-mode-experiment.md 참고).
 ─────────────────────────────────────────────────────
 """
 
@@ -31,8 +37,18 @@ BM25_K = 4.0
 
 
 class CfRecommender:
-    def __init__(self, bm25_k: float = BM25_K):
+    def __init__(self, bm25_k: float = BM25_K, idf_mode: str = "catalog"):
         self.bm25_k = bm25_k
+        # idf_mode: 희귀도 가중치를 어느 기준으로 매길지.
+        #   "user"    - (기존 기본값) 이 어코드를 소장한 향수를 가진 "유저"가 몇 명인가 기준.
+        #               유저 표본이 작거나 편향되면 실제 카탈로그 희귀도와 어긋날 수 있음.
+        #   "catalog" - 전체 "향수 카탈로그"에서 이 어코드를 가진 향수가 몇 개인가 기준
+        #               (교과서적인 IDF에 더 가까움, 카탈로그 크기가 고정이라 안정적).
+        #   "none"    - 가중치 없음(순수 TF/이진값만).
+        # scripts/evaluate_cf*.py가 세 방식을 비교하기 위한 스위치 -- 실제 서비스(load())는
+        # 기본값("catalog")으로 돌아감. "user"가 원래 기본값이었으나, 실험 결과 "소수 취향
+        # 보존"이라는 IDF 본연의 목적을 오히려 못 살리는 것으로 확인돼 교체함.
+        self.idf_mode = idf_mode
 
         self.tfidf_matrix: pd.DataFrame | None = None
         self.perfume_tfidf_matrix: pd.DataFrame | None = None
@@ -44,31 +60,64 @@ class CfRecommender:
 
     def load(self) -> None:
         logger.info("CF 추천 모델 로딩 중...")
+        self._build_from_data(
+            fetch_user_accord_tf(self.bm25_k),
+            fetch_user_likes(),
+            fetch_perfume_accord_map(),
+        )
 
+    def _build_from_data(
+        self,
+        user_accord_rows: list[dict],
+        likes_rows: list[dict],
+        perfume_accord_rows: list[dict],
+    ) -> None:
+        """load()의 실제 계산 로직. DB에서 직접 안 읽고, 주어진 데이터로만 매트릭스를
+        구성한다. scripts/evaluate_cf.py가 leave-one-out 평가에서 일부 소장 기록을
+        제외한 데이터로 이 메서드를 직접 호출해서, 실제 서비스와 완전히 같은 알고리즘을
+        평가에도 그대로 쓴다."""
         # 1. 유저-어코드 BM25 TF
-        df_user_accord = pd.DataFrame(fetch_user_accord_tf(self.bm25_k))
+        df_user_accord = pd.DataFrame(user_accord_rows)
 
         # 2. 소장 향수 목록
-        self.df_likes = pd.DataFrame(fetch_user_likes())
+        self.df_likes = pd.DataFrame(likes_rows)
 
         # 3. 향수-어코드 매핑
-        df_perfume_accord = pd.DataFrame(fetch_perfume_accord_map())
+        df_perfume_accord = pd.DataFrame(perfume_accord_rows)
 
-        # 4. User-based IDF
-        #    log(전체 유저 수 / 해당 어코드 향수를 소장한 유저 수) + 1
+        # 4. IDF (idf_mode에 따라 세 가지 중 하나)
         total_users = df_user_accord["member_id"].nunique()
-        users_per_accord = (
-            df_user_accord[df_user_accord["tf"] > 0]
-            .groupby("accord_id")["member_id"]
-            .nunique()
-            .reset_index(name="user_count")
-        )
-        users_per_accord["user_idf"] = (
-            np.log(total_users / (1 + users_per_accord["user_count"])) + 1
-        )
-        self.user_idf_dict = dict(
-            zip(users_per_accord["accord_id"], users_per_accord["user_idf"])
-        )
+        if self.idf_mode == "user":
+            #    log(전체 유저 수 / 해당 어코드 향수를 소장한 유저 수) + 1
+            users_per_accord = (
+                df_user_accord[df_user_accord["tf"] > 0]
+                .groupby("accord_id")["member_id"]
+                .nunique()
+                .reset_index(name="user_count")
+            )
+            users_per_accord["user_idf"] = (
+                np.log(total_users / (1 + users_per_accord["user_count"])) + 1
+            )
+            self.user_idf_dict = dict(
+                zip(users_per_accord["accord_id"], users_per_accord["user_idf"])
+            )
+        elif self.idf_mode == "catalog":
+            #    log(전체 향수 수 / 해당 어코드를 가진 향수 수) + 1 -- 교과서적인 IDF
+            total_perfumes = df_perfume_accord["perfume_id"].nunique()
+            perfumes_per_accord = (
+                df_perfume_accord.groupby("accord_id")["perfume_id"]
+                .nunique()
+                .reset_index(name="perfume_count")
+            )
+            perfumes_per_accord["catalog_idf"] = (
+                np.log(total_perfumes / (1 + perfumes_per_accord["perfume_count"])) + 1
+            )
+            self.user_idf_dict = dict(
+                zip(perfumes_per_accord["accord_id"], perfumes_per_accord["catalog_idf"])
+            )
+        else:
+            # "none" -- 모든 어코드를 동일 가중치(1.0)로 취급, 순수 TF/이진값만 사용
+            self.user_idf_dict = {}
 
         # 5. 유저 TF × User-IDF 매트릭스
         user_accord_matrix = df_user_accord.pivot(
