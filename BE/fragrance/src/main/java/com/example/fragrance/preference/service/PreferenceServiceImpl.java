@@ -20,7 +20,9 @@ import com.example.fragrance.preference.mapper.PreferenceMapper;
 import com.example.fragrance.recommend.dto.FastApiMemberRecommendResponse;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class PreferenceServiceImpl implements PreferenceService {
@@ -72,10 +74,16 @@ public class PreferenceServiceImpl implements PreferenceService {
 
 	@Override
 	public List<FastApiMemberRecommendResponse.RecommendationItem> getMemberRecommend(Long memberId) {
+		long tTotal = System.currentTimeMillis();
+
+		long t0 = System.currentTimeMillis();
 		long totalPerfumes = preferenceMapper.countOwnedPerfumes(memberId);
+		log.info("[타이밍] countOwnedPerfumes: {}ms", System.currentTimeMillis() - t0);
 
 		if (totalPerfumes == 0) {
+			t0 = System.currentTimeMillis();
 			List<TopLikedPerfumeDto> topLiked = preferenceMapper.findTopLikedPerfumes();
+			log.info("[타이밍] findTopLikedPerfumes(콜드스타트): {}ms", System.currentTimeMillis() - t0);
 			return topLiked.stream()
 				.map(p -> new FastApiMemberRecommendResponse.RecommendationItem(
 					p.getPerfumeId(), p.getPerfumeName(), p.getImageRoute(), p.getAccordList()
@@ -86,11 +94,14 @@ public class PreferenceServiceImpl implements PreferenceService {
 		Map<String, Object> body = new HashMap<>();
 		body.put("member_id", memberId);
 
+		t0 = System.currentTimeMillis();
 		FastApiMemberRecommendResponse response = restTemplate.postForObject(
 			fastapiUrl + "/api/v1/recommend/member",
 			body,
 			FastApiMemberRecommendResponse.class
 		);
+		log.info("[타이밍] FastAPI /recommend/member 호출: {}ms", System.currentTimeMillis() - t0);
+		log.info("[타이밍] getMemberRecommend 전체: {}ms", System.currentTimeMillis() - tTotal);
 
 		if (response == null || response.getRecommendations() == null) {
 			return Collections.emptyList();

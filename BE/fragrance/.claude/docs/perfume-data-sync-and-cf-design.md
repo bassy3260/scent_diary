@@ -3,9 +3,11 @@
 작성일: 2026-09-05 (갱신: 2026-09-06)
 상태: **임베딩+ES 동기화 파이프라인(트리거 → 아웃박스 → 워커 → ML 단건 임베딩 → ES 단건
 upsert/delete) end-to-end 검증 완료.** 재시도/포기(DLQ)도 구현+검증 완료.
-`perfume_rows`(ML 추천 서빙용 캐시) 재로드도 "dirty 체크 + 최소 간격 제한" 방식으로
-구현+검증 완료. 남은 건 CF 쪽에 같은 재로드 패턴 적용, ES 호출 타임아웃 미설정 —
-6번 체크리스트 참고.
+`perfume_rows`(ML 추천 서빙용 캐시), `cf_recommender` 둘 다 재로드 구현+검증 완료
+(`perfume_rows`는 "dirty 체크 + 최소 간격 제한", `cf_recommender`는 순수 시간 기반).
+CF 데이터 조회 함수의 `is_delete` 미필터링 버그도 수정 완료. ES 전체 재색인도
+Reindex + Alias Swap 방식으로 개선 완료(무중단 재색인). 남은 건 DLQ `given_up` 재실행
+(redrive) API뿐 — 당장 필요성 낮아 보류. 6번 체크리스트 참고.
 
 ---
 
@@ -315,21 +317,41 @@ FastAPI가 느려지면 이 취향 맵 페이지 로딩도 그 영향을 그대�
       - **검증 완료**: 아무 변화 없을 때 6~8초 대기해도 재로드 로그 안 뜸 확인, `outbox_events`에
         가짜 처리완료 행을 직접 넣어서 다음 체크 주기(2초 이내)에 실제 재로드(1314건,
         1.03s) 발동하는 것까지 확인
-- [ ] (후속) DLQ `given_up` 항목을 수동으로 재실행(redrive)하는 API/스크립트 — 지금은 수동 SQL만
-- [ ] (후속) `PerfumeSearchService.syncPerfumeToElasticsearch` 호출에 명시적 타임아웃 없음
-      (ML 호출 쪽엔 있음) — 발견만 하고 아직 안 고침
+- [ ] (후속, 보류) DLQ `given_up` 항목을 수동으로 재실행(redrive)하는 API/스크립트 —
+      지금은 수동 SQL만. 실전에서 아직 한 번도 `given_up`이 발생한 적 없어 우선순위 낮춤
+- [x] `PerfumeSearchService.syncPerfumeToElasticsearch`/ES 호출 전반에 명시적 타임아웃
+      설정 — `application.yaml`의 `spring.elasticsearch.connection-timeout`(3s)/
+      `socket-timeout`(10s). (Spring Boot 기본값도 이미 1s/30s로 존재했으나, 이 프로젝트는
+      대량 벌크가 아니라 단건 upsert/delete 위주라 더 짧게 잡아 빨리 실패 → outbox
+      워커의 재시도/DLQ에 맡기는 쪽으로 명시)
+- [x] **전체 재색인을 Reindex + Alias Swap 방식으로 개선** —
+      `PerfumeSearchService.migrateAllToElasticsearch()`가 기존엔 `perfumes` 인덱스에
+      직접 upsert했으나(재색인 중 검색 불안정, 매핑 변경 불가), 이제 매번
+      `perfumes_<timestamp>` 새 인덱스를 만들어 전체 적재 후 `perfumes` 별칭을 원자적으로
+      옛 인덱스 → 새 인덱스로 스왑하고 옛 인덱스를 삭제하는 방식으로 교체. 로컬 ES에 직접
+      검증 완료: (1) "perfumes"가 아직 별칭이 아니라 진짜 인덱스로 존재하는 최초 마이그레이션
+      케이스, (2) 별칭 → 별칭 정상 스왑 케이스, (3) 별칭 스왑 실패 시 방금 만든 새 인덱스를
+      정리하는 예외 처리까지 모두 확인. 검증 중 `IndexOperations.getAliases()`가 별칭이
+      없을 때 빈 Map이 아니라 `ResourceNotFoundException`을 던지는 것도 발견해 같이 수정
 
 **CF 추천**
-- [ ] `cf_recommender.load()`를 주기적으로 재호출하는 스케줄러 추가 — `perfume_rows`에서
-      이미 검증된 dirty 체크(`has_outbox_activity_since`) + 최소 간격 패턴을 그대로
-      재사용하면 됨(`_reload_perfume_rows_periodically`를 참고용 템플릿으로 삼아서 CF용으로
-      복제/일반화). 순수 시간 기반보다 처음부터 이 방식으로 가는 게 나을 듯
-- [ ] `fetch_user_likes`, `fetch_user_accord_tf`, `fetch_perfume_accord_map`에
-      `perfume.is_delete = false` 필터 추가 (2-7 버그 수정, 재적재 주기와 무관하게 필요)
+- [x] `cf_recommender.load()`를 주기적으로 재호출하는 스케줄러 추가 — `ML/app/main.py`의
+      `_build_cf_recommender()` + `_reload_cf_recommender_periodically()`. 1차는 순수
+      시간 기반(`CF_RELOAD_SECONDS`, 기본 30분)으로 감; `member_perfume`(좋아요/소장) 변경엔
+      아직 전용 트리거가 없어서 `perfume_rows`식 dirty 체크는 다음 단계로 남김. 블루-그린
+      스왑(새 `CfRecommender` 완전히 만든 뒤 `app.state.cf_recommender` 교체)이라 재학습
+      중에도 서빙 끊김 없음
+- [x] `fetch_user_likes`, `fetch_user_accord_tf`, `fetch_perfume_accord_map`에
+      `perfume.is_delete = false` 필터 추가 완료 (2-7 버그 수정)
 
 **타이밍 계측**
-- [ ] `recommend_by_member`에 `/recommend/image`와 같은 패턴의 타이밍 로그 추가
-- [ ] `PreferenceServiceImpl`에도 단계별 타이밍 로그 추가
+- [x] `recommend_by_member`에 `/recommend/image`와 같은 패턴의 타이밍 로그 추가 완료
+- [x] `PreferenceServiceImpl`에도 단계별 타이밍 로그 추가 완료 (`countOwnedPerfumes`,
+      FastAPI 호출, 전체)
+
+**후속 후보 (당장 착수 안 함)**
+- [ ] `member_perfume`(좋아요/소장) 변경 감지용 트리거 + CF 재로드도 dirty 체크로 고도화
+- [ ] DLQ redrive API/스크립트
 
 ---
 
